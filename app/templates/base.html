@@ -11,7 +11,9 @@
   <header class="site-header">
     <div class="header-inner">
       <a href="/" class="logo">
-        <span class="logo-icon">▶</span>
+        <svg class="logo-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
         <span class="logo-text">yt<span class="logo-accent">-abs-</span>importer</span>
       </a>
       <nav class="site-nav">
@@ -27,10 +29,11 @@
   </main>
 
   <footer class="site-footer">
-    <span>yt-abs-importer</span>
+    <span>yt-abs-importer &copy; 2026</span>
     {% if settings.dry_run %}
-    <span class="badge badge-warning">DRY RUN MODE</span>
+    <span class="badge badge-warning">DRY RUN</span>
     {% endif %}
   </footer>
 </body>
 </html>
+

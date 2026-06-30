@@ -3,14 +3,21 @@
 
 {% block content %}
 <div class="page-header">
-  <a href="/" class="back-link">← Back</a>
-  <h1 class="page-title">Preview &amp; Configure</h1>
+  <a href="/" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    Back
+  </a>
+  <h1 class="page-title">Configure Import</h1>
 </div>
 
 <div class="preview-layout">
 
-  <!-- Left: metadata -->
+  <!-- Left: Metadata Preview Card -->
   <div class="preview-meta card">
+    <h3 class="card-title" style="margin-bottom: 1rem;">Video Preview</h3>
     {% if meta.thumbnail %}
     <div class="thumbnail-wrap">
       <img src="{{ meta.thumbnail | e }}" alt="Video thumbnail" class="thumbnail" loading="lazy" />
@@ -20,7 +27,7 @@
     <div class="meta-fields">
       <div class="meta-row">
         <span class="meta-label">Title</span>
-        <span class="meta-value">{{ meta.title | e }}</span>
+        <span class="meta-value" style="font-weight: 600;">{{ meta.title | e }}</span>
       </div>
       <div class="meta-row">
         <span class="meta-label">Channel</span>
@@ -32,19 +39,13 @@
         <span class="meta-value mono">{{ meta.uploader_id | e }}</span>
       </div>
       {% endif %}
-      {% if meta.channel_id %}
-      <div class="meta-row">
-        <span class="meta-label">Channel ID</span>
-        <span class="meta-value mono">{{ meta.channel_id | e }}</span>
-      </div>
-      {% endif %}
       <div class="meta-row">
         <span class="meta-label">Duration</span>
         <span class="meta-value">{{ meta.duration | duration }}</span>
       </div>
       {% if meta.upload_date %}
       <div class="meta-row">
-        <span class="meta-label">Upload Date</span>
+        <span class="meta-label">Uploaded</span>
         <span class="meta-value">{{ meta.upload_date | format_date }}</span>
       </div>
       {% endif %}
@@ -52,9 +53,9 @@
         <span class="meta-label">Chapters</span>
         <span class="meta-value">
           {% if meta.chapter_count > 0 %}
-            <span class="badge badge-success">{{ meta.chapter_count }} chapters</span>
+            <span class="badge badge-success">{{ meta.chapter_count }} chapters detected</span>
           {% else %}
-            <span class="badge badge-muted">None detected</span>
+            <span class="badge badge-muted">No chapters detected</span>
           {% endif %}
         </span>
       </div>
@@ -65,9 +66,9 @@
     </div>
   </div>
 
-  <!-- Right: job form -->
+  <!-- Right: Job Configuration Form -->
   <div class="preview-form card">
-    <h2 class="card-title">Configure Import</h2>
+    <h3 class="card-title">Output Settings</h3>
 
     <form method="POST" action="/jobs/create" id="import-form">
       <!-- Hidden metadata fields -->
@@ -85,7 +86,7 @@
 
       <!-- Output title -->
       <div class="form-group">
-        <label for="output_title" class="form-label">Output Title</label>
+        <label for="output_title" class="form-label">Book Title</label>
         <input
           id="output_title"
           name="output_title"
@@ -94,7 +95,7 @@
           value="{{ meta.title | e }}"
           required
         />
-        <p class="form-hint">This becomes the filename (sanitized). Edit to customize.</p>
+        <p class="form-hint">Customize the title. This is used for the M4B metadata and output filename.</p>
       </div>
 
       <!-- Destination folder -->
@@ -110,54 +111,64 @@
           >{{ folder | e }}</option>
           {% endfor %}
         </select>
-        <p class="form-hint">Folder under <code>{{ settings.output_root }}</code></p>
+        <p class="form-hint">
+          Select a subdirectory under your Audiobookshelf root: <code>{{ settings.output_root }}</code>
+        </p>
       </div>
 
-      <!-- New folder creation -->
-      <div class="form-group">
+      <!-- New folder creation (visually subordinate) -->
+      <div class="form-group folder-sub-container">
         <label for="new_folder" class="form-label">
-          Or Create New Folder
-          <span class="form-hint-inline">(leave empty to use selection above)</span>
+          Create New Subfolder
+          <span class="form-hint-inline">(optional)</span>
         </label>
         <input
           id="new_folder"
           name="new_folder"
           type="text"
           class="form-input"
-          placeholder="e.g. @mychannelname"
+          placeholder="e.g. {{ meta.uploader_id or 'Author Name' }}"
         />
+        <p class="form-hint">Enter a name to create a new folder under your library root. Leave empty to use selection above.</p>
       </div>
 
-      <!-- Embed options -->
-      <fieldset class="form-group options-fieldset">
-        <legend class="form-label">Embed Options</legend>
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" name="embed_metadata" value="true" checked id="embed_metadata" />
-            <span>Embed metadata</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" name="embed_thumbnail" value="true" checked id="embed_thumbnail" />
-            <span>Embed thumbnail / cover art</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" name="embed_chapters" value="true" checked id="embed_chapters" />
-            <span>Embed chapters</span>
-          </label>
-          {% if settings.abs_configured %}
-          <label class="checkbox-label">
-            <input type="checkbox" name="trigger_abs_scan" value="true"
-              {% if settings.abs_scan_after_success %}checked{% endif %}
-              id="trigger_abs_scan" />
-            <span>Trigger Audiobookshelf library scan after success</span>
-          </label>
-          {% endif %}
-        </div>
-      </fieldset>
+      <!-- Advanced options -->
+      <div class="advanced-options-group">
+        <h4 class="advanced-options-title">Metadata &amp; Integration Options</h4>
+        <fieldset class="form-group options-fieldset">
+          <legend class="form-label" style="display: none;">Embed Options</legend>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="embed_metadata" value="true" checked id="embed_metadata" />
+              <span>Embed metadata (Author, title, video reference)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="embed_thumbnail" value="true" checked id="embed_thumbnail" />
+              <span>Embed video thumbnail as cover art</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="embed_chapters" value="true" checked id="embed_chapters" />
+              <span>Embed chapters (uses YouTube video chapters if detected)</span>
+            </label>
+            {% if settings.abs_configured %}
+            <label class="checkbox-label">
+              <input type="checkbox" name="trigger_abs_scan" value="true"
+                {% if settings.abs_scan_after_success %}checked{% endif %}
+                id="trigger_abs_scan" />
+              <span>Trigger Audiobookshelf library scan on success</span>
+            </label>
+            {% endif %}
+          </div>
+        </fieldset>
+      </div>
 
-      <button type="submit" class="btn btn-primary btn-large" id="create-btn">
-        <span class="btn-icon">▶</span>
-        Create M4B
+      <button type="submit" class="btn btn-primary btn-large" id="create-btn" style="margin-top: 1.5rem;">
+        <span class="btn-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </span>
+        Queue Import
       </button>
     </form>
   </div>
@@ -169,7 +180,7 @@
     const btn = document.getElementById('create-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Queuing Job...';
+      btn.innerHTML = '<span class="spinner"></span> Queueing Job...';
     }
   });
 </script>

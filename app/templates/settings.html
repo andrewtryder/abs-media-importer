@@ -2,47 +2,133 @@
 {% block title %}Settings — yt-abs-importer{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <h1 class="hero-title">Settings</h1>
-  <p class="hero-subtitle">Configure application settings and directories</p>
+<div class="page-header">
+  <h1 class="page-title">Settings</h1>
 </div>
 
-<div class="card center-card">
-  {% if error %}
-  <div class="alert alert-error">
-    <span class="alert-icon">✕</span>
-    <span>{{ error | e }}</span>
-  </div>
-  {% endif %}
-
-  {% if success %}
-  <div class="alert alert-success">
-    <span class="alert-icon">✓</span>
-    <span>{{ success | e }}</span>
-  </div>
-  {% endif %}
-
-  <form method="POST" action="/settings" class="settings-form">
-    <div class="form-group">
-      <label for="output_root" class="form-label">Output Root Directory</label>
-      <input
-        id="output_root"
-        name="output_root"
-        type="text"
-        class="form-input"
-        placeholder="/media/podcasts"
-        value="{{ output_root if error else settings.output_root | e }}"
-        required
-      />
-      <p class="form-hint">The base directory where audiobooks will be saved. Must be an absolute path and writable by the application.</p>
+<div class="preview-layout">
+  <!-- Left Side: Form card -->
+  <div class="settings-form-card card">
+    <h3 class="card-title">Deployment Settings</h3>
+    
+    {% if error %}
+    <div class="alert alert-error">
+      <div class="alert-icon">✕</div>
+      <span>{{ error | e }}</span>
     </div>
+    {% endif %}
 
-    <div class="form-actions" style="margin-top: 1.5rem;">
-      <button type="submit" class="btn btn-primary">
-        <span class="btn-icon">💾</span>
-        Save Settings
-      </button>
+    {% if success %}
+    <div class="alert alert-success">
+      <div class="alert-icon">✓</div>
+      <span>{{ success | e }}</span>
     </div>
-  </form>
+    {% endif %}
+
+    <form method="POST" action="/settings" class="settings-form">
+      <div class="form-group">
+        <label for="output_root" class="form-label">Output Root Directory</label>
+        <input
+          id="output_root"
+          name="output_root"
+          type="text"
+          class="form-input"
+          placeholder="/media/podcasts"
+          value="{{ output_root if error else settings.output_root | e }}"
+          required
+        />
+        <p class="form-hint" style="margin-bottom: 0.5rem;">
+          The base folder where M4B audiobooks will be written.
+        </p>
+        <div class="alert alert-warning" style="font-size: 0.8rem; padding: 0.75rem 1rem; margin-bottom: 1rem; border-radius: var(--radius-sm);">
+          <div class="alert-icon">💡</div>
+          <div>
+            <strong>Docker deployment notice:</strong> This must be the <em>container-side</em> path (e.g. <code>/media/podcasts</code>),
+            not the host machine path (e.g. <code>/Volumes/Library/...</code>). Host paths should only be specified in your <code>.env</code> file under <code>HOST_PODCASTS_DIR</code>.
+          </div>
+        </div>
+        <p class="form-hint">
+          Clicking save writes to <code>/data/settings.json</code> which overrides defaults and environment values for this setting.
+        </p>
+      </div>
+
+      <div class="form-actions" style="margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary">
+          <span class="btn-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+          </span>
+          Save Settings
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right Side: Environment Summary card -->
+  <div class="settings-summary-card card">
+    <h3 class="card-title">Environment Summary</h3>
+    <p class="form-hint" style="margin-top: -1rem; margin-bottom: 1.5rem;">
+      Read-only settings loaded from environment variables and config files.
+    </p>
+
+    <div class="meta-fields">
+      <div class="meta-row">
+        <span class="meta-label">Output path</span>
+        <span class="meta-value mono" style="font-size: 0.85em;">{{ settings.output_root }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Dry run</span>
+        <span class="meta-value">
+          {% if settings.dry_run %}
+          <span class="badge badge-warning">Enabled</span>
+          {% else %}
+          <span class="badge badge-muted">Disabled</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">ABS Link</span>
+        <span class="meta-value">
+          {% if settings.abs_configured %}
+          <span class="badge badge-success">Configured</span>
+          {% if settings.abs_scan_after_success %}
+          <span class="badge badge-success">Auto-Scan</span>
+          {% endif %}
+          <div class="mono small" style="margin-top: 0.25rem; font-size: 0.8em; color: var(--text-muted);">{{ settings.abs_base_url }}</div>
+          {% else %}
+          <span class="badge badge-warning">Not Configured</span>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Set ABS_BASE_URL, ABS_API_TOKEN, and ABS_LIBRARY_ID in your config to enable direct Audiobookshelf scans.</div>
+          {% endif %}
+        </span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Playlists</span>
+        <span class="meta-value">
+          {% if settings.allow_playlists %}
+          <span class="badge badge-success">Allowed</span>
+          {% else %}
+          <span class="badge badge-muted">Not Allowed</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Channels</span>
+        <span class="meta-value">
+          {% if settings.allow_channels %}
+          <span class="badge badge-success">Allowed</span>
+          {% else %}
+          <span class="badge badge-muted">Not Allowed</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Max Jobs</span>
+        <span class="meta-value">{{ settings.max_concurrent_jobs }} concurrent</span>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

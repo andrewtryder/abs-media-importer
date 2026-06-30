@@ -2,9 +2,94 @@
 {% block title %}Job: {{ (job.output_title or job.source_title or job.id) | truncate(50) | e }} — yt-abs-importer{% endblock %}
 
 {% block content %}
+{% set status = job.status.value %}
+{% set phase = job.phase or '' %}
+
+{# Setup timeline step classes: 'pending', 'active', 'completed', 'failed' #}
+{% set step_queued = 'pending' %}
+{% set step_downloading = 'pending' %}
+{% set step_converting = 'pending' %}
+{% set step_verifying = 'pending' %}
+{% set step_scanning = 'pending' %}
+{% set step_done = 'pending' %}
+
+{% if status == 'queued' %}
+  {% set step_queued = 'active' %}
+{% elif status == 'downloading' or (status == 'running' and phase == 'downloading') %}
+  {% set step_queued = 'completed' %}
+  {% set step_downloading = 'active' %}
+{% elif status in ['postprocessing', 'converting'] or (status == 'running' and phase in ['postprocessing', 'converting']) %}
+  {% set step_queued = 'completed' %}
+  {% set step_downloading = 'completed' %}
+  {% set step_converting = 'active' %}
+{% elif status == 'verifying' or (status == 'running' and phase == 'verifying') %}
+  {% set step_queued = 'completed' %}
+  {% set step_downloading = 'completed' %}
+  {% set step_converting = 'completed' %}
+  {% set step_verifying = 'active' %}
+{% elif status == 'scanning' or (status == 'running' and phase == 'scanning') %}
+  {% set step_queued = 'completed' %}
+  {% set step_downloading = 'completed' %}
+  {% set step_converting = 'completed' %}
+  {% set step_verifying = 'completed' %}
+  {% set step_scanning = 'active' %}
+{% elif status == 'succeeded' %}
+  {% set step_queued = 'completed' %}
+  {% set step_downloading = 'completed' %}
+  {% set step_converting = 'completed' %}
+  {% set step_verifying = 'completed' %}
+  {% set step_scanning = 'completed' %}
+  {% set step_done = 'completed' %}
+{% elif status == 'failed' %}
+  {% set step_queued = 'completed' %}
+  {% if phase == 'downloading' %}
+    {% set step_downloading = 'failed' %}
+  {% elif phase in ['postprocessing', 'converting'] %}
+    {% set step_downloading = 'completed' %}
+    {% set step_converting = 'failed' %}
+  {% elif phase == 'verifying' %}
+    {% set step_downloading = 'completed' %}
+    {% set step_converting = 'completed' %}
+    {% set step_verifying = 'failed' %}
+  {% elif phase == 'scanning' %}
+    {% set step_downloading = 'completed' %}
+    {% set step_converting = 'completed' %}
+    {% set step_verifying = 'completed' %}
+    {% set step_scanning = 'failed' %}
+  {% else %}
+    {% set step_queued = 'failed' %}
+  {% endif %}
+  {% set step_done = 'failed' %}
+{% elif status == 'cancelled' %}
+  {% set step_queued = 'completed' %}
+  {% if phase == 'downloading' %}
+    {% set step_downloading = 'failed' %}
+  {% elif phase in ['postprocessing', 'converting'] %}
+    {% set step_downloading = 'completed' %}
+    {% set step_converting = 'failed' %}
+  {% elif phase == 'verifying' %}
+    {% set step_downloading = 'completed' %}
+    {% set step_converting = 'completed' %}
+    {% set step_verifying = 'failed' %}
+  {% elif phase == 'scanning' %}
+    {% set step_downloading = 'completed' %}
+    {% set step_converting = 'completed' %}
+    {% set step_verifying = 'completed' %}
+    {% set step_scanning = 'failed' %}
+  {% else %}
+    {% set step_queued = 'failed' %}
+  {% endif %}
+{% endif %}
+
 <div class="page-header">
-  <a href="/jobs" class="back-link">← Jobs</a>
-  <h1 class="page-title">Job Detail</h1>
+  <a href="/jobs" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    Jobs
+  </a>
+  <h1 class="page-title">Job Details</h1>
 </div>
 
 <div class="job-detail-layout">
@@ -15,11 +100,39 @@
       <div class="job-title-block">
         <h2 class="job-title-text">{{ (job.output_title or job.source_title or "Unknown") | e }}</h2>
         {% if job.uploader %}
-        <div class="job-uploader">{{ job.uploader | e }}</div>
+        <div class="job-uploader">Source Channel: {{ job.uploader | e }}</div>
         {% endif %}
       </div>
       <span class="badge badge-{{ job.status.value }} badge-lg">{{ job.status.value }}</span>
     </div>
+
+    <!-- Timeline Phase Section -->
+    <ul class="timeline">
+      <li class="timeline-step {{ step_queued }}">
+        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+        <span class="timeline-label">Queued</span>
+      </li>
+      <li class="timeline-step {{ step_downloading }}">
+        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+        <span class="timeline-label">Downloading</span>
+      </li>
+      <li class="timeline-step {{ step_converting }}">
+        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+        <span class="timeline-label">Converting</span>
+      </li>
+      <li class="timeline-step {{ step_verifying }}">
+        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+        <span class="timeline-label">Verifying</span>
+      </li>
+      <li class="timeline-step {{ step_scanning }}">
+        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+        <span class="timeline-label">Scanning</span>
+      </li>
+      <li class="timeline-step {{ step_done }}">
+        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+        <span class="timeline-label">Done</span>
+      </li>
+    </ul>
 
     {% if job.thumbnail_url %}
     <img src="{{ job.thumbnail_url | e }}" alt="Thumbnail" class="detail-thumbnail" loading="lazy" />
@@ -27,15 +140,14 @@
 
     <div class="detail-grid">
       <div class="detail-row">
-        <span class="detail-label">Status</span>
-        <span class="detail-value"><span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span></span>
+        <span class="detail-label">Pipeline Status</span>
+        <span class="detail-value">
+          <span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span>
+          {% if job.phase %}
+          <span class="phase-tag">Stage: {{ job.phase | e }}</span>
+          {% endif %}
+        </span>
       </div>
-      {% if job.phase %}
-      <div class="detail-row">
-        <span class="detail-label">Phase</span>
-        <span class="detail-value">{{ job.phase | e }}</span>
-      </div>
-      {% endif %}
       <div class="detail-row">
         <span class="detail-label">Attempts</span>
         <span class="detail-value">{{ job.attempts }}</span>
@@ -55,7 +167,7 @@
       <div class="detail-row">
         <span class="detail-label">Source URL</span>
         <span class="detail-value">
-          <a href="{{ job.url | e }}" target="_blank" rel="noopener" class="url-link">{{ job.url | truncate(60) | e }}</a>
+          <a href="{{ job.url | e }}" target="_blank" rel="noopener" class="url-link">{{ job.url | truncate(80) | e }}</a>
         </span>
       </div>
       {% if job.destination_folder %}
@@ -65,33 +177,36 @@
       </div>
       {% endif %}
       {% if job.final_output_path %}
-      <div class="detail-row">
+      <div class="detail-row" style="background: rgba(16, 185, 129, 0.04); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px dashed rgba(16, 185, 129, 0.2);">
         <span class="detail-label">Output Path</span>
-        <span class="detail-value mono small output-path">{{ job.final_output_path | e }}</span>
+        <span class="detail-value mono small output-path" style="user-select: all;">{{ job.final_output_path | e }}</span>
       </div>
       {% endif %}
       <div class="detail-row">
-        <span class="detail-label">Created</span>
+        <span class="detail-label">Created At</span>
         <span class="detail-value">{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if job.created_at else '—' }}</span>
       </div>
       {% if job.started_at %}
       <div class="detail-row">
-        <span class="detail-label">Started</span>
+        <span class="detail-label">Started At</span>
         <span class="detail-value">{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
       </div>
       {% endif %}
       {% if job.finished_at %}
       <div class="detail-row">
-        <span class="detail-label">Finished</span>
+        <span class="detail-label">Finished At</span>
         <span class="detail-value">{{ job.finished_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
       </div>
       {% endif %}
     </div>
 
     {% if job.error_message %}
-    <div class="alert alert-error mt-4">
-      <strong>Error:</strong>
-      <pre class="error-pre">{{ job.error_message | e }}</pre>
+    <div class="alert alert-error mt-4" style="border-radius: var(--radius-sm);">
+      <div class="alert-icon">✕</div>
+      <div>
+        <strong>Import Error:</strong>
+        <pre class="error-pre">{{ job.error_message | e }}</pre>
+      </div>
     </div>
     {% endif %}
 
@@ -101,7 +216,10 @@
       <form method="POST" action="/api/jobs/{{ job.id }}/retry"
             onsubmit="handleRetry(event, this)">
         <button type="submit" class="btn btn-primary" id="retry-btn">
-          🔄 Retry Job
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+          Retry Import
         </button>
       </form>
       {% endif %}
@@ -110,10 +228,20 @@
       <form method="POST" action="/api/jobs/{{ job.id }}/cancel"
             onsubmit="handleCancel(event, this)">
         <button type="submit" class="btn btn-danger" id="cancel-btn">
-          ✕ Cancel
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Cancel Job
         </button>
       </form>
-      <p class="form-hint mt-2">Note: Cancellation stops the pipeline between phases or during active downloads, but may take a moment to terminate the active subprocess.</p>
+      <div class="alert alert-warning mt-4" style="margin-bottom: 0; font-size: 0.8rem; width: 100%; border-radius: var(--radius-sm);">
+        <div class="alert-icon">⚠</div>
+        <div>
+          Cancellation halts the pipeline at the end of the active phase or terminates active downloads. 
+          Subprocesses might take a brief moment to shut down gracefully.
+        </div>
+      </div>
       {% endif %}
     </div>
   </div>
@@ -121,10 +249,24 @@
   <!-- Log card -->
   <div class="card log-card">
     <div class="log-header">
-      <h3 class="log-title">Process Log</h3>
-      {% if job.status.value not in ['succeeded', 'failed', 'cancelled'] %}
-      <button class="btn btn-xs btn-secondary" onclick="refreshLog()" id="refresh-log-btn">↻ Refresh</button>
-      {% endif %}
+      <h3 class="log-title">Process Logs</h3>
+      <div class="log-actions-row">
+        <button class="btn btn-xs btn-secondary btn-copy" onclick="copyLog()" id="copy-log-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy Log
+        </button>
+        {% if job.status.value not in ['succeeded', 'failed', 'cancelled'] %}
+        <button class="btn btn-xs btn-secondary" onclick="refreshLog()" id="refresh-log-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+          Refresh
+        </button>
+        {% endif %}
+      </div>
     </div>
     <pre class="log-viewer" id="log-content">{{ log | e }}</pre>
   </div>
@@ -178,6 +320,11 @@
 
   function handleRetry(event, form) {
     event.preventDefault();
+    const btn = document.getElementById('retry-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Retrying...';
+    }
     fetch(form.action, { method: 'POST' })
       .then(r => r.json())
       .then(() => window.location.reload())
@@ -186,10 +333,27 @@
 
   function handleCancel(event, form) {
     event.preventDefault();
+    const btn = document.getElementById('cancel-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Cancelling...';
+    }
     fetch(form.action, { method: 'POST' })
       .then(r => r.json())
       .then(() => window.location.reload())
       .catch(() => window.location.reload());
   }
+
+  function copyLog() {
+    const content = document.getElementById('log-content').textContent;
+    navigator.clipboard.writeText(content).then(() => {
+      const btn = document.getElementById('copy-log-btn');
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 2000);
+    }).catch(err => {
+      console.error('Could not copy log text: ', err);
+    });
+  }
 </script>
+{% block content_end %}{% endblock %}
 {% endblock %}

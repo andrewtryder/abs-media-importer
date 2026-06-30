@@ -2,20 +2,71 @@
 {% block title %}Jobs — yt-abs-importer{% endblock %}
 
 {% block content %}
+{% set ns = namespace(active=0, succeeded=0, failed=0, queued=0) %}
+{% for job in jobs %}
+  {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+    {% set ns.active = ns.active + 1 %}
+  {% elif job.status.value == 'queued' %}
+    {% set ns.queued = ns.queued + 1 %}
+  {% elif job.status.value == 'succeeded' %}
+    {% set ns.succeeded = ns.succeeded + 1 %}
+  {% elif job.status.value in ['failed', 'cancelled'] %}
+    {% set ns.failed = ns.failed + 1 %}
+  {% endif %}
+{% endfor %}
+
 <div class="page-header">
   <h1 class="page-title">Import Jobs</h1>
-  <a href="/" class="btn btn-secondary">+ New Import</a>
+  <a href="/" class="btn btn-primary">
+    <span class="btn-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </span>
+    New Import
+  </a>
 </div>
 
 {% if not jobs %}
 <div class="empty-state">
-  <div class="empty-icon">📭</div>
-  <p>No jobs yet. <a href="/">Import your first video</a>.</p>
+  <svg class="empty-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+    <line x1="7" y1="2" x2="7" y2="22"></line>
+    <line x1="17" y1="2" x2="17" y2="22"></line>
+    <line x1="2" y1="12" x2="22" y2="12"></line>
+    <line x1="2" y1="7" x2="7" y2="7"></line>
+    <line x1="2" y1="17" x2="7" y2="17"></line>
+    <line x1="17" y1="17" x2="22" y2="17"></line>
+    <line x1="17" y1="7" x2="22" y2="7"></line>
+  </svg>
+  <h3>No import jobs found</h3>
+  <p>You haven't queued any audiobooks yet. Paste a YouTube URL to get started.</p>
+  <a href="/" class="btn btn-primary">Import a Video</a>
 </div>
 {% else %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-value" style="color: var(--info);">{{ ns.active }}</span>
+    <span class="stat-label">Active Jobs</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value" style="color: var(--text-secondary);">{{ ns.queued }}</span>
+    <span class="stat-label">Queued</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value" style="color: var(--success);">{{ ns.succeeded }}</span>
+    <span class="stat-label">Succeeded</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value" style="color: var(--danger);">{{ ns.failed }}</span>
+    <span class="stat-label">Failed / Cancelled</span>
+  </div>
+</div>
+
 <div class="filter-tabs">
   <button class="filter-tab active" data-filter="all">All</button>
-  <button class="filter-tab" data-filter="running">Running</button>
+  <button class="filter-tab" data-filter="running">Active</button>
   <button class="filter-tab" data-filter="queued">Queued</button>
   <button class="filter-tab" data-filter="completed">Completed</button>
 </div>
@@ -35,7 +86,7 @@
     <tbody>
       {% for job in jobs %}
       <tr class="job-row" data-status="{{ job.status.value }}">
-        <td class="job-title-cell">
+        <td class="job-title-cell" data-label="Title">
           <a href="/jobs/{{ job.id }}" class="job-link">
             {{ (job.output_title or job.source_title or job.url) | truncate(60) | e }}
           </a>
@@ -43,17 +94,17 @@
           <div class="job-meta-sub">{{ job.uploader | e }}</div>
           {% endif %}
         </td>
-        <td class="job-dest-cell">
+        <td class="job-dest-cell" data-label="Destination">
           <span class="mono small">{{ job.destination_folder | default('—') | e }}</span>
         </td>
-        <td>
+        <td data-label="Status">
           <span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span>
-          {% if job.phase and job.phase != job.status %}
+          {% if job.phase and job.phase != job.status.value %}
           <span class="phase-tag">{{ job.phase }}</span>
           {% endif %}
         </td>
-        <td class="date-cell">{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '—' }}</td>
-        <td class="date-cell">{{ job.updated_at.strftime('%Y-%m-%d %H:%M') if job.updated_at else '—' }}</td>
+        <td class="date-cell" data-label="Created">{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '—' }}</td>
+        <td class="date-cell" data-label="Updated">{{ job.updated_at.strftime('%Y-%m-%d %H:%M') if job.updated_at else '—' }}</td>
         <td>
           <a href="/jobs/{{ job.id }}" class="btn btn-xs btn-secondary">View</a>
         </td>
