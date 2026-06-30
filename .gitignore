@@ -166,3 +166,6 @@ logs/
 *.m4a
 *.mp3
 *.part
+
+# Environment / migration temp files
+.repo-standards-migration-state.json
