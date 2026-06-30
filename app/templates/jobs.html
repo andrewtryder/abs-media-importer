@@ -20,7 +20,7 @@
   <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
     <div class="flex items-center gap-4">
       <h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Background Jobs</h2>
-      <div class="bg-surface-container-highest px-3 py-1 rounded-full border border-outline-variant text-[12px]">
+      <div class="bg-surface-container-highest px-3 py-1 rounded-full border border-outline-variant font-label-md text-label-md">
         <span class="font-label-md text-primary">{{ ns.active }} Active</span>
         <span class="mx-2 text-outline-variant">/</span>
         <span class="font-label-md text-on-surface-variant">{{ jobs | length }} Total</span>
@@ -31,7 +31,7 @@
         <span class="absolute inset-y-0 left-3 flex items-center text-on-surface-variant">
           <span class="material-symbols-outlined text-[20px]">search</span>
         </span>
-        <input class="bg-surface-container-low border border-outline rounded-lg pl-10 pr-4 py-1.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-64 transition-all" id="jobs-search-input" placeholder="Filter jobs..." type="text"/>
+        <input class="bg-surface-container-low border border-outline rounded-lg pl-10 pr-4 py-1.5 font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-64 transition-all" id="jobs-search-input" placeholder="Filter jobs..." type="text"/>
       </div>
     </div>
   </header>
@@ -68,12 +68,12 @@
     <!-- Filters Section -->
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2">
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer active-tab bg-secondary-container text-on-secondary-container" data-filter="all">All</button>
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="running">Active</button>
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="queued">Queued</button>
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="completed">Completed</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer active-tab bg-secondary-container text-on-secondary-container" data-filter="all">All</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="running">Active</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="queued">Queued</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="completed">Completed</button>
       </div>
-      <a href="/" class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-headline-sm text-[13px] flex items-center gap-2 hover:brightness-110 transition-all">
+      <a href="/" class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-headline-sm text-body-md flex items-center gap-2 hover:brightness-110 transition-all">
         <span class="material-symbols-outlined text-[16px]">add</span>
         New Import
       </a>
@@ -84,8 +84,8 @@
     <div class="bg-surface-container border border-outline rounded-xl p-12 text-center flex flex-col items-center gap-4">
       <span class="material-symbols-outlined text-[48px] text-on-surface-variant opacity-60">hourglass_empty</span>
       <h3 class="font-headline-sm text-headline-sm text-on-surface">No import jobs found</h3>
-      <p class="font-body-md text-on-surface-variant max-w-sm">You haven't queued any audiobooks yet. Paste a YouTube URL on the import tab to get started.</p>
-      <a href="/" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg font-headline-sm text-[14px] hover:brightness-110 transition-all">Import a Video</a>
+      <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">You haven't queued any audiobooks yet. Paste a YouTube URL on the import tab to get started.</p>
+      <a href="/" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg font-headline-sm text-body-md hover:brightness-110 transition-all">Import a Video</a>
     </div>
     {% else %}
     <div class="bg-surface-container border border-outline rounded-xl overflow-hidden shadow-xl">
@@ -108,45 +108,45 @@
                   {{ (job.output_title or job.source_title or job.url) | e }}
                 </a>
                 {% if job.uploader %}
-                <span class="text-[11px] text-on-surface-variant opacity-75 font-body-md block mt-0.5 truncate">{{ job.uploader | e }}</span>
+                <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
                 {% endif %}
               </td>
-              <td class="px-6 py-4 font-code text-[11px] text-on-surface-variant truncate max-w-[150px]">
+              <td class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
                 {{ job.destination_folder | default('—') | e }}
               </td>
               <td class="px-6 py-4">
                 <div class="flex flex-col gap-1">
                   <!-- Badges matching status -->
                   {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-[11px] border border-secondary-container w-fit">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-label-md border border-secondary-container w-fit">
                     <span class="material-symbols-outlined text-[13px] animate-spin-slow">sync</span>
                     {{ job.status.value }}
                   </span>
                   {% elif job.status.value == 'succeeded' %}
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 font-label-md text-[11px] border border-green-500/20 w-fit">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 font-label-md text-label-md border border-green-500/20 w-fit">
                     <span class="material-symbols-outlined text-[13px]">check_circle</span>
                     completed
                   </span>
                   {% elif job.status.value in ['failed', 'cancelled'] %}
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container/40 text-error font-label-md text-[11px] border border-error/30 w-fit">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container/40 text-error font-label-md text-label-md border border-error/30 w-fit">
                     <span class="material-symbols-outlined text-[13px]">error</span>
                     {{ job.status.value }}
                   </span>
                   {% else %}
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-md text-[11px] border border-outline w-fit">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-md text-label-md border border-outline w-fit">
                     <span class="material-symbols-outlined text-[13px]">schedule</span>
                     {{ job.status.value }}
                   </span>
                   {% endif %}
 
                   {% if job.progress_label %}
-                    <span class="text-[10px] text-primary font-code">{{ job.progress_label }}{% if job.progress_percent is not none %} ({{ job.progress_percent | round | int }}%){% endif %}</span>
+                    <span class="font-code text-code text-primary">{{ job.progress_label }}{% if job.progress_percent is not none %} ({{ job.progress_percent | round | int }}%){% endif %}</span>
                   {% elif job.phase and job.phase != job.status.value %}
-                    <span class="text-[10px] text-tertiary font-code">{{ job.phase }}</span>
+                    <span class="font-code text-code text-tertiary">{{ job.phase }}</span>
                   {% endif %}
                 </div>
               </td>
-              <td class="px-6 py-4 font-code text-[11px] text-on-surface-variant">
+              <td class="px-6 py-4 font-code text-code text-on-surface-variant">
                 {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
               </td>
               <td class="px-6 py-4 text-right">

@@ -1,0 +1,52 @@
+/* Self-hosted fonts — Geist, JetBrains Mono, Material Symbols Outlined */
+
+/* Geist — sans-serif UI font */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('geist-v5-latin-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('geist-v5-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('geist-v5-latin-700.woff2') format('woff2');
+}
+
+/* JetBrains Mono — monospace / label / code font */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('jetbrains-mono-v24-latin-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('jetbrains-mono-v24-latin-600.woff2') format('woff2');
+}
+
+/* Material Symbols Outlined — icon font */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('material-symbols-outlined-v354-latin-regular.woff2') format('woff2');
+}

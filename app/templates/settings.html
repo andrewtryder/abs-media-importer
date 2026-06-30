@@ -6,7 +6,7 @@
   <!-- Top App Bar -->
   <header class="flex justify-end items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
     <div class="flex items-center gap-stack-md">
-      <span class="font-label-md text-on-surface-variant font-code text-[11px] opacity-75">Config Overrides Active</span>
+      <span class="font-code text-code text-on-surface-variant opacity-75">Config Overrides Active</span>
     </div>
   </header>
 
@@ -56,11 +56,11 @@
                   required
                 />
               </div>
-              <p class="text-[11px] text-on-surface-variant opacity-75 leading-relaxed">
+              <p class="font-label-md text-label-md text-on-surface-variant opacity-75 leading-relaxed">
                 The base folder inside the container where audiobook files will be written.
               </p>
               
-              <div class="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 mt-2 text-[11px] text-on-surface-variant flex gap-3">
+              <div class="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 mt-2 font-label-md text-label-md text-on-surface-variant flex gap-3">
                 <span class="material-symbols-outlined text-primary shrink-0">info</span>
                 <div>
                   <strong>Docker Host Path Notice:</strong> This must be the <em>container-side</em> path (e.g. <code>/media/audiobooks</code>). 
@@ -79,7 +79,7 @@
                   disabled
                   readonly
                 />
-                <p class="text-[10px] text-on-surface-variant opacity-60">Read-only (configured via environment/configs).</p>
+                <p class="font-label-md text-label-md text-on-surface-variant opacity-60">Read-only (configured via environment/configs).</p>
               </div>
               <div class="flex flex-col gap-2">
                 <label class="font-label-md text-label-md text-on-surface-variant opacity-60 uppercase tracking-wider">YouTube Cookies File</label>
@@ -93,7 +93,7 @@
                     readonly
                   />
                 </div>
-                <p class="text-[10px] text-on-surface-variant opacity-60">Read-only. Place cookies file at that path.</p>
+                <p class="font-label-md text-label-md text-on-surface-variant opacity-60">Read-only. Place cookies file at that path.</p>
               </div>
             </div>
           </div>
@@ -145,7 +145,7 @@
             <div class="bg-surface-container-low border border-outline border-dashed rounded-lg p-4 text-center">
               <span class="material-symbols-outlined text-[32px] text-on-surface-variant opacity-50 mb-2">sync_disabled</span>
               <p class="font-body-md text-on-surface-variant">Audiobookshelf integration is not configured.</p>
-              <p class="text-[11px] text-on-surface-variant opacity-75 mt-1">Provide <code>ABS_BASE_URL</code>, <code>ABS_API_TOKEN</code>, and <code>ABS_LIBRARY_ID</code> in environment or configs to enable scans.</p>
+              <p class="font-label-md text-label-md text-on-surface-variant opacity-75 mt-1">Provide <code>ABS_BASE_URL</code>, <code>ABS_API_TOKEN</code>, and <code>ABS_LIBRARY_ID</code> in environment or configs to enable scans.</p>
             </div>
             {% endif %}
           </div>
@@ -162,9 +162,9 @@
                 <span class="font-body-md text-on-surface-variant">Dry run mode</span>
                 <span>
                   {% if settings.dry_run %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 font-label-md text-[10px]">ENABLED</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 font-label-md text-label-md">ENABLED</span>
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-[10px]">DISABLED</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">DISABLED</span>
                   {% endif %}
                 </span>
               </div>
@@ -172,9 +172,9 @@
                 <span class="font-body-md text-on-surface-variant">Playlists</span>
                 <span>
                   {% if settings.allow_playlists %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-[10px]">ALLOWED</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-label-md">ALLOWED</span>
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-[10px]">DISABLED</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">DISABLED</span>
                   {% endif %}
                 </span>
               </div>
@@ -182,9 +182,9 @@
                 <span class="font-body-md text-on-surface-variant">Channels</span>
                 <span>
                   {% if settings.allow_channels %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-[10px]">ALLOWED</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-label-md">ALLOWED</span>
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-[10px]">DISABLED</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">DISABLED</span>
                   {% endif %}
                 </span>
               </div>
@@ -192,9 +192,9 @@
                 <span class="font-body-md text-on-surface-variant">ABS scan after import</span>
                 <span>
                   {% if settings.abs_configured and settings.abs_scan_after_success %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-[10px]">ACTIVE</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-label-md">ACTIVE</span>
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-[10px]">INACTIVE</span>
+                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">INACTIVE</span>
                   {% endif %}
                 </span>
               </div>
@@ -204,7 +204,7 @@
 
         <div class="bg-surface-container-lowest border border-outline-variant border-dashed rounded-xl p-stack-md">
           <h4 class="font-label-md text-label-md text-on-surface-variant mb-2">QUICK HELP</h4>
-          <p class="font-body-md text-[12px] text-on-surface-variant leading-relaxed">
+          <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
             Changing the output directory applies to all future downloads. Unsaved configurations are highlighted at the bottom of the page.
           </p>
         </div>

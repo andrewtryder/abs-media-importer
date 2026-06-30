@@ -74,6 +74,9 @@ def test_pipeline_dry_run(test_db, mock_settings):
     assert Path(job.final_output_path).exists()
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "succeeded"
+    # DRY RUN: progress should be 100% complete
+    assert job.progress_percent == 100.0
+    assert job.progress_label == "Complete"
 
 
 @patch("app.services.process_runner.subprocess.Popen")
@@ -153,6 +156,70 @@ def test_pipeline_happy_path(
 
 
 @patch("app.services.process_runner.subprocess.Popen")
+@patch("app.services.import_pipeline.YtDlpService.find_downloaded_file")
+@patch("app.services.import_pipeline.FfmpegService.run_remux")
+@patch("app.services.import_pipeline.FfmpegService.verify_output")
+def test_pipeline_happy_path_with_abs_scan(
+    mock_verify, mock_remux, mock_find, mock_popen, test_db, mock_settings, tmp_path
+):
+    """Verify happy path with audiobookshelf scan triggered."""
+    job = Job(
+        id="job-scan",
+        url="https://youtube.com/watch?v=123",
+        status=JobStatus.queued,
+        output_title="Scan Video",
+        destination_folder="Scan",
+        collision_mode="overwrite",
+        trigger_abs_scan=True,
+    )
+    test_db.add(job)
+    test_db.commit()
+
+    # Enable ABS scan in settings
+    mock_settings.abs_scan_after_success = True
+    mock_settings.abs_base_url = "http://abs:1337"
+    mock_settings.abs_api_token = "test-token"
+    mock_settings.abs_library_id = "lib-1"
+
+    # Mock subprocess.Popen for download
+    mock_proc = MagicMock()
+    mock_proc.stdout = ["[download] 100% of 10.00MiB\n"]
+    mock_proc.returncode = 0
+    mock_popen.return_value = mock_proc
+
+    # Mock finding downloaded file
+    downloaded = tmp_path / "work" / "job-scan" / "download" / "Scan Video.m4a"
+    downloaded.parent.mkdir(parents=True, exist_ok=True)
+    downloaded.write_bytes(b"audio")
+    mock_find.return_value = downloaded
+
+    # Mock remux
+    mock_remux.return_value = RemuxResult(success=True, used_fallback=False)
+
+    # Mock verify
+    final_output = mock_settings.output_root / "Scan" / "Scan Video.m4b"
+    final_output.parent.mkdir(parents=True, exist_ok=True)
+    final_output.write_bytes(b"final m4b")
+    mock_verify.return_value = FfprobeResult(
+        file_size=1000, has_audio=True, chapter_count=0, duration_seconds=60.0, codec_name="aac"
+    )
+
+    # Mock ABS scan success
+    with patch("app.services.import_pipeline.AudiobookshelfClient.trigger_scan") as mock_scan:
+        from app.services.audiobookshelf import ScanResult
+
+        mock_scan.return_value = ScanResult(success=True, skipped=False)
+
+        pipeline = ImportPipeline(test_db, mock_settings, "job-scan")
+        pipeline.run()
+
+    test_db.refresh(job)
+    assert job.status == JobStatus.succeeded
+    assert job.progress_percent == 100.0
+    assert job.progress_label == "Complete"
+
+
+@patch("app.services.process_runner.subprocess.Popen")
 def test_pipeline_failed_download(mock_popen, test_db, mock_settings):
     """Verify pipeline failure transitions and attempts log when download fails."""
     job = Job(
@@ -178,6 +245,9 @@ def test_pipeline_failed_download(mock_popen, test_db, mock_settings):
     assert job.status == JobStatus.failed
     assert job.phase == "failed"
     assert "yt-dlp download failed" in job.error_message
+    assert job.progress_label == "Failed"
+    assert job.progress_eta == ""
+    assert job.progress_speed == ""
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "failed"
     assert "yt-dlp download failed" in job.attempts_log[0].error_message
@@ -226,6 +296,9 @@ def test_pipeline_failed_verification(
     assert job.status == JobStatus.failed
     assert job.phase == "failed"
     assert "Output verification failed: No audio stream found" in job.error_message
+    assert job.progress_label == "Failed"
+    assert job.progress_eta == ""
+    assert job.progress_speed == ""
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "failed"
 
@@ -283,14 +356,21 @@ def test_pipeline_cancellation(mock_popen, test_db, mock_settings):
     mock_proc.returncode = 0
     mock_popen.return_value = mock_proc
 
-    # Force checking cancellation frequently
-    with patch("time.time", side_effect=[0.0, 2.0, 3.0, 4.0, 5.0]):
+    # Force checking cancellation frequently — provide enough values for all
+    # time.time() calls made by _set_progress and the process runner loop.
+    time_values = [0.0, 2.0, 3.0, 4.0, 5.0]
+    while len(time_values) < 30:
+        time_values.append(time_values[-1] + 0.5)
+    with patch("time.time", side_effect=time_values):
         pipeline = ImportPipeline(test_db, mock_settings, "job-cancel")
         pipeline.run()
 
     test_db.refresh(job)
     assert job.status == JobStatus.cancelled
     assert job.phase == "cancelled"
+    assert job.progress_label == "Cancelled"
+    assert job.progress_eta == ""
+    assert job.progress_speed == ""
     assert mock_proc.terminate.called
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "cancelled"
@@ -352,3 +432,84 @@ def test_database_migration_columns(test_db):
     cursor_attempts = connection.execute(text("PRAGMA table_info(job_attempts)"))
     attempts_cols = [row[1] for row in cursor_attempts.fetchall()]
     assert "artifact_metadata" in attempts_cols
+
+
+# ── Progress mapping helpers ───────────────────────────────────────────────
+
+
+def test_map_range():
+    """Verify _map_range correctly scales values into target ranges."""
+    # 0.0 -> start, 1.0 -> end
+    assert ImportPipeline._map_range(0.0, 2.0, 70.0) == 2.0
+    assert ImportPipeline._map_range(0.5, 2.0, 70.0) == pytest.approx(36.0)
+    assert ImportPipeline._map_range(1.0, 2.0, 70.0) == 70.0
+
+    # Clamping
+    assert ImportPipeline._map_range(-0.5, 2.0, 70.0) == 0.0
+    assert ImportPipeline._map_range(1.5, 2.0, 70.0) == 100.0
+
+    # Conversion range 72-90%
+    assert ImportPipeline._map_range(0.0, 72.0, 90.0) == 72.0
+    assert ImportPipeline._map_range(0.5, 72.0, 90.0) == 81.0
+    assert ImportPipeline._map_range(1.0, 72.0, 90.0) == 90.0
+
+
+def test_download_progress_mapping():
+    """Verify yt-dlp percent maps into overall 2-70% range."""
+    # 0% -> 2%
+    assert ImportPipeline._map_range(0.0 / 100.0, 2.0, 70.0) == 2.0
+    # 50% -> 36%
+    assert ImportPipeline._map_range(50.0 / 100.0, 2.0, 70.0) == 36.0
+    # 100% -> 70%
+    assert ImportPipeline._map_range(100.0 / 100.0, 2.0, 70.0) == 70.0
+
+
+def test_conversion_progress_mapping_with_duration():
+    """Verify ffmpeg out_time maps into 72-90% when duration is known."""
+    # out_time=0, duration=100 -> 72% (ratio 0.0)
+    assert ImportPipeline._map_range(0.0 / 100.0, 72.0, 90.0) == 72.0
+    # out_time=50, duration=100 -> 81% (ratio 0.5)
+    assert ImportPipeline._map_range(50.0 / 100.0, 72.0, 90.0) == 81.0
+    # out_time=100, duration=100 -> 90% (ratio 1.0)
+    assert ImportPipeline._map_range(100.0 / 100.0, 72.0, 90.0) == 90.0
+    # out_time=200, duration=100 -> 90% clamped
+    assert ImportPipeline._map_range(200.0 / 100.0, 72.0, 90.0) == 100.0  # clamped by _map_range
+
+
+def test_set_progress_clamping(test_db, mock_settings):
+    """Verify _set_progress clamps percent to 0-100."""
+    job = Job(
+        id="job-clamp",
+        url="https://youtube.com/watch?v=123",
+        status=JobStatus.queued,
+        output_title="Clamp Test",
+        destination_folder="Clamp",
+    )
+    test_db.add(job)
+    test_db.commit()
+
+    pipeline = ImportPipeline(test_db, mock_settings, "job-clamp")
+
+    # Set valid percent
+    pipeline._set_progress(job, percent=50.0, label="Halfway", force=True)
+    test_db.refresh(job)
+    assert 49.0 <= job.progress_percent <= 51.0
+    assert job.progress_label == "Halfway"
+
+    # Set negative — should clamp to 0
+    pipeline._set_progress(job, percent=-10.0, label="Negative", force=True)
+    test_db.refresh(job)
+    assert job.progress_percent == 0.0
+    assert job.progress_label == "Negative"
+
+    # Set above 100 — should clamp to 100
+    pipeline._set_progress(job, percent=150.0, label="Overflow", force=True)
+    test_db.refresh(job)
+    assert job.progress_percent == 100.0
+    assert job.progress_label == "Overflow"
+
+    # Label-only update
+    pipeline._set_progress(job, label="Label only", force=True)
+    test_db.refresh(job)
+    assert job.progress_percent == 100.0  # unchanged
+    assert job.progress_label == "Label only"

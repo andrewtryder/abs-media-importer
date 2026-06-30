@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from app.config import Settings
-from app.services.ffmpeg import FfmpegService
+from app.services.ffmpeg import FfmpegProgress, FfmpegProgressParser, FfmpegService
 
 
 def make_svc(**kwargs) -> FfmpegService:  # type: ignore[return]
@@ -215,3 +215,135 @@ def test_verify_output_success(tmp_path: Path):
     assert result.chapter_count == 2
     assert result.duration_seconds == 3600.0
     assert result.codec_name == "aac"
+
+
+# ── Progress flag in command builders ───────────────────────────────────────
+
+
+def test_primary_command_with_progress_flag(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command(tmp_path / "a.m4a", tmp_path / "b.m4b", progress=True)
+    assert "-progress" in cmd
+    assert "pipe:1" in cmd
+    assert "-stats_period" in cmd
+    assert "-nostats" in cmd
+    # -y should come before -progress
+    y_idx = cmd.index("-y")
+    prog_idx = cmd.index("-progress")
+    assert prog_idx > y_idx
+
+
+def test_primary_command_without_progress_flag(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command(tmp_path / "a.m4a", tmp_path / "b.m4b", progress=False)
+    assert "-progress" not in cmd
+    assert "-stats_period" not in cmd
+    assert "-nostats" not in cmd
+
+
+def test_fallback_command_with_progress_flag(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command_fallback(tmp_path / "a.m4a", tmp_path / "b.m4b", progress=True)
+    assert "-progress" in cmd
+    assert "pipe:1" in cmd
+    assert "-stats_period" in cmd
+    assert "-nostats" in cmd
+
+
+def test_fallback_command_without_progress_flag(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command_fallback(tmp_path / "a.m4a", tmp_path / "b.m4b", progress=False)
+    assert "-progress" not in cmd
+
+
+# ── FFmpeg progress parsing ────────────────────────────────────────────────
+
+
+def test_ffmpeg_progress_from_dict_out_time_ms():
+    data = {"out_time_ms": "12345678", "speed": "12.3x", "progress": "continue"}
+    fp = FfmpegProgress.from_dict(data)
+    assert fp.out_time_ms == 12345678
+    assert fp.out_time_seconds == pytest.approx(12.345678)
+    assert fp.speed == "12.3x"
+    assert fp.progress == "continue"
+
+
+def test_ffmpeg_progress_from_dict_out_time_us():
+    data = {"out_time_us": "12345678", "speed": "3.2x", "progress": "end"}
+    fp = FfmpegProgress.from_dict(data)
+    assert fp.out_time_seconds == pytest.approx(12.345678)
+    assert fp.speed == "3.2x"
+    assert fp.progress == "end"
+
+
+def test_ffmpeg_progress_from_dict_out_time_timestamp():
+    data = {"out_time": "00:01:02.500000", "speed": "3.2x", "progress": "end"}
+    fp = FfmpegProgress.from_dict(data)
+    assert fp.out_time_seconds == pytest.approx(62.5)
+    assert fp.speed == "3.2x"
+    assert fp.progress == "end"
+
+
+def test_ffmpeg_progress_from_dict_missing_time():
+    data = {"speed": "1.0x", "progress": "continue"}
+    fp = FfmpegProgress.from_dict(data)
+    assert fp.out_time_ms is None
+    assert fp.out_time_seconds is None
+    assert fp.speed == "1.0x"
+    assert fp.progress == "continue"
+
+
+def test_ffmpeg_progress_from_dict_empty():
+    fp = FfmpegProgress.from_dict({})
+    assert fp.out_time_ms is None
+    assert fp.out_time_seconds is None
+    assert fp.speed is None
+    assert fp.progress is None
+
+
+def test_ffmpeg_progress_parser_full_group():
+    """Verify stateful parser returns progress when a group completes."""
+    parser = FfmpegProgressParser()
+    lines = [
+        "frame=1",
+        "fps=0.00",
+        "out_time_ms=5000000",
+        "speed=5.0x",
+        "progress=continue",
+    ]
+    result = None
+    for line in lines:
+        r = parser.feed_line(line)
+        if r is not None:
+            result = r
+
+    assert result is not None
+    assert result.out_time_seconds == pytest.approx(5.0)
+    assert result.speed == "5.0x"
+    assert result.progress == "continue"
+
+
+def test_ffmpeg_progress_parser_ignores_non_kv_lines():
+    parser = FfmpegProgressParser()
+    assert parser.feed_line("some random log line") is None
+    assert parser.feed_line("") is None
+    assert parser.feed_line("[libx264 @ 0x1234] using SAR=1/1") is None
+
+
+def test_ffmpeg_progress_parser_malformed_does_not_raise():
+    parser = FfmpegProgressParser()
+    # should not raise
+    assert parser.feed_line("=value") is None
+    assert parser.feed_line("key=") is None
+
+
+def test_progress_command_insertion_order(tmp_path: Path):
+    """Validate -progress flags come after -y but before the file arguments."""
+    svc = make_svc()
+    cmd = svc.build_remux_command(tmp_path / "a.m4a", tmp_path / "b.m4b", progress=True)
+    # -y is first after the binary
+    assert cmd[1] == "-y"
+    # -progress must come before -i
+    prog_idx = cmd.index("-progress")
+    input_idx = cmd.index("-i")
+    assert prog_idx < input_idx

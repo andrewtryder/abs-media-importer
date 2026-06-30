@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.config import Settings
 from app.models import Job, JobStatus
 from app.services.audiobookshelf import AudiobookshelfClient
-from app.services.ffmpeg import FfmpegService
+from app.services.ffmpeg import FfmpegProgress, FfmpegService
 from app.services.filesystem import FilesystemService
 from app.services.jobs import sync_get_job, sync_record_attempt, sync_update_job
 from app.services.ytdlp import YtDlpService, parse_ytdlp_progress_line
@@ -61,12 +61,79 @@ class PipelineFailedError(Exception):
 class ImportPipeline:
     """Synchronously orchestrates a job's import pipeline stages."""
 
+    # ── Progress ranges ─────────────────────────────────────────────────────
+    _RANGE_SETUP = (0.0, 2.0)
+    _RANGE_DOWNLOAD = (2.0, 70.0)
+    _RANGE_CONVERT = (72.0, 90.0)
+    # Milestones
+    _M_DOWNLOAD_DONE = 70.0
+    _M_LOCATING = 72.0
+    _M_PREPARE_CONVERT = 72.0
+    _M_CONVERT_DONE = 90.0
+    _M_VERIFY = 92.0
+    _M_VERIFIED = 94.0
+    _M_SCAN = 96.0
+    _M_CLEANUP = 98.0
+    _M_CLEANUP_DONE = 99.0
+    _M_COMPLETE = 100.0
+
+    _THROTTLE_INTERVAL = 1.0  # seconds between DB writes during streaming phases
+
     def __init__(self, db: Session, settings: Settings, job_id: str) -> None:
         self.db = db
         self.settings = settings
         self.job_id = job_id
-        self._last_progress = -1
+        self._last_progress = -1.0
         self._last_progress_write_time = 0.0
+        self._progress_throttle_interval = self._THROTTLE_INTERVAL
+
+    # ── Progress helpers ───────────────────────────────────────────────────
+
+    @staticmethod
+    def _map_range(value: float, start: float, end: float) -> float:
+        """Map *value* (0.0 to 1.0) into [start, end] and clamp to 0-100."""
+        result = start + value * (end - start)
+        return max(0.0, min(100.0, result))
+
+    def _set_progress(
+        self,
+        job: Job,
+        *,
+        percent: float | None = None,
+        label: str | None = None,
+        eta: str | None = None,
+        speed: str | None = None,
+        force: bool = False,
+    ) -> None:
+        """Persist progress fields, throttled unless *force* is True."""
+        now = time.time()
+        pct_changed = percent is not None and round(percent) != round(job.progress_percent or 0)
+        label_changed = label is not None and label != job.progress_label
+        time_passed = now - self._last_progress_write_time > self._THROTTLE_INTERVAL
+
+        if not force and not pct_changed and not label_changed and not time_passed:
+            return
+
+        kwargs: dict[str, Any] = {}
+        if percent is not None:
+            clamped = max(0.0, min(100.0, percent))
+            kwargs["progress"] = round(clamped)
+            kwargs["progress_percent"] = clamped
+        if label is not None:
+            kwargs["progress_label"] = label
+        if eta is not None:
+            kwargs["progress_eta"] = eta
+        if speed is not None:
+            kwargs["progress_speed"] = speed
+
+        if kwargs:
+            sync_update_job(self.db, job, **kwargs)
+            self.db.commit()
+            self._last_progress_write_time = now
+            if percent is not None:
+                self._last_progress = percent
+
+    # ── Main entry point ───────────────────────────────────────────────────
 
     def run(self) -> None:
         """Execute the import pipeline."""
@@ -94,9 +161,9 @@ class ImportPipeline:
             phase="resolving_output",
             log_file_path=str(log_path),
             work_dir=str(work_dir),
-            progress_label="Setup",
         )
         self.db.commit()
+        self._set_progress(job, percent=0.0, label="Setup", eta="", speed="", force=True)
 
         log_fh = log_path.open("a", encoding="utf-8")
 
@@ -135,6 +202,8 @@ class ImportPipeline:
             log(f"URL: {job.url}")
             log(f"DRY_RUN: {self.settings.dry_run}")
 
+            self._set_progress(job, percent=2.0, label="Setup complete", eta="", speed="")
+
             # ── DRY RUN Mode ──────────────────────────────────────────────────
             if self.settings.dry_run:
                 log("--- DRY RUN: building commands only ---")
@@ -162,16 +231,20 @@ class ImportPipeline:
                 if check_cancelled():
                     raise PipelineCancelledError()
 
+                self._set_progress(
+                    job,
+                    percent=self._M_COMPLETE,
+                    label="Complete",
+                    eta="",
+                    speed="",
+                    force=True,
+                )
                 sync_update_job(
                     self.db,
                     job,
                     status=JobStatus.succeeded,
                     phase="succeeded",
                     final_output_path=str(output_path),
-                    progress_percent=100.0,
-                    progress_label="Complete",
-                    progress_eta="",
-                    progress_speed="",
                 )
                 self.db.commit()
                 sync_record_attempt(
@@ -194,9 +267,15 @@ class ImportPipeline:
                 job,
                 status=JobStatus.downloading,
                 phase="downloading",
-                progress_label="Downloading",
             )
             self.db.commit()
+            self._set_progress(
+                job,
+                percent=self._RANGE_DOWNLOAD[0],
+                label="Downloading",
+                eta="",
+                speed="",
+            )
             log("[download] Starting yt-dlp")
 
             dl_template = ytdlp_svc.get_output_template(self.job_id)
@@ -224,21 +303,31 @@ class ImportPipeline:
             if check_cancelled():
                 raise PipelineCancelledError()
 
-            sync_update_job(
-                self.db,
+            self._set_progress(
                 job,
-                phase="download_complete",
-                progress_label="Downloading",
+                percent=self._M_DOWNLOAD_DONE,
+                label="Download complete",
+                eta="",
+                speed="",
+                force=True,
             )
+            sync_update_job(self.db, job, phase="download_complete")
             self.db.commit()
 
             # ── Locate Artifact ────────────────────────────────────────────────
+            self._set_progress(
+                job,
+                percent=self._M_LOCATING,
+                label="Locating downloaded audio",
+                eta="",
+                speed="",
+                force=True,
+            )
             sync_update_job(
                 self.db,
                 job,
                 status=JobStatus.postprocessing,
                 phase="locating_artifact",
-                progress_label="Postprocessing",
             )
             self.db.commit()
 
@@ -271,16 +360,32 @@ class ImportPipeline:
             log(f"[download] Completed: {dl_artifact.path}")
             log(f"[download] Artifact: format={dl_artifact.format} size={dl_artifact.filesize}")
 
+            self._set_progress(
+                job,
+                percent=self._M_LOCATING,
+                label="Download artifact ready",
+                eta="",
+                speed="",
+                force=True,
+            )
+
             if check_cancelled():
                 raise PipelineCancelledError()
 
             # ── Remux to .m4b ─────────────────────────────────────────────────
+            self._set_progress(
+                job,
+                percent=self._M_PREPARE_CONVERT,
+                label="Preparing conversion",
+                eta="",
+                speed="",
+                force=True,
+            )
             sync_update_job(
                 self.db,
                 job,
                 status=JobStatus.converting,
                 phase="converting",
-                progress_label="Converting",
             )
             self.db.commit()
             log("[convert] Starting ffmpeg remux")
@@ -289,13 +394,68 @@ class ImportPipeline:
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
+            # Determine media duration for conversion progress mapping
+            media_duration: float | None = float(job.duration) if job.duration is not None else None
+
+            # Build progress callback for ffmpeg
+            def _on_ffmpeg_progress(fp: FfmpegProgress) -> None:
+                if (
+                    media_duration is not None
+                    and media_duration > 0
+                    and fp.out_time_seconds is not None
+                ):
+                    ratio = min(fp.out_time_seconds / media_duration, 1.0)
+                    overall = self._map_range(ratio, *self._RANGE_CONVERT)
+                    label = (
+                        "Retrying conversion without cover art"
+                        if fp.raw.get("_fallback")
+                        else "Converting to M4B"
+                    )
+                    self._set_progress(
+                        job,
+                        percent=overall,
+                        label=label,
+                        speed=fp.speed,
+                    )
+                else:
+                    self._set_progress(
+                        job,
+                        percent=75.0,
+                        label="Converting to M4B",
+                        speed=fp.speed,
+                    )
+
+            # Wrap on_progress to inject fallback flag
+            _in_fallback = False
+
+            def _on_ffmpeg_progress_primary(fp: FfmpegProgress) -> None:
+                _on_ffmpeg_progress(fp)
+
+            def _on_ffmpeg_progress_fallback(fp: FfmpegProgress) -> None:
+                fp.raw["_fallback"] = "1"
+                _on_ffmpeg_progress(fp)
+
             remux_result = ffmpeg_svc.run_remux(
-                dl_artifact.path, output_path, log_fh, check_cancelled=check_cancelled
+                dl_artifact.path,
+                output_path,
+                log_fh,
+                check_cancelled=check_cancelled,
+                on_progress=_on_ffmpeg_progress,
             )
+
             if not remux_result.success:
                 if check_cancelled():
                     raise PipelineCancelledError()
                 raise PipelineFailedError(f"ffmpeg remux failed: {remux_result.error}")
+
+            self._set_progress(
+                job,
+                percent=self._M_CONVERT_DONE,
+                label="Conversion complete",
+                eta="",
+                speed="",
+                force=True,
+            )
 
             # Wrap in ConversionArtifact
             conv_artifact = ConversionArtifact(
@@ -310,21 +470,23 @@ class ImportPipeline:
             if check_cancelled():
                 raise PipelineCancelledError()
 
-            sync_update_job(
-                self.db,
-                job,
-                phase="conversion_complete",
-                progress_label="Converting",
-            )
+            sync_update_job(self.db, job, phase="conversion_complete")
             self.db.commit()
 
             # ── Verify ────────────────────────────────────────────────────────
+            self._set_progress(
+                job,
+                percent=self._M_VERIFY,
+                label="Verifying output",
+                eta="",
+                speed="",
+                force=True,
+            )
             sync_update_job(
                 self.db,
                 job,
                 status=JobStatus.verifying,
                 phase="verifying",
-                progress_label="Verifying",
             )
             self.db.commit()
             log("[verify] Running ffprobe")
@@ -342,15 +504,30 @@ class ImportPipeline:
                 log(f"[verify] Chapters: {conv_artifact.chapter_count}")
                 log(f"[verify] File size: {conv_artifact.filesize} bytes")
 
+                self._set_progress(
+                    job,
+                    percent=self._M_VERIFIED,
+                    label="Output verified",
+                    eta="",
+                    speed="",
+                    force=True,
+                )
                 sync_update_job(
                     self.db,
                     job,
                     chapter_count=conv_artifact.chapter_count,
                     phase="verified",
-                    progress_label="Verifying",
                 )
                 self.db.commit()
             except (FileNotFoundError, RuntimeError) as exc:
+                self._set_progress(
+                    job,
+                    percent=self._M_VERIFY,
+                    label="Verification failed",
+                    eta="",
+                    speed="",
+                    force=True,
+                )
                 raise PipelineFailedError(f"Output verification failed: {exc}") from exc
 
             if check_cancelled():
@@ -358,49 +535,96 @@ class ImportPipeline:
 
             # ── Audiobookshelf Scan ───────────────────────────────────────────
             if job.trigger_abs_scan and self.settings.abs_scan_after_success:
+                self._set_progress(
+                    job,
+                    percent=self._M_SCAN,
+                    label="Triggering Audiobookshelf scan",
+                    eta="",
+                    speed="",
+                    force=True,
+                )
                 sync_update_job(
                     self.db,
                     job,
                     status=JobStatus.scanning,
                     phase="scanning",
-                    progress_label="Scanning",
                 )
                 self.db.commit()
                 log("[scan] Triggering Audiobookshelf scan")
                 scan_result = abs_client.trigger_scan()
                 if scan_result.skipped:
                     log("[scan] ABS scan skipped (not configured)")
+                    self._set_progress(
+                        job,
+                        percent=self._M_SCAN,
+                        label="Audiobookshelf scan skipped",
+                        eta="",
+                        speed="",
+                        force=True,
+                    )
                 elif scan_result.success:
                     log("[scan] ABS scan triggered successfully")
+                    self._set_progress(
+                        job,
+                        percent=self._M_SCAN,
+                        label="Audiobookshelf scan triggered",
+                        eta="",
+                        speed="",
+                        force=True,
+                    )
                 else:
                     log(f"[scan] ABS scan failed (non-fatal): {scan_result.error}")
+                    self._set_progress(
+                        job,
+                        percent=self._M_SCAN,
+                        label="Audiobookshelf scan failed",
+                        eta="",
+                        speed="",
+                        force=True,
+                    )
 
             if check_cancelled():
                 raise PipelineCancelledError()
 
             # ── Cleanup ───────────────────────────────────────────────────────
-            sync_update_job(
-                self.db,
+            self._set_progress(
                 job,
-                phase="cleanup",
-                progress_label="Cleanup",
+                percent=self._M_CLEANUP,
+                label="Cleaning up temporary files",
+                eta="",
+                speed="",
+                force=True,
             )
+            sync_update_job(self.db, job, phase="cleanup")
             self.db.commit()
             if self.settings.cleanup_temp_on_success:
                 log("[cleanup] Cleaning up work directory")
                 fs.cleanup_work_dir(self.job_id)
 
+            self._set_progress(
+                job,
+                percent=self._M_CLEANUP_DONE,
+                label="Cleanup complete",
+                eta="",
+                speed="",
+                force=True,
+            )
+
             # ── Success ───────────────────────────────────────────────────────
+            self._set_progress(
+                job,
+                percent=self._M_COMPLETE,
+                label="Complete",
+                eta="",
+                speed="",
+                force=True,
+            )
             sync_update_job(
                 self.db,
                 job,
                 status=JobStatus.succeeded,
                 phase="succeeded",
                 final_output_path=str(output_path),
-                progress_percent=100.0,
-                progress_label="Complete",
-                progress_eta="",
-                progress_speed="",
             )
             self.db.commit()
             sync_record_attempt(
@@ -418,14 +642,18 @@ class ImportPipeline:
 
         except PipelineCancelledError:
             log("Job execution halted due to cancellation.")
+            self._set_progress(
+                job,
+                label="Cancelled",
+                eta="",
+                speed="",
+                force=True,
+            )
             sync_update_job(
                 self.db,
                 job,
                 status=JobStatus.cancelled,
                 phase="cancelled",
-                progress_label="Cancelled",
-                progress_eta="",
-                progress_speed="",
             )
             self.db.commit()
             sync_record_attempt(
@@ -443,15 +671,19 @@ class ImportPipeline:
         except Exception as exc:
             err_msg = str(exc)
             log(f"FAILED: {err_msg}")
+            self._set_progress(
+                job,
+                label="Failed",
+                eta="",
+                speed="",
+                force=True,
+            )
             sync_update_job(
                 self.db,
                 job,
                 status=JobStatus.failed,
                 phase="failed",
                 error_message=err_msg,
-                progress_label="Failed",
-                progress_eta="",
-                progress_speed="",
             )
             self.db.commit()
             sync_record_attempt(
@@ -486,27 +718,30 @@ class ImportPipeline:
             if is_download and job:
                 progress_info = parse_ytdlp_progress_line(line)
                 if progress_info and progress_info.percent is not None:
-                    percent = progress_info.percent
-                    pct_int = int(round(percent))
+                    dl_pct = progress_info.percent
+                    # Map download percent (0-100) into overall job range (2-70%)
+                    ratio = dl_pct / 100.0
+                    overall = self._map_range(ratio, *self._RANGE_DOWNLOAD)
+                    pct_int = round(overall)
                     now = time.time()
 
-                    prog_changed = pct_int != self._last_progress
-                    eta_changed = progress_info.eta != job.progress_eta
-                    speed_changed = progress_info.speed != job.progress_speed
-                    time_passed = now - self._last_progress_write_time > 1.0
+                    prog_changed = pct_int != round(self._last_progress)
+                    eta_changed = progress_info.eta != (job.progress_eta or "")
+                    speed_changed = progress_info.speed != (job.progress_speed or "")
+                    time_passed = now - self._last_progress_write_time > self._THROTTLE_INTERVAL
 
                     if prog_changed or eta_changed or speed_changed or time_passed:
                         sync_update_job(
                             self.db,
                             job,
                             progress=pct_int,
-                            progress_percent=percent,
+                            progress_percent=round(overall, 1),
                             progress_eta=progress_info.eta,
                             progress_speed=progress_info.speed,
                             progress_label="Downloading",
                         )
                         self.db.commit()
-                        self._last_progress = pct_int
+                        self._last_progress = overall
                         self._last_progress_write_time = now
 
         res = run_streaming_process(

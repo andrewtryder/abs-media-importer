@@ -7,7 +7,7 @@ import json
 import logging
 import subprocess
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.config import Settings
@@ -36,6 +36,90 @@ class RemuxResult:
     error: str | None = None
 
 
+@dataclass
+class FfmpegProgress:
+    """Parsed ffmpeg progress from -progress pipe:1 output."""
+
+    out_time_ms: int | None = None
+    out_time_seconds: float | None = None
+    speed: str | None = None
+    progress: str | None = None
+    raw: dict[str, str] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, str]) -> FfmpegProgress:
+        out_time_seconds: float | None = None
+        out_time_ms: int | None = None
+
+        raw_out_time_ms = data.get("out_time_ms")
+        if raw_out_time_ms is not None:
+            try:
+                ms_val = int(raw_out_time_ms)
+                out_time_ms = ms_val
+                out_time_seconds = ms_val / 1_000_000.0
+            except (ValueError, TypeError):
+                pass
+
+        if out_time_seconds is None:
+            raw_out_time_us = data.get("out_time_us")
+            if raw_out_time_us is not None:
+                try:
+                    us_val = int(raw_out_time_us)
+                    out_time_seconds = us_val / 1_000_000.0
+                except (ValueError, TypeError):
+                    pass
+
+        if out_time_seconds is None:
+            raw_out_time = data.get("out_time")
+            if raw_out_time is not None:
+                try:
+                    parts = raw_out_time.split(":")
+                    if len(parts) == 3:
+                        h, m, s = parts
+                        out_time_seconds = int(h) * 3600 + int(m) * 60 + float(s)
+                except (ValueError, TypeError):
+                    pass
+
+        return cls(
+            out_time_ms=out_time_ms,
+            out_time_seconds=out_time_seconds,
+            speed=data.get("speed"),
+            progress=data.get("progress"),
+            raw=dict(data),
+        )
+
+
+class FfmpegProgressParser:
+    """Stateful parser for ffmpeg -progress pipe:1 output.
+
+    ffmpeg emits groups of key=value lines ending with progress=continue
+    or progress=end.  This parser collects those groups and returns a
+    FfmpegProgress when a group is complete.
+    """
+
+    def __init__(self) -> None:
+        self._current: dict[str, str] = {}
+
+    def feed_line(self, line: str) -> FfmpegProgress | None:
+        """Feed a single line of ffmpeg output.  Returns a FfmpegProgress
+        when a progress group completes, or None."""
+        line = line.strip()
+        if "=" not in line:
+            return None
+
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        self._current[key] = value
+
+        if key == "progress" and value in ("continue", "end"):
+            result = FfmpegProgress.from_dict(self._current)
+            self._current = {}
+            return result
+
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Service
 # ---------------------------------------------------------------------------
@@ -49,17 +133,30 @@ class FfmpegService:
 
     # ── Command builders ──────────────────────────────────────────────────────
 
-    def build_remux_command(self, input_path: Path, output_path: Path) -> list[str]:
+    def build_remux_command(
+        self,
+        input_path: Path,
+        output_path: Path,
+        *,
+        progress: bool = False,
+    ) -> list[str]:
         """
         Primary remux command.
 
         Maps audio stream + optional video stream (cover art).
         Uses -f ipod which is the correct container for .m4b/.m4a.
+
+        If *progress* is True, includes -progress pipe:1 -stats_period 1 -nostats
+        so the caller can parse structured ffmpeg progress output.
         """
         s = self.settings
         cmd = [
             s.ffmpeg_bin,
             "-y",
+        ]
+        if progress:
+            cmd += ["-progress", "pipe:1", "-stats_period", "1", "-nostats"]
+        cmd += [
             "-i",
             str(input_path),
             "-map",
@@ -81,7 +178,13 @@ class FfmpegService:
         cmd.append(str(output_path))
         return cmd
 
-    def build_remux_command_fallback(self, input_path: Path, output_path: Path) -> list[str]:
+    def build_remux_command_fallback(
+        self,
+        input_path: Path,
+        output_path: Path,
+        *,
+        progress: bool = False,
+    ) -> list[str]:
         """
         Fallback remux command: audio-only, no cover art.
 
@@ -92,6 +195,10 @@ class FfmpegService:
         cmd = [
             s.ffmpeg_bin,
             "-y",
+        ]
+        if progress:
+            cmd += ["-progress", "pipe:1", "-stats_period", "1", "-nostats"]
+        cmd += [
             "-i",
             str(input_path),
             "-map",
@@ -131,6 +238,7 @@ class FfmpegService:
         output_path: Path,
         log_fh: object | None = None,
         check_cancelled: Callable[[], bool] | None = None,
+        on_progress: Callable[[FfmpegProgress], None] | None = None,
     ) -> RemuxResult:
         """
         Attempt primary remux; fall back to audio-only on failure.
@@ -140,6 +248,7 @@ class FfmpegService:
             output_path: Destination .m4b path.
             log_fh: Open file handle to write ffmpeg output into (optional).
             check_cancelled: Callback to check if job is cancelled.
+            on_progress: Optional callback receiving FfmpegProgress updates.
 
         Returns:
             RemuxResult indicating success and whether fallback was used.
@@ -147,9 +256,11 @@ class FfmpegService:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Primary attempt
-        cmd = self.build_remux_command(input_path, output_path)
+        cmd = self.build_remux_command(input_path, output_path, progress=on_progress is not None)
         logger.debug("ffmpeg primary: %s", cmd)
-        success, err = self._run_cmd(cmd, log_fh, check_cancelled=check_cancelled)
+        success, err = self._run_cmd(
+            cmd, log_fh, check_cancelled=check_cancelled, on_progress=on_progress
+        )
 
         if success:
             return RemuxResult(success=True, used_fallback=False)
@@ -167,9 +278,13 @@ class FfmpegService:
             output_path.unlink()
 
         # Fallback attempt
-        cmd_fallback = self.build_remux_command_fallback(input_path, output_path)
+        cmd_fallback = self.build_remux_command_fallback(
+            input_path, output_path, progress=on_progress is not None
+        )
         logger.debug("ffmpeg fallback: %s", cmd_fallback)
-        success_fb, err_fb = self._run_cmd(cmd_fallback, log_fh, check_cancelled=check_cancelled)
+        success_fb, err_fb = self._run_cmd(
+            cmd_fallback, log_fh, check_cancelled=check_cancelled, on_progress=on_progress
+        )
 
         if success_fb:
             return RemuxResult(success=True, used_fallback=True)
@@ -226,6 +341,7 @@ class FfmpegService:
         cmd: list[str],
         log_fh: object | None,
         check_cancelled: Callable[[], bool] | None = None,
+        on_progress: Callable[[FfmpegProgress], None] | None = None,
     ) -> tuple[bool, str | None]:
         """
         Run *cmd* via process_runner, streaming stdout/stderr in real-time to *log_fh*.
@@ -235,6 +351,7 @@ class FfmpegService:
         from app.services.process_runner import run_streaming_process
 
         error_lines = []
+        parser = FfmpegProgressParser() if on_progress else None
 
         def log_line(line: str) -> None:
             _write_log(log_fh, line + "\n")
@@ -242,10 +359,17 @@ class FfmpegService:
             if len(error_lines) > 50:
                 error_lines.pop(0)
 
+        def on_line(line: str) -> None:
+            if parser is not None and on_progress is not None:
+                progress = parser.feed_line(line)
+                if progress is not None:
+                    on_progress(progress)
+
         res = run_streaming_process(
             cmd,
             log_line=log_line,
             check_cancelled=check_cancelled,
+            on_line=on_line,
         )
 
         if res.cancelled:

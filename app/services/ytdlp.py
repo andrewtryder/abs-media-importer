@@ -106,14 +106,13 @@ class YtDlpService:
         if not self.settings.allow_playlists and _is_playlist_url(url):
             return UrlValidationResult(
                 False,
-                "Playlist URLs are not allowed (ALLOW_PLAYLISTS=false). "
-                "Paste a single video URL.",
+                "Playlist URLs are not allowed (ALLOW_PLAYLISTS=false). Paste a single video URL.",
             )
 
         if not self.settings.allow_channels and _is_channel_url(url):
             return UrlValidationResult(
                 False,
-                "Channel URLs are not allowed (ALLOW_CHANNELS=false). " "Paste a single video URL.",
+                "Channel URLs are not allowed (ALLOW_CHANNELS=false). Paste a single video URL.",
             )
 
         return UrlValidationResult(True)
@@ -224,9 +223,7 @@ class YtDlpService:
     def get_output_template(self, job_id: str) -> str:
         """Return the yt-dlp output template for a job."""
         s = self.settings
-        template = (
-            "%(uploader_id,channel_id,channel,uploader|Unknown Channel)s" "/%(title)s.%(ext)s"
-        )
+        template = "%(uploader_id,channel_id,channel,uploader|Unknown Channel)s/%(title)s.%(ext)s"
         return str(s.work_dir / job_id / "download" / template)
 
     def find_downloaded_file(self, job_id: str) -> Path | None:

@@ -6,10 +6,25 @@
   <title>{% block title %}yt-abs-importer{% endblock %}</title>
   <meta name="description" content="YouTube to Audiobookshelf importer — convert YouTube videos to M4B audiobooks" />
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/fonts/fonts.css"/>
   <style>
     .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -moz-font-feature-settings: 'liga';
+      font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
     .glass-card {
@@ -89,13 +104,13 @@
             "base": "4px"
           },
           "fontFamily": {
-            "headline-lg": ["Geist"],
-            "label-md": ["JetBrains Mono"],
-            "headline-md": ["Geist"],
-            "headline-sm": ["Geist"],
-            "code": ["JetBrains Mono"],
-            "body-lg": ["Geist"],
-            "body-md": ["Geist"]
+            "headline-lg": ["Geist", "sans-serif"],
+            "label-md": ["JetBrains Mono", "monospace"],
+            "headline-md": ["Geist", "sans-serif"],
+            "headline-sm": ["Geist", "sans-serif"],
+            "code": ["JetBrains Mono", "monospace"],
+            "body-lg": ["Geist", "sans-serif"],
+            "body-md": ["Geist", "sans-serif"]
           },
           "fontSize": {
             "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "700"}],
@@ -137,8 +152,8 @@
           JD
       </div>
       <div class="flex flex-col">
-        <span class="text-xs font-semibold">Dev User</span>
-        <span class="text-[10px] text-on-surface-variant font-code">dry_run: {{ 'true' if settings.dry_run else 'false' }}</span>
+        <span class="text-xs font-semibold font-body-md">Dev User</span>
+        <span class="font-code text-code text-on-surface-variant">dry_run: {{ 'true' if settings.dry_run else 'false' }}</span>
       </div>
     </div>
   </aside>
@@ -155,7 +170,7 @@
           <a class="font-label-md text-label-md text-on-surface-variant hover:text-secondary-fixed dark:hover:text-secondary-fixed transition-opacity duration-200" href="#">Documentation</a>
           <a class="font-label-md text-label-md text-on-surface-variant hover:text-secondary-fixed dark:hover:text-secondary-fixed transition-opacity duration-200" href="https://github.com/andrewtryder/yt-abs-importer">GitHub</a>
         </div>
-        <div class="text-on-surface-variant text-[11px] opacity-60">
+        <div class="font-label-md text-label-md text-on-surface-variant opacity-60">
           © 2026 yt-abs-importer project
         </div>
       </div>
