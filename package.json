@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "rulesync": "rulesync generate"
+  },
+  "devDependencies": {
+    "rulesync": "^9.0.2"
+  },
+  "name": "yt-abs-importer"
+}

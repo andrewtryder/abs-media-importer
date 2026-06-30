@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
-import pytest
-
 from app.config import Settings
-from app.services.ytdlp import YtDlpService, VideoMetadata
+from app.services.ytdlp import VideoMetadata, YtDlpService
 
 
 def make_svc(**kwargs) -> YtDlpService:  # type: ignore[return]
     import os
+
     os.environ.setdefault("APP_SECRET_KEY", "test")
     for k, v in kwargs.items():
         os.environ[k] = str(v)
@@ -21,6 +19,7 @@ def make_svc(**kwargs) -> YtDlpService:  # type: ignore[return]
 
 
 # ── Preview command ────────────────────────────────────────────────────────────
+
 
 def test_preview_command_structure():
     svc = make_svc()
@@ -41,6 +40,7 @@ def test_preview_command_no_shell_true():
 
 
 # ── Download command ────────────────────────────────────────────────────────────
+
 
 def test_download_command_contains_no_playlist():
     svc = make_svc()
@@ -65,8 +65,12 @@ def test_download_command_audio_format():
 def test_download_command_embed_flags_default():
     svc = make_svc()
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
-        embed_metadata=True, embed_thumbnail=True, embed_chapters=True,
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
+        embed_metadata=True,
+        embed_thumbnail=True,
+        embed_chapters=True,
     )
     assert "--embed-metadata" in cmd
     assert "--embed-thumbnail" in cmd
@@ -76,8 +80,12 @@ def test_download_command_embed_flags_default():
 def test_download_command_embed_flags_off():
     svc = make_svc()
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
-        embed_metadata=False, embed_thumbnail=False, embed_chapters=False,
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
+        embed_metadata=False,
+        embed_thumbnail=False,
+        embed_chapters=False,
     )
     assert "--embed-metadata" not in cmd
     assert "--embed-thumbnail" not in cmd
@@ -88,7 +96,9 @@ def test_download_command_archive(tmp_path: Path):
     archive = tmp_path / "archive.txt"
     svc = make_svc(ARCHIVE_FILE=str(archive))
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
         use_archive=True,
     )
     assert "--download-archive" in cmd
@@ -99,7 +109,9 @@ def test_download_command_archive(tmp_path: Path):
 def test_download_command_skip_archive():
     svc = make_svc()
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
         use_archive=False,
     )
     assert "--download-archive" not in cmd
@@ -108,7 +120,9 @@ def test_download_command_skip_archive():
 def test_download_command_extra_args():
     svc = make_svc(YTDLP_EXTRA_ARGS="--verbose --no-warnings")
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
         use_archive=False,
     )
     assert "--verbose" in cmd
@@ -118,7 +132,9 @@ def test_download_command_extra_args():
 def test_download_command_url_at_end():
     svc = make_svc()
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
         use_archive=False,
     )
     assert cmd[-1] == "https://youtu.be/abc123"
@@ -129,7 +145,9 @@ def test_download_command_url_at_end():
 def test_download_command_no_shell_true():
     svc = make_svc()
     cmd = svc.build_download_command(
-        "https://youtu.be/abc123", "job-1", "/tmp/out/%(title)s.%(ext)s",
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
         use_archive=False,
     )
     assert isinstance(cmd, list)
@@ -142,6 +160,7 @@ def test_custom_ytdlp_bin():
 
 
 # ── VideoMetadata.from_json ───────────────────────────────────────────────────
+
 
 def test_video_metadata_from_json():
     data = {
@@ -173,6 +192,7 @@ def test_video_metadata_missing_optional_fields():
 
 
 # ── find_downloaded_file ──────────────────────────────────────────────────────
+
 
 def test_find_downloaded_file(tmp_path: Path):
     svc = make_svc(WORK_DIR=str(tmp_path))

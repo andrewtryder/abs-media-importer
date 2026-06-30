@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import html
 import logging
 import secrets
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -40,6 +42,7 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
 
 # Register custom Jinja2 filters
 def _format_duration(seconds: int | None) -> str:
@@ -72,7 +75,7 @@ templates.env.filters["escape_html"] = _escape_html
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # type: ignore[type-arg]
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialize DB on startup."""
     await init_db()
     logger.info("Database initialized")
@@ -114,22 +117,24 @@ def _attach_basic_auth(app: FastAPI, settings: Settings) -> None:
     expected_pass = settings.auth_password or ""
 
     class BasicAuthMiddleware(BaseHTTPMiddleware):
-        async def dispatch(self, request: Request, call_next: Any) -> Any:
+        async def dispatch(
+            self,
+            request: Request,
+            call_next: Callable[[Request], Awaitable[Response]],
+        ) -> Response:
             # Skip health endpoint
             if request.url.path == "/health":
                 return await call_next(request)
 
             auth_header = request.headers.get("Authorization", "")
             if auth_header.startswith("Basic "):
-                try:
+                with contextlib.suppress(Exception):
                     decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
                     user, _, pwd = decoded.partition(":")
                     if secrets.compare_digest(user, expected_user) and secrets.compare_digest(
                         pwd, expected_pass
                     ):
                         return await call_next(request)
-                except Exception:  # noqa: BLE001
-                    pass
 
             return Response(
                 "Unauthorized",
@@ -149,8 +154,7 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, PLR0912, PLR0915
-
+def _register_routes(app: FastAPI, settings: Settings) -> None:
     # ── Health ────────────────────────────────────────────────────────────────
 
     @app.get("/health")
@@ -188,7 +192,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, P
             raise HTTPException(status_code=400, detail=validation.error)
         try:
             meta = svc.run_preview(url)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return {
             "id": meta.id,
@@ -233,7 +237,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, P
         embed_thumbnail: bool = Form(True),
         embed_chapters: bool = Form(True),
         trigger_abs_scan: bool = Form(False),
-    ) -> Any:
+    ) -> JSONResponse:
         svc = YtDlpService(cfg)
         validation = svc.validate_url(url)
         if not validation.valid:
@@ -294,9 +298,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, P
         return {"log": log_path.read_text(encoding="utf-8", errors="replace")}
 
     @app.post("/api/jobs/{job_id}/retry")
-    async def api_retry_job(
-        job_id: str, db: DbDep, cfg: SettingsDep
-    ) -> dict[str, str]:
+    async def api_retry_job(job_id: str, db: DbDep, cfg: SettingsDep) -> dict[str, str]:
         job = await get_job(db, job_id)
         if job is None:
             raise HTTPException(status_code=404, detail="Job not found")
@@ -317,13 +319,13 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, P
         if job is None:
             raise HTTPException(status_code=404, detail="Job not found")
         if job.rq_job_id:
-            try:
+            with contextlib.suppress(Exception):
                 from rq.job import Job as RqJob
+
                 from app.queue import get_redis
+
                 rq_job = RqJob.fetch(job.rq_job_id, connection=get_redis())
                 rq_job.cancel()
-            except Exception:  # noqa: BLE001
-                pass
         await update_job_status(db, job_id, JobStatus.cancelled)
         return {"job_id": job_id, "status": "cancelled"}
 
@@ -367,7 +369,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, P
             )
         try:
             meta = svc.run_preview(url)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return templates.TemplateResponse(
                 "index.html",
                 {
@@ -417,7 +419,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:  # noqa: C901, P
         embed_thumbnail: bool = Form(True),
         embed_chapters: bool = Form(True),
         trigger_abs_scan: bool = Form(False),
-    ) -> Any:
+    ) -> HTMLResponse | RedirectResponse:
         svc = YtDlpService(cfg)
         validation = svc.validate_url(url)
         if not validation.valid:

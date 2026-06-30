@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +14,7 @@ from app.models import Job, JobAttempt, JobStatus
 
 
 def _utcnow() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 # ---------------------------------------------------------------------------
@@ -81,12 +81,8 @@ async def get_job(session: AsyncSession, job_id: str) -> Job | None:
     return result.scalar_one_or_none()
 
 
-async def get_recent_jobs(
-    session: AsyncSession, limit: int = 50
-) -> list[Job]:
-    result = await session.execute(
-        select(Job).order_by(desc(Job.created_at)).limit(limit)
-    )
+async def get_recent_jobs(session: AsyncSession, limit: int = 50) -> list[Job]:
+    result = await session.execute(select(Job).order_by(desc(Job.created_at)).limit(limit))
     return list(result.scalars().all())
 
 

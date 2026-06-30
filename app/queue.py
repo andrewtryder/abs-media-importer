@@ -14,7 +14,7 @@ _queue: Queue | None = None
 
 
 def get_redis() -> Redis:  # type: ignore[type-arg]
-    global _redis_conn  # noqa: PLW0603
+    global _redis_conn
     if _redis_conn is None:
         settings = get_settings()
         _redis_conn = Redis.from_url(settings.redis_url)
@@ -22,7 +22,7 @@ def get_redis() -> Redis:  # type: ignore[type-arg]
 
 
 def get_queue() -> Queue:
-    global _queue  # noqa: PLW0603
+    global _queue
     if _queue is None:
         settings = get_settings()
         _queue = Queue(
@@ -47,7 +47,7 @@ def enqueue_job_task(job_id: str) -> str:
     return rq_job.id
 
 
-def _build_rq_retry():  # type: ignore[return]
+def _build_rq_retry() -> object | None:
     """Build an rq.Retry object from config, if rq supports it."""
     try:
         from rq import Retry  # rq >= 1.10

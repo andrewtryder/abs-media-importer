@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from app.services.filesystem import (
     FilesystemService,
     create_destination_folder,
@@ -15,8 +14,8 @@ from app.services.filesystem import (
     safe_filename,
 )
 
-
 # ── safe_filename ──────────────────────────────────────────────────────────────
+
 
 def test_safe_filename_basic():
     assert safe_filename("Hello World") == "Hello World"
@@ -55,6 +54,7 @@ def test_safe_filename_no_path_separators():
 
 # ── resolve_safe_path ──────────────────────────────────────────────────────────
 
+
 def test_resolve_safe_path_ok(tmp_path: Path):
     root = tmp_path / "root"
     root.mkdir()
@@ -77,6 +77,7 @@ def test_resolve_safe_path_double_dot(tmp_path: Path):
 
 
 # ── list_folders ──────────────────────────────────────────────────────────────
+
 
 def test_list_folders_empty(tmp_path: Path):
     root = tmp_path / "empty"
@@ -113,6 +114,7 @@ def test_list_folders_recursive(tmp_path: Path):
 
 # ── create_destination_folder ─────────────────────────────────────────────────
 
+
 def test_create_folder_creates_dir(tmp_path: Path):
     root = tmp_path / "out"
     root.mkdir()
@@ -137,6 +139,7 @@ def test_create_folder_traversal_rejected(tmp_path: Path):
 
 
 # ── resolve_output_path ────────────────────────────────────────────────────────
+
 
 def test_output_path_no_collision(tmp_path: Path):
     root = tmp_path / "out"
@@ -166,9 +169,7 @@ def test_output_path_collision_skip(tmp_path: Path):
     folder.mkdir(parents=True)
     existing = folder / "My Episode.m4b"
     existing.write_bytes(b"x")
-    result = resolve_output_path(
-        root, "ChannelA", "My Episode", "abc123", collision_mode="skip"
-    )
+    result = resolve_output_path(root, "ChannelA", "My Episode", "abc123", collision_mode="skip")
     assert result == existing
 
 
@@ -192,6 +193,7 @@ def test_output_path_traversal_rejected(tmp_path: Path):
 
 
 # ── FilesystemService ─────────────────────────────────────────────────────────
+
 
 def test_filesystem_service_list(default_settings, tmp_output_root: Path):
     (tmp_output_root / "ShowA").mkdir()

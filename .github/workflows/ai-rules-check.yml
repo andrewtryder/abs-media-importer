@@ -1,0 +1,72 @@
+name: AI Rules
+
+on:
+  pull_request:
+    paths:
+      - ".rulesync/**"
+      - "rulesync.jsonc"
+      - "AGENTS.md"
+      - ".cursor/**"
+      - ".agents/**"
+      - ".repo-policy.yml"
+      - ".github/workflows/ai-rules-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ai-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Detect Node version source
+        id: node-version
+        shell: bash
+        run: |
+          if [[ -f .nvmrc ]]; then
+            echo "has_nvmrc=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_nvmrc=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v6
+        if: steps.node-version.outputs.has_nvmrc == 'true'
+        with:
+          node-version-file: ".nvmrc"
+      - uses: actions/setup-node@v6
+        if: steps.node-version.outputs.has_nvmrc != 'true'
+        with:
+          node-version: "24"
+      - name: Install pinned Rulesync
+        shell: bash
+        run: |
+          if [[ ! -f package.json ]]; then
+            echo "No package.json found; falling back to ephemeral Rulesync."
+            exit 0
+          fi
+          if [[ -f pnpm-lock.yaml ]]; then
+            corepack enable
+            pnpm install --frozen-lockfile
+          elif [[ -f yarn.lock ]]; then
+            corepack enable
+            yarn install --frozen-lockfile
+          elif [[ -f package-lock.json ]]; then
+            npm ci
+          else
+            npm install
+          fi
+      - name: Regenerate AI rules
+        shell: bash
+        run: |
+          if [[ -f package.json ]]; then
+            npx rulesync generate
+          else
+            npx -y rulesync generate
+          fi
+      - name: Fail if generated files are stale
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::AI rules are out of sync. Run: npx rulesync generate"
+            git status --porcelain
+            git --no-pager diff
+            exit 1
+          fi

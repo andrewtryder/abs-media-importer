@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine as _sync_create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import get_settings
 from app.models import Base
@@ -19,8 +25,8 @@ _async_engine = None
 _async_session_factory = None
 
 
-def get_async_engine():  # type: ignore[return]
-    global _async_engine  # noqa: PLW0603
+def get_async_engine() -> AsyncEngine:
+    global _async_engine
     if _async_engine is None:
         settings = get_settings()
         _async_engine = create_async_engine(
@@ -32,11 +38,9 @@ def get_async_engine():  # type: ignore[return]
 
 
 def get_async_session_factory() -> async_sessionmaker[AsyncSession]:
-    global _async_session_factory  # noqa: PLW0603
+    global _async_session_factory
     if _async_session_factory is None:
-        _async_session_factory = async_sessionmaker(
-            get_async_engine(), expire_on_commit=False
-        )
+        _async_session_factory = async_sessionmaker(get_async_engine(), expire_on_commit=False)
     return _async_session_factory
 
 
@@ -62,8 +66,8 @@ _sync_engine = None
 _sync_session_factory = None
 
 
-def get_sync_engine():  # type: ignore[return]
-    global _sync_engine  # noqa: PLW0603
+def get_sync_engine() -> Engine:
+    global _sync_engine
     if _sync_engine is None:
         settings = get_settings()
         _sync_engine = _sync_create_engine(
@@ -75,7 +79,7 @@ def get_sync_engine():  # type: ignore[return]
 
 
 def get_sync_session_factory() -> sessionmaker[Session]:
-    global _sync_session_factory  # noqa: PLW0603
+    global _sync_session_factory
     if _sync_session_factory is None:
         _sync_session_factory = sessionmaker(get_sync_engine(), expire_on_commit=False)
     return _sync_session_factory

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import subprocess
@@ -61,9 +62,9 @@ class FfmpegService:
             "-i",
             str(input_path),
             "-map",
-            "0:a:0",        # first audio stream
+            "0:a:0",  # first audio stream
             "-map",
-            "0:v?",         # optional video stream (cover art), skip if absent
+            "0:v?",  # optional video stream (cover art), skip if absent
             "-map_metadata",
             "0",
             "-map_chapters",
@@ -79,9 +80,7 @@ class FfmpegService:
         cmd.append(str(output_path))
         return cmd
 
-    def build_remux_command_fallback(
-        self, input_path: Path, output_path: Path
-    ) -> list[str]:
+    def build_remux_command_fallback(self, input_path: Path, output_path: Path) -> list[str]:
         """
         Fallback remux command: audio-only, no cover art.
 
@@ -129,7 +128,7 @@ class FfmpegService:
         self,
         input_path: Path,
         output_path: Path,
-        log_fh: "object | None" = None,
+        log_fh: object | None = None,
     ) -> RemuxResult:
         """
         Attempt primary remux; fall back to audio-only on failure.
@@ -187,9 +186,7 @@ class FfmpegService:
         cmd = self.build_ffprobe_command(output_path)
         logger.debug("ffprobe: %s", cmd)
 
-        result = subprocess.run(  # noqa: S603
-            cmd, capture_output=True, text=True, check=False
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         try:
             data = json.loads(result.stdout)
@@ -221,7 +218,7 @@ class FfmpegService:
     def _run_cmd(
         self,
         cmd: list[str],
-        log_fh: "object | None",
+        log_fh: object | None,
     ) -> tuple[bool, str | None]:
         """
         Run *cmd* via subprocess, streaming stdout/stderr in real-time to *log_fh*.
@@ -230,7 +227,7 @@ class FfmpegService:
         """
         _write_log(log_fh, f"$ {' '.join(cmd)}\n")
         try:
-            proc = subprocess.Popen(  # noqa: S603
+            proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -241,7 +238,7 @@ class FfmpegService:
             return False, f"Binary not found: {exc}"
 
         error_lines = []
-        assert proc.stdout is not None  # noqa: S101
+        assert proc.stdout is not None
         for line in proc.stdout:
             _write_log(log_fh, line)
             error_lines.append(line)
@@ -256,10 +253,8 @@ class FfmpegService:
         return False, f"ffmpeg exited {proc.returncode}: {err_msg[-500:]}"
 
 
-def _write_log(fh: "object | None", text: str) -> None:
+def _write_log(fh: object | None, text: str) -> None:
     if fh is not None:
-        try:
+        with contextlib.suppress(Exception):
             fh.write(text)  # type: ignore[union-attr]
             fh.flush()  # type: ignore[union-attr]
-        except Exception:  # noqa: BLE001
-            pass
