@@ -228,6 +228,7 @@ packages:
   - git
   - curl
   - ca-certificates
+  - qemu-guest-agent
 
 users:
   - name: debian
@@ -253,6 +254,7 @@ cat <<EOF >> "$SNIPPET_FILE"
 runcmd:
   - mkdir -p /opt
   - git clone https://github.com/andrewtryder/yt-abs-importer.git /opt/yt-abs-importer
+  - systemctl enable qemu-guest-agent --now
 EOF
 
 if [ "$MODE" = "docker-vm" ]; then
@@ -285,7 +287,8 @@ qm create "$VMID" \
     --memory "$MEMORY" \
     --net0 virtio,bridge="$BRIDGE" \
     --scsihw virtio-scsi-pci \
-    --ostype l26
+    --ostype l26 \
+    --agent 1
 
 log "Importing Debian disk image to storage ${STORAGE}..."
 IMPORT_OUT=$(qm importdisk "$VMID" "$IMAGE_PATH" "$STORAGE" 2>&1)

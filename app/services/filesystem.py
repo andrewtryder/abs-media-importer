@@ -63,11 +63,16 @@ def resolve_safe_path(root: Path, relative: str) -> Path:
     root = root.resolve()
     candidate = (root / relative).resolve()
     try:
-        candidate.relative_to(root)
-    except ValueError:
-        raise ValueError(
-            f"Path traversal detected: '{relative}' resolves outside root '{root}'"
-        ) from None
+        is_safe = candidate.is_relative_to(root)
+    except AttributeError:
+        try:
+            candidate.relative_to(root)
+            is_safe = True
+        except ValueError:
+            is_safe = False
+
+    if not is_safe:
+        raise ValueError(f"Path traversal detected: '{relative}' resolves outside root '{root}'")
     return candidate
 
 
@@ -76,9 +81,16 @@ def assert_within_root(root: Path, path: Path) -> None:
     root = root.resolve()
     path = path.resolve()
     try:
-        path.relative_to(root)
-    except ValueError:
-        raise ValueError(f"Path '{path}' is outside output root '{root}'") from None
+        is_safe = path.is_relative_to(root)
+    except AttributeError:
+        try:
+            path.relative_to(root)
+            is_safe = True
+        except ValueError:
+            is_safe = False
+
+    if not is_safe:
+        raise ValueError(f"Path '{path}' is outside output root '{root}'")
 
 
 # ---------------------------------------------------------------------------

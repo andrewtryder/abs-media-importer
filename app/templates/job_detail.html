@@ -99,8 +99,6 @@
     <div class="job-actions">
       {% if job.status.value in ['failed', 'cancelled'] %}
       <form method="POST" action="/api/jobs/{{ job.id }}/retry"
-            hx-post="/api/jobs/{{ job.id }}/retry"
-            hx-swap="none"
             onsubmit="handleRetry(event, this)">
         <button type="submit" class="btn btn-primary" id="retry-btn">
           🔄 Retry Job
@@ -110,13 +108,12 @@
 
       {% if job.status.value in ['queued', 'running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
       <form method="POST" action="/api/jobs/{{ job.id }}/cancel"
-            hx-post="/api/jobs/{{ job.id }}/cancel"
-            hx-swap="none"
             onsubmit="handleCancel(event, this)">
         <button type="submit" class="btn btn-danger" id="cancel-btn">
           ✕ Cancel
         </button>
       </form>
+      <p class="form-hint mt-2">Note: Cancellation stops the pipeline between phases or during active downloads, but may take a moment to terminate the active subprocess.</p>
       {% endif %}
     </div>
   </div>

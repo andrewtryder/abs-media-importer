@@ -6,6 +6,7 @@ import contextlib
 import json
 import logging
 import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -129,6 +130,7 @@ class FfmpegService:
         input_path: Path,
         output_path: Path,
         log_fh: object | None = None,
+        check_cancelled: Callable[[], bool] | None = None,
     ) -> RemuxResult:
         """
         Attempt primary remux; fall back to audio-only on failure.
@@ -137,6 +139,7 @@ class FfmpegService:
             input_path: Source .m4a file.
             output_path: Destination .m4b path.
             log_fh: Open file handle to write ffmpeg output into (optional).
+            check_cancelled: Callback to check if job is cancelled.
 
         Returns:
             RemuxResult indicating success and whether fallback was used.
@@ -146,10 +149,13 @@ class FfmpegService:
         # Primary attempt
         cmd = self.build_remux_command(input_path, output_path)
         logger.debug("ffmpeg primary: %s", cmd)
-        success, err = self._run_cmd(cmd, log_fh)
+        success, err = self._run_cmd(cmd, log_fh, check_cancelled=check_cancelled)
 
         if success:
             return RemuxResult(success=True, used_fallback=False)
+
+        if check_cancelled and check_cancelled():
+            return RemuxResult(success=False, used_fallback=False, error="Cancelled by user")
 
         # Log the primary failure
         _write_log(log_fh, f"\n[ffmpeg] Primary command failed: {err}\n")
@@ -163,7 +169,7 @@ class FfmpegService:
         # Fallback attempt
         cmd_fallback = self.build_remux_command_fallback(input_path, output_path)
         logger.debug("ffmpeg fallback: %s", cmd_fallback)
-        success_fb, err_fb = self._run_cmd(cmd_fallback, log_fh)
+        success_fb, err_fb = self._run_cmd(cmd_fallback, log_fh, check_cancelled=check_cancelled)
 
         if success_fb:
             return RemuxResult(success=True, used_fallback=True)
@@ -219,6 +225,7 @@ class FfmpegService:
         self,
         cmd: list[str],
         log_fh: object | None,
+        check_cancelled: Callable[[], bool] | None = None,
     ) -> tuple[bool, str | None]:
         """
         Run *cmd* via subprocess, streaming stdout/stderr in real-time to *log_fh*.
@@ -237,13 +244,35 @@ class FfmpegService:
         except FileNotFoundError as exc:
             return False, f"Binary not found: {exc}"
 
+        import time
+
+        last_check = time.time()
+
         error_lines = []
         assert proc.stdout is not None
+        # NOTE: Reading from stdout is blocking. If the subprocess does not output
+        # anything or takes a long time, the cancellation check will be delayed
+        # until the next line is read. This is a known limitation.
         for line in proc.stdout:
             _write_log(log_fh, line)
             error_lines.append(line)
             if len(error_lines) > 50:
                 error_lines.pop(0)
+
+            if check_cancelled and time.time() - last_check > 3.0:
+                last_check = time.time()
+                if check_cancelled():
+                    _write_log(
+                        log_fh, "\n[ffmpeg] Cancellation requested. Terminating subprocess...\n"
+                    )
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        proc.wait()
+                    _write_log(log_fh, "[ffmpeg] Subprocess terminated.\n")
+                    return False, "Cancelled by user"
 
         proc.wait()
         if proc.returncode == 0:

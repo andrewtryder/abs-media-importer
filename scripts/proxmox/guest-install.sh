@@ -32,7 +32,8 @@ apt-get install -y --no-install-recommends \
     curl \
     redis-server \
     sqlite3 \
-    ca-certificates
+    ca-certificates \
+    qemu-guest-agent
 
 # 2. Install latest yt-dlp binary
 log "Installing latest yt-dlp binary..."
@@ -119,6 +120,7 @@ log "Enabling services..."
 systemctl enable redis-server
 systemctl enable yt-abs-importer-app
 systemctl enable yt-abs-importer-worker
+systemctl enable qemu-guest-agent --now
 
 # Start redis-server if not running
 systemctl start redis-server

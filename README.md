@@ -359,13 +359,14 @@ ffprobe -v error -show_chapters "/mnt/podcasts/MyChannel/My Episode.m4b"
 
 ## Security Notes
 
-- By default the app binds to `0.0.0.0:8080`. In `docker-compose.yml`, bind to a specific LAN interface if desired: `127.0.0.1:8080:8080`
-- Enable `AUTH_ENABLED=true` with `AUTH_USERNAME`/`AUTH_PASSWORD` for basic protection on non-LAN access
-- Only YouTube domains are allowed by default (configurable via `ALLOWED_DOMAINS`)
-- Playlist and channel URLs are rejected by default
-- All subprocess calls use argument arrays — never `shell=True`
-- All paths are validated against the `OUTPUT_ROOT` — path traversal is rejected
-- API tokens are never logged or displayed in the UI
+- **Default Binding:** For safety, the default Docker Compose configuration binds only to localhost (`127.0.0.1:8080`). To expose the application to your LAN, change this in `docker-compose.yml` to `"8080:8080"`, but make sure to enable HTTP Basic Authentication first.
+- **Authentication:** Do not expose the application directly to the public internet without enabling Basic Auth. Set `AUTH_ENABLED=true`, `AUTH_USERNAME=admin`, and `AUTH_PASSWORD=yoursecurepassword` in your environment, and configure a strong `APP_SECRET_KEY`.
+- **Reverse Proxy:** We strongly recommend routing public traffic through a trusted reverse proxy (such as Nginx, Caddy, or Cloudflare Tunnels) configured with SSL/TLS.
+- Only YouTube domains are allowed by default (configurable via `ALLOWED_DOMAINS`).
+- Playlist and channel URLs are rejected by default.
+- All subprocess calls use argument arrays — never `shell=True`.
+- All paths are validated against the `OUTPUT_ROOT` — path traversal is rejected.
+- API tokens are never logged or displayed in the UI.
 
 ---
 

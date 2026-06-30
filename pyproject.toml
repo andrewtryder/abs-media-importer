@@ -6,6 +6,17 @@ build-backend = "setuptools.backends.legacy:build"
 name = "yt-abs-importer"
 version = "0.1.0"
 description = "Selective YouTube-to-Audiobookshelf importer"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Andrew Ryder"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 requires-python = ">=3.12"
 
 [tool.setuptools.packages.find]

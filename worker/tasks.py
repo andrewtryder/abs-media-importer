@@ -72,6 +72,11 @@ def run_import_job(job_id: str) -> None:
             log_fh.flush()
             logger.info("[%s] %s", job_id, msg)
 
+        def check_cancelled_cb() -> bool:
+            assert job is not None
+            db.refresh(job)
+            return job.status == JobStatus.cancelled
+
         log(f"=== Job {job_id} started at {started_at.isoformat()} ===")
         log(f"URL: {job.url}")
         log(f"Output title: {job.output_title}")
@@ -122,6 +127,12 @@ def run_import_job(job_id: str) -> None:
             output_path.write_bytes(b"DRY RUN fake .m4b content")
             log(f"DRY RUN: created fake output file at {output_path}")
 
+            if check_cancelled_cb():
+                log("Job execution halted due to cancellation.")
+                if settings.cleanup_temp_on_failure:
+                    fs.cleanup_work_dir(job_id)
+                return
+
             sync_update_job(
                 db,
                 job,
@@ -139,6 +150,12 @@ def run_import_job(job_id: str) -> None:
             )
             db.commit()
             log_fh.close()
+            return
+
+        if check_cancelled_cb():
+            log("Job execution halted due to cancellation.")
+            if settings.cleanup_temp_on_failure:
+                fs.cleanup_work_dir(job_id)
             return
 
         # ── Download ──────────────────────────────────────────────────────────
@@ -161,9 +178,20 @@ def run_import_job(job_id: str) -> None:
         if settings.archive_file:
             settings.archive_file.parent.mkdir(parents=True, exist_ok=True)
 
-        dl_success = _run_subprocess(dl_cmd, log)
+        dl_success = _run_subprocess(dl_cmd, log, check_cancelled=check_cancelled_cb)
         if not dl_success:
+            if check_cancelled_cb():
+                log("Job execution halted due to cancellation.")
+                if settings.cleanup_temp_on_failure:
+                    fs.cleanup_work_dir(job_id)
+                return
             _fail(db, job, log, "yt-dlp download failed", log_fh, started_at)
+            if settings.cleanup_temp_on_failure:
+                fs.cleanup_work_dir(job_id)
+            return
+
+        if check_cancelled_cb():
+            log("Job execution halted due to cancellation.")
             if settings.cleanup_temp_on_failure:
                 fs.cleanup_work_dir(job_id)
             return
@@ -199,6 +227,12 @@ def run_import_job(job_id: str) -> None:
             return
         log(f"Found downloaded file: {downloaded_file}")
 
+        if check_cancelled_cb():
+            log("Job execution halted due to cancellation.")
+            if settings.cleanup_temp_on_failure:
+                fs.cleanup_work_dir(job_id)
+            return
+
         # ── Remux to .m4b ─────────────────────────────────────────────────────
         sync_update_job(db, job, status=JobStatus.converting, phase="converting")
         db.commit()
@@ -206,8 +240,15 @@ def run_import_job(job_id: str) -> None:
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        remux_result = ffmpeg_svc.run_remux(downloaded_file, output_path, log_fh)
+        remux_result = ffmpeg_svc.run_remux(
+            downloaded_file, output_path, log_fh, check_cancelled=check_cancelled_cb
+        )
         if not remux_result.success:
+            if check_cancelled_cb():
+                log("Job execution halted due to cancellation.")
+                if settings.cleanup_temp_on_failure:
+                    fs.cleanup_work_dir(job_id)
+                return
             _fail(
                 db,
                 job,
@@ -222,6 +263,12 @@ def run_import_job(job_id: str) -> None:
 
         if remux_result.used_fallback:
             log("Note: ffmpeg used audio-only fallback (cover art was dropped)")
+
+        if check_cancelled_cb():
+            log("Job execution halted due to cancellation.")
+            if settings.cleanup_temp_on_failure:
+                fs.cleanup_work_dir(job_id)
+            return
 
         # ── Verify ────────────────────────────────────────────────────────────
         sync_update_job(db, job, status=JobStatus.verifying, phase="verifying")
@@ -240,6 +287,12 @@ def run_import_job(job_id: str) -> None:
             _fail(db, job, log, f"Output verification failed: {exc}", log_fh, started_at)
             return
 
+        if check_cancelled_cb():
+            log("Job execution halted due to cancellation.")
+            if settings.cleanup_temp_on_failure:
+                fs.cleanup_work_dir(job_id)
+            return
+
         # ── Audiobookshelf scan ───────────────────────────────────────────────
         if job.trigger_abs_scan and settings.abs_scan_after_success:
             sync_update_job(db, job, status=JobStatus.scanning, phase="scanning")
@@ -252,6 +305,12 @@ def run_import_job(job_id: str) -> None:
                 log("ABS scan triggered successfully")
             else:
                 log(f"ABS scan failed (non-fatal): {scan_result.error}")
+
+        if check_cancelled_cb():
+            log("Job execution halted due to cancellation.")
+            if settings.cleanup_temp_on_failure:
+                fs.cleanup_work_dir(job_id)
+            return
 
         # ── Cleanup ────────────────────────────────────────────────────────────
         if settings.cleanup_temp_on_success:
@@ -284,7 +343,7 @@ def run_import_job(job_id: str) -> None:
         logger.exception("Unhandled error in job %s", job_id)
         try:
             job = sync_get_job(db, job_id)
-            if job:
+            if job and job.status != JobStatus.cancelled:
                 sync_update_job(
                     db,
                     job,
@@ -313,7 +372,11 @@ def run_import_job(job_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _run_subprocess(cmd: list[str], log: Callable[[str], None]) -> bool:
+def _run_subprocess(
+    cmd: list[str],
+    log: Callable[[str], None],
+    check_cancelled: Callable[[], bool] | None = None,
+) -> bool:
     """
     Run *cmd* as a subprocess, streaming stdout/stderr to *log*.
 
@@ -332,9 +395,28 @@ def _run_subprocess(cmd: list[str], log: Callable[[str], None]) -> bool:
         log(f"ERROR: could not start process: {exc}")
         return False
 
+    import time
+
+    last_check = time.time()
+
     assert proc.stdout is not None
+    # NOTE: Reading from stdout is blocking. If the subprocess does not output
+    # anything or takes a long time, the cancellation check will be delayed
+    # until the next line is read. This is a known limitation.
     for line in proc.stdout:
         log(line.rstrip())
+        if check_cancelled and time.time() - last_check > 3.0:
+            last_check = time.time()
+            if check_cancelled():
+                log("Cancellation requested. Terminating subprocess...")
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+                log("Subprocess terminated.")
+                return False
 
     proc.wait()
     if proc.returncode != 0:

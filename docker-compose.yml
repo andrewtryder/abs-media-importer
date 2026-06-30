@@ -39,8 +39,10 @@ services:
     container_name: yt-abs-importer-app
     command: app
     restart: unless-stopped
+    # By default, bind only to localhost for safety.
+    # To expose the service to your LAN, change to "8080:8080", but make sure to enable HTTP Basic Auth first!
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./data:/data
       - /tmp/hello:/media/podcasts # ← change to your NFS mount point

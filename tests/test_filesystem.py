@@ -60,7 +60,7 @@ def test_resolve_safe_path_ok(tmp_path: Path):
     root = tmp_path / "root"
     root.mkdir()
     result = resolve_safe_path(root, "subdir")
-    assert str(result).startswith(str(root.resolve()))
+    assert result.is_relative_to(root)
 
 
 def test_resolve_safe_path_traversal(tmp_path: Path):
@@ -80,10 +80,13 @@ def test_resolve_safe_path_double_dot(tmp_path: Path):
 def test_resolve_safe_path_sibling_prefix_escape(tmp_path: Path):
     root = tmp_path / "out"
     root.mkdir()
+    # Test sibling directory whose name starts with root's name
     sibling = tmp_path / "outside"
     sibling.mkdir()
     with pytest.raises(ValueError, match="outside root|traversal"):
         resolve_safe_path(root, "../outside")
+    with pytest.raises(ValueError, match="outside root|traversal"):
+        resolve_safe_path(root, "../out2")
 
 
 def test_assert_within_root_ok(tmp_path: Path):
@@ -103,6 +106,8 @@ def test_assert_within_root_sibling_prefix_escape(tmp_path: Path):
     sibling.mkdir()
     with pytest.raises(ValueError, match="outside output root|outside"):
         assert_within_root(root, sibling)
+    with pytest.raises(ValueError, match="outside output root|outside"):
+        assert_within_root(root, tmp_path / "out2")
 
 
 # ── list_folders ──────────────────────────────────────────────────────────────

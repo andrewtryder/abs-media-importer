@@ -20,9 +20,9 @@ Thank you for your interest in contributing to this project! We welcome contribu
 - Update documentation (README, ADRs) if your change introduces new behavior or deprecates existing functionality.
 - If your change affects repository governance or CI/CD, add a note in the PR description.
 
-## Code of conduct
+## Code of Conduct
 
-Be respectful and constructive. This project follows a standard open-source code of conduct: prioritize collaboration over competition, assume good intent, and provide actionable feedback.
+We expect all contributors to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a respectful and welcoming environment for everyone.
 
 ## Questions?
 

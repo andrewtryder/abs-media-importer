@@ -120,9 +120,16 @@ If you prefer to configure the VM manually on your Proxmox host:
 After deployment, you must configure the application directory mounts and credentials.
 
 1. Find the guest VM's IP:
+
+   The interactive installer configures the VM with `qemu-guest-agent` enabled. Once the guest VM has finished booting and the agent starts, you can fetch its network interfaces (including IP address) using:
    ```bash
    qm guest cmd <VMID> network-get-interfaces
    ```
+   *Alternative options if the agent is unreachable:*
+   * Check the Proxmox VE Web UI under **VM Summary** -> **IPs**.
+   * Inspect DHCP leases on your local router or network manager.
+   * Access the VM's console in Proxmox and run `ip a`.
+
 2. SSH to the guest VM:
    ```bash
    ssh debian@<GUEST_IP>
