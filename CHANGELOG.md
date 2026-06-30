@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/andrewtryder/yt-abs-importer/compare/v1.0.0...v1.0.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **deps:** resolve pytest-asyncio and pytest 9 dependency conflict ([d74c995](https://github.com/andrewtryder/yt-abs-importer/commit/d74c995edb9f145cc41651a1d86406dacf893be4))
+
 ## 1.0.0 (2026-06-30)
 
 
