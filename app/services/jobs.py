@@ -94,6 +94,11 @@ async def update_job_status(
     error_message: str | None = None,
     final_output_path: str | None = None,
     rq_job_id: str | None = None,
+    progress: int | None = None,
+    progress_percent: float | None = None,
+    progress_eta: str | None = None,
+    progress_speed: str | None = None,
+    progress_label: str | None = None,
 ) -> Job | None:
     job = await get_job(session, job_id)
     if job is None:
@@ -108,6 +113,24 @@ async def update_job_status(
         job.final_output_path = final_output_path
     if rq_job_id is not None:
         job.rq_job_id = rq_job_id
+    if progress is not None:
+        job.progress = progress
+    if progress_percent is not None:
+        job.progress_percent = progress_percent
+    if progress_eta is not None:
+        job.progress_eta = progress_eta
+    if progress_speed is not None:
+        job.progress_speed = progress_speed
+    if progress_label is not None:
+        job.progress_label = progress_label
+
+    if status == JobStatus.queued:
+        job.progress = None
+        job.progress_percent = None
+        job.progress_eta = None
+        job.progress_speed = None
+        job.progress_label = None
+
     if status == JobStatus.running and job.started_at is None:
         job.started_at = _utcnow()
     if status in {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}:
@@ -138,6 +161,11 @@ def sync_update_job(
     work_dir: str | None = None,
     rq_job_id: str | None = None,
     chapter_count: int | None = None,
+    progress: int | None = None,
+    progress_percent: float | None = None,
+    progress_eta: str | None = None,
+    progress_speed: str | None = None,
+    progress_label: str | None = None,
 ) -> None:
     """Update job fields and flush to DB (no commit — caller commits)."""
     now = _utcnow()
@@ -149,6 +177,12 @@ def sync_update_job(
             job.started_at = now
         if status in {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}:
             job.finished_at = now
+        if status == JobStatus.queued:
+            job.progress = None
+            job.progress_percent = None
+            job.progress_eta = None
+            job.progress_speed = None
+            job.progress_label = None
     if phase is not None:
         job.phase = phase
     if error_message is not None:
@@ -163,6 +197,16 @@ def sync_update_job(
         job.rq_job_id = rq_job_id
     if chapter_count is not None:
         job.chapter_count = chapter_count
+    if progress is not None:
+        job.progress = progress
+    if progress_percent is not None:
+        job.progress_percent = progress_percent
+    if progress_eta is not None:
+        job.progress_eta = progress_eta
+    if progress_speed is not None:
+        job.progress_speed = progress_speed
+    if progress_label is not None:
+        job.progress_label = progress_label
 
     session.flush()
 
@@ -176,6 +220,7 @@ def sync_record_attempt(
     error_message: str | None = None,
     started_at: datetime | None = None,
     finished_at: datetime | None = None,
+    artifact_metadata: str | None = None,
 ) -> JobAttempt:
     """Append a JobAttempt record for the given job."""
     attempt = JobAttempt(
@@ -187,6 +232,7 @@ def sync_record_attempt(
         error_message=error_message,
         started_at=started_at or _utcnow(),
         finished_at=finished_at,
+        artifact_metadata=artifact_metadata,
     )
     session.add(attempt)
     session.flush()

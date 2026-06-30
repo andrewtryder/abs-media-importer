@@ -278,3 +278,66 @@ def _is_playlist_url(url: str) -> bool:
 
 def _is_channel_url(url: str) -> bool:
     return any(p.search(url) for p in _CHANNEL_PATTERNS)
+
+
+# ---------------------------------------------------------------------------
+# Progress Parsing
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class DownloadProgress:
+    percent: float | None = None
+    speed: str | None = None
+    eta: str | None = None
+    downloaded: str | None = None
+    total: str | None = None
+    raw_line: str | None = None
+
+
+def parse_ytdlp_progress_line(line: str) -> DownloadProgress | None:
+    """
+    Parse a yt-dlp progress line and extract percentage, speed, ETA, and size.
+
+    Returns None if the line is not a progress line.
+    """
+    line_str = line.strip()
+    if not line_str.startswith("[download]"):
+        return None
+
+    # Check if there is a percentage
+    pct_match = re.search(r"(\d+(?:\.\d+)?)%", line_str)
+    if not pct_match:
+        return None
+
+    percent = float(pct_match.group(1))
+
+    # Extract total size: "of <total>"
+    total = None
+    total_match = re.search(r"of\s+(~?\d+(?:\.\d+)?[a-zA-Z]+)", line_str)
+    if total_match:
+        total = total_match.group(1)
+
+    # Extract speed: "at <speed>"
+    speed = None
+    speed_match = re.search(r"at\s+(\d+(?:\.\d+)?[a-zA-Z]+/s)", line_str)
+    if speed_match:
+        speed = speed_match.group(1)
+
+    # Extract ETA: "ETA <eta>" or "in <eta>"
+    eta = None
+    eta_match = re.search(r"ETA\s+(\d+:\d+(?::\d+)?)", line_str)
+    if eta_match:
+        eta = eta_match.group(1)
+    else:
+        in_match = re.search(r"in\s+(\d+:\d+(?::\d+)?)", line_str)
+        if in_match:
+            eta = in_match.group(1)
+
+    return DownloadProgress(
+        percent=percent,
+        speed=speed,
+        eta=eta,
+        total=total,
+        raw_line=line_str,
+    )

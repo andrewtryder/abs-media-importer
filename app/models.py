@@ -10,6 +10,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -98,6 +99,11 @@ class Job(Base):
         nullable=False,
     )
     phase: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    progress: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    progress_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
+    progress_eta: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    progress_speed: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    progress_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -161,5 +167,6 @@ class JobAttempt(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     rq_job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    artifact_metadata: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     job: Mapped[Job] = relationship("Job", back_populates="attempts_log")

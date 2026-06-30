@@ -589,4 +589,28 @@ code, .mono {
   box-shadow: var(--shadow-sm);
 }
 
+/* ── Progress Bar ───────────────────────────────────────────── */
+.progress-container {
+  width: 100%;
+  background-color: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-top: 0.5rem;
+  display: none;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: var(--accent);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
 

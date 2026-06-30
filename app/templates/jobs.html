@@ -48,8 +48,10 @@
         </td>
         <td>
           <span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span>
-          {% if job.phase and job.phase != job.status %}
-          <span class="phase-tag">{{ job.phase }}</span>
+          {% if job.progress_label %}
+            <span class="phase-tag">{{ job.progress_label }}{% if job.progress_percent is not none %} ({{ job.progress_percent | round | int }}%){% endif %}</span>
+          {% elif job.phase and job.phase != job.status %}
+            <span class="phase-tag">{{ job.phase }}</span>
           {% endif %}
         </td>
         <td class="date-cell">{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '—' }}</td>

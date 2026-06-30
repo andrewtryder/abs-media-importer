@@ -207,3 +207,49 @@ def test_find_downloaded_file(tmp_path: Path):
 def test_find_downloaded_file_not_found(tmp_path: Path):
     svc = make_svc(WORK_DIR=str(tmp_path))
     assert svc.find_downloaded_file("job-xyz") is None
+
+
+# ── progress parsing ─────────────────────────────────────────────────────────
+
+
+def test_parse_ytdlp_progress_line():
+    from app.services.ytdlp import parse_ytdlp_progress_line
+
+    # Happy path: typical line with all fields
+    line = "[download]  12.3% of 48.55MiB at 3.21MiB/s ETA 00:13"
+    res = parse_ytdlp_progress_line(line)
+    assert res is not None
+    assert res.percent == 12.3
+    assert res.total == "48.55MiB"
+    assert res.speed == "3.21MiB/s"
+    assert res.eta == "00:13"
+    assert res.raw_line == line
+
+    # Happy path: completed download line
+    line = "[download] 100% of 48.55MiB in 00:15"
+    res = parse_ytdlp_progress_line(line)
+    assert res is not None
+    assert res.percent == 100.0
+    assert res.total == "48.55MiB"
+    assert res.speed is None
+    assert res.eta == "00:15"
+
+    # Unrelated line: starts with [download] but is not progress
+    line = "[download] Destination: /tmp/hello.m4a"
+    assert parse_ytdlp_progress_line(line) is None
+
+    # Unrelated line: completely different
+    line = "[youtube] CcYToxtmFHs: Downloading webpage"
+    assert parse_ytdlp_progress_line(line) is None
+
+    # Partial/malformed progress line (should not raise)
+    line = "[download]  abc% of 48.55MiB"
+    assert parse_ytdlp_progress_line(line) is None
+
+    line = "[download]  50% of unknown at fast speed"
+    res = parse_ytdlp_progress_line(line)
+    assert res is not None
+    assert res.percent == 50.0
+    assert res.total is None
+    assert res.speed is None
+    assert res.eta is None

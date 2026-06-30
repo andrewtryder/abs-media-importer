@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import create_engine as _sync_create_engine
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -52,10 +52,35 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Create all tables on startup."""
+    """Create all tables on startup and apply lightweight migrations."""
     engine = get_async_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        def run_migrations(connection: Connection) -> None:
+            # Check jobs columns
+            cursor = connection.execute("PRAGMA table_info(jobs)")
+            cols = [row[1] for row in cursor.fetchall()]
+
+            new_cols = [
+                ("progress_percent", "FLOAT"),
+                ("progress_eta", "VARCHAR(32)"),
+                ("progress_speed", "VARCHAR(32)"),
+                ("progress_label", "VARCHAR(64)"),
+            ]
+
+            for col_name, col_type in new_cols:
+                if col_name not in cols:
+                    connection.execute(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}")
+
+            # Check job_attempts columns
+            cursor_attempts = connection.execute("PRAGMA table_info(job_attempts)")
+            attempts_cols = [row[1] for row in cursor_attempts.fetchall()]
+
+            if "artifact_metadata" not in attempts_cols:
+                connection.execute("ALTER TABLE job_attempts ADD COLUMN artifact_metadata TEXT")
+
+        await conn.run_sync(run_migrations)
 
 
 # ---------------------------------------------------------------------------
