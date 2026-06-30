@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.2.0...v1.3.0) (2026-06-30)
+
+
+### Features
+
+* **ui:** polish web interface look and feel for release ([2e974d3](https://github.com/andrewtryder/yt-abs-importer/commit/2e974d3d87dd700cdf2437a24f48add1357030b6))
+* **ui:** polish web interface look and feel for release ([fd4cca2](https://github.com/andrewtryder/yt-abs-importer/commit/fd4cca22b7bf813f35aec9550f6415a33b3e5831))
+
 ## [1.2.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.1.0...v1.2.0) (2026-06-30)
 
 
