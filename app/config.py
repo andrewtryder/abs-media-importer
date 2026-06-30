@@ -181,8 +181,8 @@ class Settings(BaseSettings):
     ffprobe_bin: str = Field("ffprobe", alias="FFPROBE_BIN")
     ytdlp_audio_format: str = Field("m4a", alias="YTDLP_AUDIO_FORMAT")
     ytdlp_audio_quality: str = Field("", alias="YTDLP_AUDIO_QUALITY")
-    ytdlp_extra_args: Any = Field(default_factory=list, alias="YTDLP_EXTRA_ARGS")
-    ffmpeg_extra_args: Any = Field(default_factory=list, alias="FFMPEG_EXTRA_ARGS")
+    ytdlp_extra_args: Any = Field(default_factory=lambda: [], alias="YTDLP_EXTRA_ARGS")
+    ffmpeg_extra_args: Any = Field(default_factory=lambda: [], alias="FFMPEG_EXTRA_ARGS")
 
     output_extension: str = Field("m4b", alias="OUTPUT_EXTENSION")
     filename_template: str = Field("{title}.m4b", alias="FILENAME_TEMPLATE")

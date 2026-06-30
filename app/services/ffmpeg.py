@@ -256,5 +256,5 @@ class FfmpegService:
 def _write_log(fh: object | None, text: str) -> None:
     if fh is not None:
         with contextlib.suppress(Exception):
-            fh.write(text)  # type: ignore[union-attr]
-            fh.flush()  # type: ignore[union-attr]
+            fh.write(text)  # type: ignore[attr-defined]
+            fh.flush()  # type: ignore[attr-defined]

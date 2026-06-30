@@ -27,6 +27,7 @@ apt-get install -y --no-install-recommends \
     python3-venv \
     python3-dev \
     ffmpeg \
+    atomicparsley \
     git \
     curl \
     redis-server \

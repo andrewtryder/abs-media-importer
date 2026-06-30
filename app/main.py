@@ -396,7 +396,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:
             },
         )
 
-    @app.post("/jobs/create", response_class=HTMLResponse)
+    @app.post("/jobs/create", response_class=HTMLResponse, response_model=None)
     async def page_create_job(
         request: Request,
         db: DbDep,

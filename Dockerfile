@@ -13,6 +13,7 @@ LABEL org.opencontainers.image.description="YouTube to Audiobookshelf importer"
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    atomicparsley \
     curl \
     wget \
     ca-certificates \

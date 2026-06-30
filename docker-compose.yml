@@ -43,7 +43,7 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/data
-      - /mnt/podcasts:/media/podcasts    # ← change to your NFS mount point
+      - /tmp/hello:/media/podcasts # ← change to your NFS mount point
       - ./config:/config
     environment:
       - REDIS_URL=redis://redis:6379/0
@@ -67,7 +67,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-fs", "http://localhost:8080/health"]
+      test: [ "CMD", "curl", "-fs", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/data
-      - /mnt/podcasts:/media/podcasts    # ← must match app service
+      - /tmp/hello:/media/podcasts # ← must match app service
       - ./config:/config
     environment:
       - REDIS_URL=redis://redis:6379/0
@@ -107,7 +107,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

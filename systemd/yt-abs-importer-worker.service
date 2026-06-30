@@ -13,7 +13,7 @@ EnvironmentFile=/etc/yt-abs-importer/.env
 # Fail gracefully with a clear error message if config is missing
 ExecStartPre=/bin/sh -c 'if [ ! -f /etc/yt-abs-importer/.env ]; then echo "ERROR: /etc/yt-abs-importer/.env is missing. Please copy /opt/yt-abs-importer/.env.example and populate it."; exit 1; fi'
 
-ExecStart=/opt/yt-abs-importer/.venv/bin/python -m rq.cli worker ytabs
+ExecStart=/opt/yt-abs-importer/.venv/bin/python -m rq.cli worker ytabs --url ${REDIS_URL}
 Restart=always
 RestartSec=5
 

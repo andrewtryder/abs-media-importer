@@ -62,8 +62,12 @@ def resolve_safe_path(root: Path, relative: str) -> Path:
     """
     root = root.resolve()
     candidate = (root / relative).resolve()
-    if not str(candidate).startswith(str(root)):
-        raise ValueError(f"Path traversal detected: '{relative}' resolves outside root '{root}'")
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        raise ValueError(
+            f"Path traversal detected: '{relative}' resolves outside root '{root}'"
+        ) from None
     return candidate
 
 
@@ -71,8 +75,10 @@ def assert_within_root(root: Path, path: Path) -> None:
     """Raise ValueError if *path* is not under *root*."""
     root = root.resolve()
     path = path.resolve()
-    if not str(path).startswith(str(root)):
-        raise ValueError(f"Path '{path}' is outside output root '{root}'")
+    try:
+        path.relative_to(root)
+    except ValueError:
+        raise ValueError(f"Path '{path}' is outside output root '{root}'") from None
 
 
 # ---------------------------------------------------------------------------
@@ -87,19 +93,31 @@ def list_folders(output_root: Path, recursive: bool = False) -> list[str]:
     By default lists only one level deep. If *recursive* is True, lists all
     nested directories. Returns relative POSIX paths.
     """
-    if not output_root.exists():
+    try:
+        if not output_root.exists():
+            return []
+    except OSError:
         return []
 
     results: list[str] = []
-    if recursive:
-        for item in sorted(output_root.rglob("*")):
-            if item.is_dir():
-                rel = item.relative_to(output_root)
-                results.append(rel.as_posix())
-    else:
-        for item in sorted(output_root.iterdir()):
-            if item.is_dir():
-                results.append(item.name)
+    try:
+        if recursive:
+            for item in sorted(output_root.rglob("*")):
+                try:
+                    if item.is_dir():
+                        rel = item.relative_to(output_root)
+                        results.append(rel.as_posix())
+                except OSError:
+                    continue
+        else:
+            for item in sorted(output_root.iterdir()):
+                try:
+                    if item.is_dir():
+                        results.append(item.name)
+                except OSError:
+                    continue
+    except OSError:
+        return []
 
     return results
 

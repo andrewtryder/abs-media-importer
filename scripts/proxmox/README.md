@@ -12,7 +12,7 @@ You can choose between two deployment modes:
 
 > [!WARNING]
 > Running scripts fetched directly from the internet as `root` on your Proxmox VE host is a potential security risk.
-> Always review the code of [proxmox-install.sh](file:///Users/atr/code/yt-abs-importer/scripts/proxmox/proxmox-install.sh) and [guest-install.sh](file:///Users/atr/code/yt-abs-importer/scripts/proxmox/guest-install.sh) before executing them.
+> Always review the code of [proxmox-install.sh](proxmox-install.sh) and [guest-install.sh](guest-install.sh) before executing them.
 
 ---
 
