@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.1.0...v1.2.0) (2026-06-30)
+
+
+### Features
+
+* **docker:** make podcasts directory configurable via .env ([ac8860f](https://github.com/andrewtryder/yt-abs-importer/commit/ac8860f7bbe2a42a660cc1d053a67509bfe58bb4))
+* **docker:** make podcasts directory configurable via .env ([d2a5f0c](https://github.com/andrewtryder/yt-abs-importer/commit/d2a5f0cf66bb582637aa0f5aaadf4ef3b6baf1e8))
+
 ## [1.1.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.0.1...v1.1.0) (2026-06-30)
 
 
