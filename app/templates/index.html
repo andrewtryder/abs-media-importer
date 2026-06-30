@@ -3,8 +3,24 @@
 
 {% block content %}
 <div class="page-hero">
-  <h1 class="hero-title">YouTube → Audiobookshelf</h1>
-  <p class="hero-subtitle">Paste a YouTube URL to convert a video to an M4B audiobook file</p>
+  <h1 class="hero-title">YouTube to Audiobookshelf</h1>
+  <p class="hero-subtitle">Import YouTube videos directly into your Audiobookshelf library as high-quality M4B audiobooks</p>
+  
+  <div class="settings-badges">
+    {% if settings.dry_run %}
+    <span class="badge badge-warning">Dry Run Mode</span>
+    {% endif %}
+    {% if settings.allow_playlists %}
+    <span class="badge badge-success">Playlists Allowed</span>
+    {% else %}
+    <span class="badge badge-muted">Playlists Disabled</span>
+    {% endif %}
+    {% if settings.abs_configured %}
+    <span class="badge badge-success">Audiobookshelf Connected</span>
+    {% else %}
+    <span class="badge badge-warning">ABS Disconnected</span>
+    {% endif %}
+  </div>
 </div>
 
 <div class="card center-card">
@@ -30,30 +46,46 @@
           autofocus
         />
         <button type="submit" class="btn btn-primary" id="preview-btn">
-          <span class="btn-icon">🔍</span>
-          Preview
+          <span class="btn-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          Fetch Metadata
         </button>
       </div>
-      <p class="form-hint">Single video URLs only. Playlists and channel URLs are {{ "allowed" if settings.allow_playlists else "not allowed" }}.</p>
+      <p class="form-hint">
+        Single video URLs only. Output goes directly to your configured Audiobookshelf folder. 
+        {% if settings.allow_playlists or settings.allow_channels %}
+        (Note: Playlists/Channels are allowed under current settings).
+        {% endif %}
+      </p>
     </div>
   </form>
 </div>
 
-<div class="info-grid">
-  <div class="info-card">
-    <div class="info-icon">🎵</div>
-    <h3>M4B Output</h3>
-    <p>Downloads audio and remuxes to M4B with embedded metadata, thumbnail, and chapters.</p>
+<div class="how-it-works">
+  <div class="how-step">
+    <div class="how-step-num">1</div>
+    <div class="how-step-content">
+      <h4>Paste YouTube URL</h4>
+      <p>Enter any YouTube video link. The server will validate the URL and fetch metadata details.</p>
+    </div>
   </div>
-  <div class="info-card">
-    <div class="info-icon">📚</div>
-    <h3>Audiobookshelf Ready</h3>
-    <p>Files are written directly to your Audiobookshelf media directory for instant discovery.</p>
+  <div class="how-step">
+    <div class="how-step-num">2</div>
+    <div class="how-step-content">
+      <h4>Customize Settings</h4>
+      <p>Configure the output title, select a destination folder under your library root, and adjust advanced options.</p>
+    </div>
   </div>
-  <div class="info-card">
-    <div class="info-icon">🔄</div>
-    <h3>Background Jobs</h3>
-    <p>Downloads run in the background. Track progress and retry failures from the Jobs page.</p>
+  <div class="how-step">
+    <div class="how-step-num">3</div>
+    <div class="how-step-content">
+      <h4>Queue Import</h4>
+      <p>The import runs in the background. It downloads audio, remuxes to M4B, embeds metadata, and scans your library.</p>
+    </div>
   </div>
 </div>
 
@@ -62,7 +94,7 @@
     const btn = document.getElementById('preview-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Previewing...';
+      btn.innerHTML = '<span class="spinner"></span> Fetching metadata...';
     }
   });
 </script>
