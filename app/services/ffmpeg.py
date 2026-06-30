@@ -228,58 +228,34 @@ class FfmpegService:
         check_cancelled: Callable[[], bool] | None = None,
     ) -> tuple[bool, str | None]:
         """
-        Run *cmd* via subprocess, streaming stdout/stderr in real-time to *log_fh*.
+        Run *cmd* via process_runner, streaming stdout/stderr in real-time to *log_fh*.
 
         Returns (success, error_message).
         """
-        _write_log(log_fh, f"$ {' '.join(cmd)}\n")
-        try:
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            )
-        except FileNotFoundError as exc:
-            return False, f"Binary not found: {exc}"
-
-        import time
-
-        last_check = time.time()
+        from app.services.process_runner import run_streaming_process
 
         error_lines = []
-        assert proc.stdout is not None
-        # NOTE: Reading from stdout is blocking. If the subprocess does not output
-        # anything or takes a long time, the cancellation check will be delayed
-        # until the next line is read. This is a known limitation.
-        for line in proc.stdout:
-            _write_log(log_fh, line)
-            error_lines.append(line)
+
+        def log_line(line: str) -> None:
+            _write_log(log_fh, line + "\n")
+            error_lines.append(line + "\n")
             if len(error_lines) > 50:
                 error_lines.pop(0)
 
-            if check_cancelled and time.time() - last_check > 3.0:
-                last_check = time.time()
-                if check_cancelled():
-                    _write_log(
-                        log_fh, "\n[ffmpeg] Cancellation requested. Terminating subprocess...\n"
-                    )
-                    proc.terminate()
-                    try:
-                        proc.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        proc.kill()
-                        proc.wait()
-                    _write_log(log_fh, "[ffmpeg] Subprocess terminated.\n")
-                    return False, "Cancelled by user"
+        res = run_streaming_process(
+            cmd,
+            log_line=log_line,
+            check_cancelled=check_cancelled,
+        )
 
-        proc.wait()
-        if proc.returncode == 0:
+        if res.cancelled:
+            return False, "Cancelled by user"
+
+        if res.returncode == 0:
             return True, None
 
         err_msg = "".join(error_lines)
-        return False, f"ffmpeg exited {proc.returncode}: {err_msg[-500:]}"
+        return False, f"ffmpeg exited {res.returncode}: {err_msg[-500:]}"
 
 
 def _write_log(fh: object | None, text: str) -> None:

@@ -141,11 +141,25 @@
     <div class="detail-grid">
       <div class="detail-row">
         <span class="detail-label">Pipeline Status</span>
-        <span class="detail-value">
+        <span class="detail-value" id="job-status-value">
           <span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span>
-          {% if job.phase %}
-          <span class="phase-tag">Stage: {{ job.phase | e }}</span>
-          {% endif %}
+          <span class="phase-tag" id="job-phase-value" {% if not job.phase %}style="display: none;"{% endif %}>
+            {% if job.phase %}Stage: {{ job.phase | e }}{% endif %}
+          </span>
+        </span>
+      </div>
+      <div class="detail-row" id="progress-row" {% if job.progress_percent is none and job.progress is none and not job.progress_label %}style="display: none;"{% endif %}>
+        <span class="detail-label">Progress</span>
+        <span class="detail-value">
+          <div class="progress-container" style="display: block;">
+            <div class="progress-bar" id="job-progress-bar" style="width: {{ job.progress_percent or job.progress or 0 }}%;"></div>
+          </div>
+          <div style="margin-top: 6px; font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+            <strong id="job-progress-text">{{ job.progress_percent or job.progress or 0 }}%</strong>
+            <span id="job-progress-label">{% if job.progress_label %}({{ job.progress_label }}){% endif %}</span>
+            <span id="job-progress-speed">{% if job.progress_speed %}at {{ job.progress_speed }}{% endif %}</span>
+            <span id="job-progress-eta">{% if job.progress_eta %}ETA {{ job.progress_eta }}{% endif %}</span>
+          </div>
         </span>
       </div>
       <div class="detail-row">
@@ -308,6 +322,60 @@
       fetch('/api/jobs/{{ job.id }}')
         .then(r => r.json())
         .then(d => {
+          // Update status badges dynamically
+          const mainBadge = document.querySelector('.job-header .badge');
+          if (mainBadge) {
+            mainBadge.className = `badge badge-${d.status} badge-lg`;
+            mainBadge.textContent = d.status;
+          }
+          const listBadge = document.querySelector('#job-status-value .badge');
+          if (listBadge) {
+            listBadge.className = `badge badge-${d.status}`;
+            listBadge.textContent = d.status;
+          }
+
+          // Update phase tag
+          const phaseVal = document.getElementById('job-phase-value');
+          if (d.phase) {
+            if (phaseVal) {
+              phaseVal.style.display = '';
+              phaseVal.textContent = `Stage: ${d.phase}`;
+            }
+          } else {
+            if (phaseVal) phaseVal.style.display = 'none';
+          }
+
+          // Update progress row and bar
+          const progressRow = document.getElementById('progress-row');
+          const progressBar = document.getElementById('job-progress-bar');
+          const progressText = document.getElementById('job-progress-text');
+          const progressLabel = document.getElementById('job-progress-label');
+          const progressSpeed = document.getElementById('job-progress-speed');
+          const progressEta = document.getElementById('job-progress-eta');
+
+          const hasProgress = (d.progress_percent !== null && d.progress_percent !== undefined) || (d.progress !== null && d.progress !== undefined);
+          const hasLabel = !!d.progress_label;
+
+          if (hasProgress || hasLabel) {
+            if (progressRow) progressRow.style.display = '';
+
+            const pct = d.progress_percent !== null ? d.progress_percent : (d.progress !== null ? d.progress : 0);
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressText) progressText.textContent = Math.round(pct) + '%';
+
+            if (progressLabel) {
+              progressLabel.textContent = d.progress_label ? `(${d.progress_label})` : '';
+            }
+            if (progressSpeed) {
+              progressSpeed.textContent = d.progress_speed ? `at ${d.progress_speed}` : '';
+            }
+            if (progressEta) {
+              progressEta.textContent = d.progress_eta ? `ETA ${d.progress_eta}` : '';
+            }
+          } else {
+            if (progressRow) progressRow.style.display = 'none';
+          }
+
           if (d.status !== currentStatus) {
             // Status changed or finished, reload page once to refresh all cards/buttons
             clearInterval(intervalId);
