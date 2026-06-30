@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import create_engine as _sync_create_engine
+from sqlalchemy import text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -59,7 +60,7 @@ async def init_db() -> None:
 
         def run_migrations(connection: Connection) -> None:
             # Check jobs columns
-            cursor = connection.execute("PRAGMA table_info(jobs)")
+            cursor = connection.execute(text("PRAGMA table_info(jobs)"))
             cols = [row[1] for row in cursor.fetchall()]
 
             new_cols = [
@@ -71,14 +72,16 @@ async def init_db() -> None:
 
             for col_name, col_type in new_cols:
                 if col_name not in cols:
-                    connection.execute(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}")
+                    connection.execute(text(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}"))
 
             # Check job_attempts columns
-            cursor_attempts = connection.execute("PRAGMA table_info(job_attempts)")
+            cursor_attempts = connection.execute(text("PRAGMA table_info(job_attempts)"))
             attempts_cols = [row[1] for row in cursor_attempts.fetchall()]
 
             if "artifact_metadata" not in attempts_cols:
-                connection.execute("ALTER TABLE job_attempts ADD COLUMN artifact_metadata TEXT")
+                connection.execute(
+                    text("ALTER TABLE job_attempts ADD COLUMN artifact_metadata TEXT")
+                )
 
         await conn.run_sync(run_migrations)
 

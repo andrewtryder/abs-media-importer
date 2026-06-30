@@ -10,6 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -523,7 +524,7 @@ class ImportPipeline:
         conv_artifact: ConversionArtifact | None,
     ) -> str | None:
         """Serialize DownloadArtifact and ConversionArtifact to a compact JSON string."""
-        data = {}
+        data: dict[str, Any] = {}
         if dl_artifact:
             data["download"] = {
                 "path": str(dl_artifact.path),
