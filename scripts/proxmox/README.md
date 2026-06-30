@@ -149,19 +149,29 @@ To mount your Audiobookshelf podcasts directory (e.g. NFS share) inside the VM:
    sudo mkdir -p /mnt/podcasts
    sudo mount -a
    ```
-3. Map the directory:
-   - **Docker VM:** In `/opt/yt-abs-importer/.env`, configure your host podcasts directory:
+3. Map the directory using environment variables (avoid editing `docker-compose.yml` directly):
+   - **Docker VM:** In `/opt/yt-abs-importer/.env`, configure the paths. This maps the host share into the container using environment variables:
      ```env
+     # Path on the VM host (where the NFS/SMB share is mounted)
      HOST_PODCASTS_DIR=/mnt/podcasts
+     
+     # Path inside the container (do not change)
      CONTAINER_PODCASTS_DIR=/media/podcasts
+     
+     # App output root inside the container (must match CONTAINER_PODCASTS_DIR)
      OUTPUT_ROOT=/media/podcasts
      ```
-     Then restart with `docker compose up -d`.
-   - **Native VM:** In `/etc/yt-abs-importer/.env`, change the output directory:
+     *Advanced Note:* Direct modification of `docker-compose.yml` volume definitions is also possible but not recommended, as it makes application updates via `git pull` harder to merge.
+     
+     After editing `.env`, restart the stack:
+     ```bash
+     docker compose up -d
+     ```
+   - **Native VM:** In `/etc/yt-abs-importer/.env`, configure the output directory to point directly to the host mount:
      ```env
      OUTPUT_ROOT=/mnt/podcasts
      ```
-     Then restart services:
+     Then restart the systemd services:
      ```bash
      sudo systemctl restart yt-abs-importer-app yt-abs-importer-worker
      ```

@@ -7,26 +7,21 @@
 #   worker  — RQ background worker
 #   redis   — Task queue
 #
-# Volume layout:
-#   ./data         → /data      (SQLite, work files, logs)
-#   /mnt/podcasts  → /media/podcasts  (NFS share, same as Audiobookshelf)
-#   ./config       → /config    (optional YAML config)
+# Volume layout is driven by these environment variables:
+#   HOST_PODCASTS_DIR       → Path on the Docker host (e.g. /mnt/podcasts or /Volumes/Synology/Media/Podcasts)
+#   CONTAINER_PODCASTS_DIR  → Path inside the containers (default: /media/podcasts, usually do not change)
+#   OUTPUT_ROOT             → Path where the application writes podcasts (should match CONTAINER_PODCASTS_DIR)
+#
+# Other mounted volumes:
+#   ./data    → /data       (SQLite database, work/download files, logs)
+#   ./config  → /config     (Optional YAML configuration)
 #
 # ── NFS note ──────────────────────────────────────────────────────────────────
-# Recommended: Mount the NFS share on the HOST (e.g. in /etc/fstab or via
-# Proxmox), then bind-mount it here. This avoids Docker NFS driver quirks.
+# Recommended: Mount your network/NFS share on the Docker HOST machine first,
+# then bind-mount it here via HOST_PODCASTS_DIR. This avoids Docker NFS driver quirks.
 #
-#   /etc/fstab example (Proxmox host):
-#     nas.local:/volume1/podcasts  /mnt/podcasts  nfs  defaults,_netdev  0  0
-#
-# Optional Docker NFS volume (NOT recommended for Proxmox — use host mount):
-# volumes:
-#   podcasts-nfs:
-#     driver: local
-#     driver_opts:
-#       type: nfs
-#       o: "addr=nas.local,rw,nfsvers=4"
-#       device: ":/volume1/podcasts"
+#   /etc/fstab example (Proxmox/Linux host):
+#     nas.local:/volume1/podcasts  /mnt/podcasts  nfs  defaults,_netdev,nofail  0  0
 # ──────────────────────────────────────────────────────────────────────────────
 
 services:
