@@ -10,7 +10,7 @@ aiosqlite==0.20.0
 greenlet
 
 # Task queue
-redis==5.2.0
+redis==8.0.1
 rq==2.0.0
 
 # Configuration
