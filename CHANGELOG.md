@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.3.0...v1.4.0) (2026-06-30)
+
+
+### Features
+
+* **frontend:** integrate Google Stitch redesign and sidebar layout ([06b7f87](https://github.com/andrewtryder/yt-abs-importer/commit/06b7f874cefba5110241c0a86dc3e34319365a35))
+* **frontend:** integrate Google Stitch redesign and sidebar layout ([eb0a838](https://github.com/andrewtryder/yt-abs-importer/commit/eb0a838564abc79941c3c7cd34a5b927d233598e))
+* **worker:** import pipeline refactor and real-time progress tracking ([dfd511d](https://github.com/andrewtryder/yt-abs-importer/commit/dfd511d8735e6ab4d167c4c7c75fd36f1910189a))
+* **worker:** import pipeline refactor and real-time progress tracking ([c2bc4f0](https://github.com/andrewtryder/yt-abs-importer/commit/c2bc4f02c9ce84816ffa8a69e33f1595e671f0cf))
+
+
+### Bug Fixes
+
+* **db:** resolve mypy typecheck issues ([2df20b4](https://github.com/andrewtryder/yt-abs-importer/commit/2df20b414605f96bc14be8531e628ce71af9ee35))
+
 ## [1.3.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.2.0...v1.3.0) (2026-06-30)
 
 
