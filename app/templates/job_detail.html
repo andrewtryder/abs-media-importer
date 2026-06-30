@@ -81,214 +81,154 @@
   {% endif %}
 {% endif %}
 
-<div class="page-header">
-  <a href="/jobs" class="back-link">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
-      <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-    Jobs
-  </a>
-  <h1 class="page-title">Job Details</h1>
-</div>
+<main class="flex-grow w-full">
+  <div class="p-container-padding max-w-5xl mx-auto">
+    <!-- Breadcrumb -->
+    <div class="mb-stack-md">
+      <a href="/jobs" class="inline-flex items-center gap-2 text-primary hover:underline transition-all group">
+        <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        <span class="font-label-md text-label-md">Back to Jobs</span>
+      </a>
+    </div>
 
-<div class="job-detail-layout">
+    <!-- Page Header -->
+    <div class="mb-stack-lg flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+      <div>
+        <h2 class="font-headline-md text-headline-md text-on-surface leading-tight truncate max-w-xl">
+          Job Detail: {{ (job.output_title or job.source_title or "Unknown Title") | e }}
+        </h2>
+        <p class="text-on-surface-variant font-body-md mt-1">Detailed processing report and real-time logs.</p>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        {% if job.status.value in ['queued', 'running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+        <form method="POST" action="/api/jobs/{{ job.id }}/cancel" onsubmit="handleCancel(event, this)">
+          <button type="submit" class="px-4 py-2 bg-error-container/20 text-error border border-error/30 font-label-md text-label-md rounded-lg hover:bg-error-container/45 transition-colors cursor-pointer flex items-center gap-1.5" id="cancel-btn">
+            <span class="material-symbols-outlined text-[16px]">cancel</span>
+            Cancel Job
+          </button>
+        </form>
+        {% endif %}
 
-  <!-- Status card -->
-  <div class="card job-status-card">
-    <div class="job-header">
-      <div class="job-title-block">
-        <h2 class="job-title-text">{{ (job.output_title or job.source_title or "Unknown") | e }}</h2>
-        {% if job.uploader %}
-        <div class="job-uploader">Source Channel: {{ job.uploader | e }}</div>
+        {% if job.status.value in ['failed', 'cancelled'] %}
+        <form method="POST" action="/api/jobs/{{ job.id }}/retry" onsubmit="handleRetry(event, this)">
+          <button type="submit" class="px-4 py-2 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg hover:brightness-110 transition-colors cursor-pointer flex items-center gap-1.5" id="retry-btn">
+            <span class="material-symbols-outlined text-[16px]">replay</span>
+            Retry Import
+          </button>
+        </form>
         {% endif %}
       </div>
-      <span class="badge badge-{{ job.status.value }} badge-lg">{{ job.status.value }}</span>
     </div>
 
-    <!-- Timeline Phase Section -->
-    <ul class="timeline">
-      <li class="timeline-step {{ step_queued }}">
-        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
-        <span class="timeline-label">Queued</span>
-      </li>
-      <li class="timeline-step {{ step_downloading }}">
-        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
-        <span class="timeline-label">Downloading</span>
-      </li>
-      <li class="timeline-step {{ step_converting }}">
-        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
-        <span class="timeline-label">Converting</span>
-      </li>
-      <li class="timeline-step {{ step_verifying }}">
-        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
-        <span class="timeline-label">Verifying</span>
-      </li>
-      <li class="timeline-step {{ step_scanning }}">
-        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
-        <span class="timeline-label">Scanning</span>
-      </li>
-      <li class="timeline-step {{ step_done }}">
-        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
-        <span class="timeline-label">Done</span>
-      </li>
-    </ul>
-
-    {% if job.thumbnail_url %}
-    <img src="{{ job.thumbnail_url | e }}" alt="Thumbnail" class="detail-thumbnail" loading="lazy" />
-    {% endif %}
-
-    <div class="detail-grid">
-      <div class="detail-row">
-        <span class="detail-label">Pipeline Status</span>
-        <span class="detail-value" id="job-status-value">
-          <span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span>
-          <span class="phase-tag" id="job-phase-value" {% if not job.phase %}style="display: none;"{% endif %}>
-            {% if job.phase %}Stage: {{ job.phase | e }}{% endif %}
+    <!-- Info Bar -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-gutter p-4 bg-surface-container-low rounded-xl border border-outline-variant mb-stack-lg shadow-md">
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Job ID</span>
+        <span class="font-code text-body-md text-on-surface">#{{ job.id | truncate(12) }}</span>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Status</span>
+        <div id="status-badge-container">
+          {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-[11px] border border-secondary-container">
+            <span class="material-symbols-outlined text-[12px] animate-spin-slow">sync</span>
+            {{ job.status.value }}
           </span>
-        </span>
-      </div>
-      <div class="detail-row" id="progress-row" {% if job.progress_percent is none and job.progress is none and not job.progress_label %}style="display: none;"{% endif %}>
-        <span class="detail-label">Progress</span>
-        <span class="detail-value">
-          <div class="progress-container" style="display: block;">
-            <div class="progress-bar" id="job-progress-bar" style="width: {{ job.progress_percent or job.progress or 0 }}%;"></div>
-          </div>
-          <div style="margin-top: 6px; font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-            <strong id="job-progress-text">{{ job.progress_percent or job.progress or 0 }}%</strong>
-            <span id="job-progress-label">{% if job.progress_label %}({{ job.progress_label }}){% endif %}</span>
-            <span id="job-progress-speed">{% if job.progress_speed %}at {{ job.progress_speed }}{% endif %}</span>
-            <span id="job-progress-eta">{% if job.progress_eta %}ETA {{ job.progress_eta }}{% endif %}</span>
-          </div>
-        </span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Attempts</span>
-        <span class="detail-value">{{ job.attempts }}</span>
-      </div>
-      {% if job.duration %}
-      <div class="detail-row">
-        <span class="detail-label">Duration</span>
-        <span class="detail-value">{{ job.duration | duration }}</span>
-      </div>
-      {% endif %}
-      {% if job.chapter_count is not none %}
-      <div class="detail-row">
-        <span class="detail-label">Chapters</span>
-        <span class="detail-value">{{ job.chapter_count }}</span>
-      </div>
-      {% endif %}
-      <div class="detail-row">
-        <span class="detail-label">Source URL</span>
-        <span class="detail-value">
-          <a href="{{ job.url | e }}" target="_blank" rel="noopener" class="url-link">{{ job.url | truncate(80) | e }}</a>
-        </span>
-      </div>
-      {% if job.destination_folder %}
-      <div class="detail-row">
-        <span class="detail-label">Destination</span>
-        <span class="detail-value mono small">{{ job.destination_folder | e }}</span>
-      </div>
-      {% endif %}
-      {% if job.final_output_path %}
-      <div class="detail-row" style="background: rgba(16, 185, 129, 0.04); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px dashed rgba(16, 185, 129, 0.2);">
-        <span class="detail-label">Output Path</span>
-        <span class="detail-value mono small output-path" style="user-select: all;">{{ job.final_output_path | e }}</span>
-      </div>
-      {% endif %}
-      <div class="detail-row">
-        <span class="detail-label">Created At</span>
-        <span class="detail-value">{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if job.created_at else '—' }}</span>
-      </div>
-      {% if job.started_at %}
-      <div class="detail-row">
-        <span class="detail-label">Started At</span>
-        <span class="detail-value">{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
-      </div>
-      {% endif %}
-      {% if job.finished_at %}
-      <div class="detail-row">
-        <span class="detail-label">Finished At</span>
-        <span class="detail-value">{{ job.finished_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
-      </div>
-      {% endif %}
-    </div>
-
-    {% if job.error_message %}
-    <div class="alert alert-error mt-4" style="border-radius: var(--radius-sm);">
-      <div class="alert-icon">✕</div>
-      <div>
-        <strong>Import Error:</strong>
-        <pre class="error-pre">{{ job.error_message | e }}</pre>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Action buttons -->
-    <div class="job-actions">
-      {% if job.status.value in ['failed', 'cancelled'] %}
-      <form method="POST" action="/api/jobs/{{ job.id }}/retry"
-            onsubmit="handleRetry(event, this)">
-        <button type="submit" class="btn btn-primary" id="retry-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-          </svg>
-          Retry Import
-        </button>
-      </form>
-      {% endif %}
-
-      {% if job.status.value in ['queued', 'running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-      <form method="POST" action="/api/jobs/{{ job.id }}/cancel"
-            onsubmit="handleCancel(event, this)">
-        <button type="submit" class="btn btn-danger" id="cancel-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          Cancel Job
-        </button>
-      </form>
-      <div class="alert alert-warning mt-4" style="margin-bottom: 0; font-size: 0.8rem; width: 100%; border-radius: var(--radius-sm);">
-        <div class="alert-icon">⚠</div>
-        <div>
-          Cancellation halts the pipeline at the end of the active phase or terminates active downloads. 
-          Subprocesses might take a brief moment to shut down gracefully.
+          {% elif job.status.value == 'succeeded' %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-green-500/10 text-green-400 font-label-md text-[11px] border border-green-500/20">
+            <span class="material-symbols-outlined text-[12px]">check_circle</span>
+            completed
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-error-container/40 text-error font-label-md text-[11px] border border-error/30">
+            <span class="material-symbols-outlined text-[12px]">error</span>
+            {{ job.status.value }}
+          </span>
+          {% endif %}
         </div>
       </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Log card -->
-  <div class="card log-card">
-    <div class="log-header">
-      <h3 class="log-title">Process Logs</h3>
-      <div class="log-actions-row">
-        <button class="btn btn-xs btn-secondary btn-copy" onclick="copyLog()" id="copy-log-btn">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          Copy Log
-        </button>
-        {% if job.status.value not in ['succeeded', 'failed', 'cancelled'] %}
-        <button class="btn btn-xs btn-secondary" onclick="refreshLog()" id="refresh-log-btn">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-          </svg>
-          Refresh
-        </button>
-        {% endif %}
+      <div class="flex flex-col gap-1 md:col-span-1 overflow-hidden">
+        <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Source</span>
+        <a href="{{ job.url | e }}" target="_blank" rel="noopener" class="font-code text-body-md text-primary truncate hover:underline block">{{ job.url | truncate(25) | e }}</a>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Started</span>
+        <span class="font-code text-body-md text-on-surface" id="started-time-label">{{ job.started_at.strftime('%m-%d %H:%M') if job.started_at else '—' }}</span>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Duration</span>
+        <span class="font-code text-body-md text-on-surface" id="duration-label">{{ job.duration | duration if job.duration else '—' }}</span>
       </div>
     </div>
-    <pre class="log-viewer" id="log-content">{{ log | e }}</pre>
-  </div>
 
-</div>
+    <!-- Progress Card -->
+    <div class="bg-surface-container rounded-xl border border-outline-variant p-stack-lg mb-stack-lg relative overflow-hidden shadow-xl" id="progress-row" {% if job.progress_percent is none and job.progress is none and not job.progress_label %}style="display: none;"{% endif %}>
+      <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+        <span class="material-symbols-outlined text-[120px]">equalizer</span>
+      </div>
+      <div class="flex items-center justify-between mb-stack-md">
+        <div class="flex items-baseline gap-2">
+          <span class="font-headline-lg text-[42px] text-primary" id="job-progress-text">{{ job.progress_percent or job.progress or 0 }}%</span>
+          <span class="font-label-md text-on-surface-variant">PROCESSING</span>
+        </div>
+        <div class="flex gap-gutter text-right">
+          <div>
+            <p class="text-[10px] text-on-surface-variant font-label-md uppercase tracking-wide">Speed</p>
+            <p class="font-code text-headline-sm text-tertiary" id="job-progress-speed">{% if job.progress_speed %}{{ job.progress_speed }}{% else %}—{% endif %}</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-on-surface-variant font-label-md uppercase tracking-wide">ETA</p>
+            <p class="font-code text-headline-sm text-tertiary" id="job-progress-eta">{% if job.progress_eta %}{{ job.progress_eta }}{% else %}—{% endif %}</p>
+          </div>
+        </div>
+      </div>
+      <!-- Progress Bar -->
+      <div class="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden mb-stack-md">
+        <div class="h-full bg-primary-container rounded-full progress-glow transition-all duration-500 ease-out" id="job-progress-bar" style="width: {{ job.progress_percent or job.progress or 0 }}%;">
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-on-surface-variant">
+        <span class="material-symbols-outlined text-[18px] text-primary">info</span>
+        <p class="font-body-md" id="job-progress-label">{% if job.progress_label %}{{ job.progress_label }}{% elif job.phase %}Stage: {{ job.phase }}{% else %}Initializing...{% endif %}</p>
+      </div>
+    </div>
+
+    <!-- Error Pre Section -->
+    {% if job.error_message %}
+    <div class="bg-error-container/10 border border-error/30 text-error rounded-xl p-stack-md mb-stack-lg shadow-md">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined shrink-0 text-error">warning</span>
+        <div class="overflow-hidden w-full">
+          <h4 class="font-label-md text-label-md uppercase tracking-wider mb-2">Error Message</h4>
+          <pre class="font-code text-code text-on-surface bg-black/45 p-3 rounded-lg border border-outline-variant/30 overflow-x-auto whitespace-pre-wrap">{{ job.error_message | e }}</pre>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Process Logs Console -->
+    <div class="flex flex-col h-[480px] mb-12 shadow-xl">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <h3 class="font-headline-sm text-headline-sm flex items-center gap-2 text-on-surface font-semibold">
+          <span class="material-symbols-outlined text-primary">terminal</span>
+          Process Logs
+        </h3>
+        <div class="flex items-center gap-2">
+          <button class="flex items-center gap-2 px-3 py-1.5 text-label-md font-label-md border border-outline rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer bg-surface-container-low" onclick="copyLog()" id="copy-log-btn">
+            <span class="material-symbols-outlined text-[16px]">content_copy</span>
+            Copy Logs
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 bg-[#08090c] border border-[#2e3452] rounded-[10px] p-stack-md overflow-hidden flex flex-col font-code text-code text-on-surface">
+        <pre class="overflow-y-auto terminal-scroll flex flex-col gap-1 pr-2 h-full text-[#c4c6d5] leading-relaxed whitespace-pre-wrap select-text" id="log-content">{{ log | e }}</pre>
+      </div>
+    </div>
+  </div>
+</main>
 
 <script>
-  // Auto-scroll log to bottom on load
+  // Auto-scroll logs
   const logViewer = document.getElementById('log-content');
   if (logViewer) {
     logViewer.scrollTop = logViewer.scrollHeight;
@@ -297,14 +237,12 @@
   const activeStatuses = new Set(['queued', 'running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning']);
   let currentStatus = '{{ job.status.value | e }}';
 
-  // Function to refresh log and scroll to bottom
   function refreshLog() {
     fetch('/api/jobs/{{ job.id }}/log')
       .then(r => r.json())
       .then(d => {
         if (logViewer) {
-          // Check if user has scrolled up to read logs, if so, don't force scroll
-          const isAtBottom = logViewer.scrollHeight - logViewer.clientHeight <= logViewer.scrollTop + 50;
+          const isAtBottom = logViewer.scrollHeight - logViewer.clientHeight <= logViewer.scrollTop + 60;
           logViewer.textContent = d.log;
           if (isAtBottom) {
             logViewer.scrollTop = logViewer.scrollHeight;
@@ -313,39 +251,38 @@
       });
   }
 
-  // Poll log and status if active
   if (activeStatuses.has(currentStatus)) {
     const intervalId = setInterval(() => {
       refreshLog();
 
-      // Check current job status
       fetch('/api/jobs/{{ job.id }}')
         .then(r => r.json())
         .then(d => {
-          // Update status badges dynamically
-          const mainBadge = document.querySelector('.job-header .badge');
-          if (mainBadge) {
-            mainBadge.className = `badge badge-${d.status} badge-lg`;
-            mainBadge.textContent = d.status;
-          }
-          const listBadge = document.querySelector('#job-status-value .badge');
-          if (listBadge) {
-            listBadge.className = `badge badge-${d.status}`;
-            listBadge.textContent = d.status;
-          }
-
-          // Update phase tag
-          const phaseVal = document.getElementById('job-phase-value');
-          if (d.phase) {
-            if (phaseVal) {
-              phaseVal.style.display = '';
-              phaseVal.textContent = `Stage: ${d.phase}`;
+          // Update status badge
+          const badgeContainer = document.getElementById('status-badge-container');
+          if (badgeContainer) {
+            let badgeHtml = '';
+            if (activeStatuses.has(d.status)) {
+              badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-[11px] border border-secondary-container"><span class="material-symbols-outlined text-[12px] animate-spin-slow">sync</span> ${d.status}</span>`;
+            } else if (d.status === 'succeeded') {
+              badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-green-500/10 text-green-400 font-label-md text-[11px] border border-green-500/20"><span class="material-symbols-outlined text-[12px]">check_circle</span> completed</span>`;
+            } else {
+              badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-error-container/40 text-error font-label-md text-[11px] border border-error/30"><span class="material-symbols-outlined text-[12px]">error</span> ${d.status}</span>`;
             }
-          } else {
-            if (phaseVal) phaseVal.style.display = 'none';
+            badgeContainer.innerHTML = badgeHtml;
           }
 
-          // Update progress row and bar
+          // Update duration and progress values
+          const durationLabel = document.getElementById('duration-label');
+          if (durationLabel && d.duration) {
+            // simple calculation from seconds to HH:MM:SS
+            const secs = d.duration;
+            const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(secs % 60).toString().padStart(2, '0');
+            durationLabel.textContent = `${h}:${m}:${s}`;
+          }
+
           const progressRow = document.getElementById('progress-row');
           const progressBar = document.getElementById('job-progress-bar');
           const progressText = document.getElementById('job-progress-text');
@@ -364,25 +301,24 @@
             if (progressText) progressText.textContent = Math.round(pct) + '%';
 
             if (progressLabel) {
-              progressLabel.textContent = d.progress_label ? `(${d.progress_label})` : '';
+              progressLabel.textContent = d.progress_label || `Stage: ${d.phase || d.status}`;
             }
             if (progressSpeed) {
-              progressSpeed.textContent = d.progress_speed ? `at ${d.progress_speed}` : '';
+              progressSpeed.textContent = d.progress_speed || '—';
             }
             if (progressEta) {
-              progressEta.textContent = d.progress_eta ? `ETA ${d.progress_eta}` : '';
+              progressEta.textContent = d.progress_eta || '—';
             }
           } else {
             if (progressRow) progressRow.style.display = 'none';
           }
 
           if (d.status !== currentStatus) {
-            // Status changed or finished, reload page once to refresh all cards/buttons
             clearInterval(intervalId);
             window.location.reload();
           }
         })
-        .catch(err => console.error("Error fetching job status:", err));
+        .catch(err => console.error("Error polling job details:", err));
     }, 2000);
   }
 
@@ -391,7 +327,7 @@
     const btn = document.getElementById('retry-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Retrying...';
+      btn.innerHTML = '<span class="inline-block animate-spin mr-2"><span class="material-symbols-outlined text-[16px]">sync</span></span> Retrying...';
     }
     fetch(form.action, { method: 'POST' })
       .then(r => r.json())
@@ -404,7 +340,7 @@
     const btn = document.getElementById('cancel-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Cancelling...';
+      btn.innerHTML = '<span class="inline-block animate-spin mr-2"><span class="material-symbols-outlined text-[16px]">sync</span></span> Cancelling...';
     }
     fetch(form.action, { method: 'POST' })
       .then(r => r.json())
@@ -413,13 +349,16 @@
   }
 
   function copyLog() {
-    const content = document.getElementById('log-content').textContent;
-    navigator.clipboard.writeText(content).then(() => {
+    const text = document.getElementById('log-content').innerText;
+    navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copy-log-btn');
-      btn.classList.add('copied');
-      setTimeout(() => btn.classList.remove('copied'), 2000);
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span> Copied!';
+      setTimeout(() => {
+        btn.innerHTML = origText;
+      }, 2000);
     }).catch(err => {
-      console.error('Could not copy log text: ', err);
+      console.error('Copy failed: ', err);
     });
   }
 </script>

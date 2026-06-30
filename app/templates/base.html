@@ -1,39 +1,168 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>{% block title %}yt-abs-importer{% endblock %}</title>
   <meta name="description" content="YouTube to Audiobookshelf importer — convert YouTube videos to M4B audiobooks" />
-  <link rel="stylesheet" href="/static/app.css" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-card {
+      background: rgba(30, 31, 38, 0.7);
+      backdrop-filter: blur(12px);
+    }
+    .hero-gradient {
+      background: radial-gradient(circle at 50% 0%, rgba(108, 142, 247, 0.15) 0%, transparent 70%);
+    }
+  </style>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary": "#bbc6ea",
+            "primary-container": "#6c8ef7",
+            "error-container": "#93000a",
+            "tertiary-container": "#8893b5",
+            "surface-container": "#1e1f26",
+            "on-secondary-container": "#aab4d4",
+            "surface-tint": "#b5c4ff",
+            "surface-dim": "#0d0f14",
+            "on-tertiary": "#24304d",
+            "inverse-surface": "#e2e1eb",
+            "on-tertiary-container": "#202b48",
+            "on-error": "#690005",
+            "surface-bright": "#383940",
+            "surface-container-highest": "#33343b",
+            "secondary-fixed-dim": "#bcc6e6",
+            "secondary": "#bcc6e6",
+            "surface-variant": "#33343b",
+            "outline-variant": "#444653",
+            "primary-fixed-dim": "#b5c4ff",
+            "surface-container-high": "#282a30",
+            "inverse-primary": "#3257bd",
+            "tertiary-fixed-dim": "#bbc6ea",
+            "on-surface": "#e2e1eb",
+            "secondary-fixed": "#d9e2ff",
+            "background": "#121319",
+            "inverse-on-surface": "#2f3037",
+            "surface-container-low": "#1a1b22",
+            "surface": "#121319",
+            "on-primary-fixed-variant": "#0e3ea4",
+            "on-secondary-fixed-variant": "#3c4661",
+            "on-secondary": "#263049",
+            "on-primary-fixed": "#00174d",
+            "on-surface-variant": "#c4c6d5",
+            "on-secondary-fixed": "#101b33",
+            "on-background": "#e2e1eb",
+            "on-primary": "#00297a",
+            "on-primary-container": "#002571",
+            "surface-container-lowest": "#0c0e14",
+            "secondary-container": "#3c4661",
+            "primary-fixed": "#dbe1ff",
+            "tertiary-fixed": "#dae2ff",
+            "primary": "#b5c4ff",
+            "outline": "#2e3452",
+            "error": "#f87171",
+            "on-tertiary-fixed-variant": "#3b4665",
+            "on-error-container": "#ffdad6",
+            "on-tertiary-fixed": "#0f1a37"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "10px",
+            "xl": "16px",
+            "full": "9999px"
+          },
+          "spacing": {
+            "stack-lg": "32px",
+            "stack-sm": "8px",
+            "stack-md": "16px",
+            "gutter": "16px",
+            "container-padding": "24px",
+            "base": "4px"
+          },
+          "fontFamily": {
+            "headline-lg": ["Geist"],
+            "label-md": ["JetBrains Mono"],
+            "headline-md": ["Geist"],
+            "headline-sm": ["Geist"],
+            "code": ["JetBrains Mono"],
+            "body-lg": ["Geist"],
+            "body-md": ["Geist"]
+          },
+          "fontSize": {
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "700"}],
+            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+            "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+            "code": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "body-lg": ["16px", {"lineHeight": "26px", "fontWeight": "400"}],
+            "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
 </head>
-<body>
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="/" class="logo">
-        <svg class="logo-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
-        </svg>
-        <span class="logo-text">yt<span class="logo-accent">-abs-</span>importer</span>
-      </a>
-      <nav class="site-nav">
-        <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Import</a>
-        <a href="/jobs" class="nav-link {% if request.url.path.startswith('/jobs') %}active{% endif %}">Jobs</a>
-        <a href="/settings" class="nav-link {% if request.url.path.startswith('/settings') %}active{% endif %}">Settings</a>
-      </nav>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container flex min-h-screen overflow-hidden">
+  <!-- Sidebar Navigation Bar -->
+  <aside class="h-full w-64 fixed left-0 top-0 bg-surface-container border-r border-outline-variant flex flex-col p-stack-md z-50">
+    <div class="mb-stack-lg">
+      <h1 class="font-headline-sm text-headline-sm text-primary font-bold">yt-abs-importer</h1>
+      <p class="font-label-md text-label-md text-on-surface-variant opacity-70">Audiobook Sync</p>
     </div>
-  </header>
+    <nav class="flex flex-col gap-base flex-grow">
+      <a class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md {% if request.url.path == '/' %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/">
+        <span class="material-symbols-outlined">download</span>
+        <span>Import</span>
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md {% if request.url.path.startswith('/jobs') %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/jobs">
+        <span class="material-symbols-outlined">list_alt</span>
+        <span>Jobs</span>
+      </a>
+      <a class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md {% if request.url.path.startswith('/settings') %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/settings">
+        <span class="material-symbols-outlined">settings</span>
+        <span>Settings</span>
+      </a>
+    </nav>
+    <div class="mt-auto pt-4 border-t border-outline-variant/30 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs">
+          JD
+      </div>
+      <div class="flex flex-col">
+        <span class="text-xs font-semibold">Dev User</span>
+        <span class="text-[10px] text-on-surface-variant font-code">dry_run: {{ 'true' if settings.dry_run else 'false' }}</span>
+      </div>
+    </div>
+  </aside>
 
-  <main class="main-content">
+  <!-- Right Side Main Content Panel -->
+  <div class="flex-grow ml-64 h-screen overflow-y-auto flex flex-col">
     {% block content %}{% endblock %}
-  </main>
 
-  <footer class="site-footer">
-    <span>yt-abs-importer &copy; 2026</span>
-    {% if settings.dry_run %}
-    <span class="badge badge-warning">DRY RUN</span>
-    {% endif %}
-  </footer>
+    <!-- Footer Implementation -->
+    <footer class="bg-surface-dim dark:bg-surface-dim border-t border-outline-variant dark:border-outline-variant w-full py-stack-md mt-auto">
+      <div class="flex flex-col md:flex-row justify-between items-center px-container-padding gap-stack-sm max-w-full mx-auto">
+        <div class="font-label-md text-label-md font-semibold text-on-surface">yt-abs-importer v1.2.0</div>
+        <div class="flex gap-stack-lg">
+          <a class="font-label-md text-label-md text-on-surface-variant hover:text-secondary-fixed dark:hover:text-secondary-fixed transition-opacity duration-200" href="#">Documentation</a>
+          <a class="font-label-md text-label-md text-on-surface-variant hover:text-secondary-fixed dark:hover:text-secondary-fixed transition-opacity duration-200" href="https://github.com/andrewtryder/yt-abs-importer">GitHub</a>
+        </div>
+        <div class="text-on-surface-variant text-[11px] opacity-60">
+          © 2026 yt-abs-importer project
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  {% block content_end %}{% endblock %}
 </body>
 </html>
 

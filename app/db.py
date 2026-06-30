@@ -64,6 +64,7 @@ async def init_db() -> None:
             cols = [row[1] for row in cursor.fetchall()]
 
             new_cols = [
+                ("progress", "INTEGER"),
                 ("progress_percent", "FLOAT"),
                 ("progress_eta", "VARCHAR(32)"),
                 ("progress_speed", "VARCHAR(32)"),

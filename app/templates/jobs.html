@@ -15,114 +15,166 @@
   {% endif %}
 {% endfor %}
 
-<div class="page-header">
-  <h1 class="page-title">Import Jobs</h1>
-  <a href="/" class="btn btn-primary">
-    <span class="btn-icon">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
-    </span>
-    New Import
-  </a>
-</div>
+<main class="flex-grow w-full">
+  <!-- Top Header / App Bar -->
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+    <div class="flex items-center gap-4">
+      <h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Background Jobs</h2>
+      <div class="bg-surface-container-highest px-3 py-1 rounded-full border border-outline-variant text-[12px]">
+        <span class="font-label-md text-primary">{{ ns.active }} Active</span>
+        <span class="mx-2 text-outline-variant">/</span>
+        <span class="font-label-md text-on-surface-variant">{{ jobs | length }} Total</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-stack-md">
+      <div class="relative">
+        <span class="absolute inset-y-0 left-3 flex items-center text-on-surface-variant">
+          <span class="material-symbols-outlined text-[20px]">search</span>
+        </span>
+        <input class="bg-surface-container-low border border-outline rounded-lg pl-10 pr-4 py-1.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-64 transition-all" id="jobs-search-input" placeholder="Filter jobs..." type="text"/>
+      </div>
+    </div>
+  </header>
 
-{% if not jobs %}
-<div class="empty-state">
-  <svg class="empty-icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-    <line x1="7" y1="2" x2="7" y2="22"></line>
-    <line x1="17" y1="2" x2="17" y2="22"></line>
-    <line x1="2" y1="12" x2="22" y2="12"></line>
-    <line x1="2" y1="7" x2="7" y2="7"></line>
-    <line x1="2" y1="17" x2="7" y2="17"></line>
-    <line x1="17" y1="17" x2="22" y2="17"></line>
-    <line x1="17" y1="7" x2="22" y2="7"></line>
-  </svg>
-  <h3>No import jobs found</h3>
-  <p>You haven't queued any audiobooks yet. Paste a YouTube URL to get started.</p>
-  <a href="/" class="btn btn-primary">Import a Video</a>
-</div>
-{% else %}
-<div class="stats-grid">
-  <div class="stat-card">
-    <span class="stat-value" style="color: var(--info);">{{ ns.active }}</span>
-    <span class="stat-label">Active Jobs</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-value" style="color: var(--text-secondary);">{{ ns.queued }}</span>
-    <span class="stat-label">Queued</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-value" style="color: var(--success);">{{ ns.succeeded }}</span>
-    <span class="stat-label">Succeeded</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-value" style="color: var(--danger);">{{ ns.failed }}</span>
-    <span class="stat-label">Failed / Cancelled</span>
-  </div>
-</div>
+  <div class="p-container-padding max-w-5xl mx-auto w-full">
+    <!-- Stats Bento Cards -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-lg">
+      <div class="bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-on-surface-variant">Active Jobs</span>
+        <div class="flex items-baseline gap-2">
+          <span class="font-headline-sm text-headline-sm text-primary">{{ ns.active }}</span>
+        </div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-on-surface-variant">Queued Jobs</span>
+        <div class="flex items-baseline gap-2">
+          <span class="font-headline-sm text-headline-sm text-on-surface-variant">{{ ns.queued }}</span>
+        </div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-on-surface-variant">Succeeded</span>
+        <div class="flex items-baseline gap-2">
+          <span class="font-headline-sm text-headline-sm text-green-400">{{ ns.succeeded }}</span>
+        </div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-on-surface-variant">Failed / Cancelled</span>
+        <div class="flex items-baseline gap-2">
+          <span class="font-headline-sm text-headline-sm text-error">{{ ns.failed }}</span>
+        </div>
+      </div>
+    </section>
 
-<div class="filter-tabs">
-  <button class="filter-tab active" data-filter="all">All</button>
-  <button class="filter-tab" data-filter="running">Active</button>
-  <button class="filter-tab" data-filter="queued">Queued</button>
-  <button class="filter-tab" data-filter="completed">Completed</button>
-</div>
+    <!-- Filters Section -->
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex gap-2">
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer active-tab bg-secondary-container text-on-secondary-container" data-filter="all">All</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="running">Active</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="queued">Queued</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="completed">Completed</button>
+      </div>
+      <a href="/" class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-headline-sm text-[13px] flex items-center gap-2 hover:brightness-110 transition-all">
+        <span class="material-symbols-outlined text-[16px]">add</span>
+        New Import
+      </a>
+    </div>
 
-<div class="jobs-table-wrap">
-  <table class="jobs-table">
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Destination</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Updated</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for job in jobs %}
-      <tr class="job-row" data-status="{{ job.status.value }}">
-        <td class="job-title-cell" data-label="Title">
-          <a href="/jobs/{{ job.id }}" class="job-link">
-            {{ (job.output_title or job.source_title or job.url) | truncate(60) | e }}
-          </a>
-          {% if job.uploader %}
-          <div class="job-meta-sub">{{ job.uploader | e }}</div>
-          {% endif %}
-        </td>
-        <td class="job-dest-cell" data-label="Destination">
-          <span class="mono small">{{ job.destination_folder | default('—') | e }}</span>
-        </td>
-        <td data-label="Status">
-          <span class="badge badge-{{ job.status.value }}">{{ job.status.value }}</span>
-          {% if job.progress_label %}
-            <span class="phase-tag">{{ job.progress_label }}{% if job.progress_percent is not none %} ({{ job.progress_percent | round | int }}%){% endif %}</span>
-          {% elif job.phase and job.phase != job.status.value %}
-            <span class="phase-tag">{{ job.phase }}</span>
-          {% endif %}
-        </td>
-        <td class="date-cell" data-label="Created">{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '—' }}</td>
-        <td class="date-cell" data-label="Updated">{{ job.updated_at.strftime('%Y-%m-%d %H:%M') if job.updated_at else '—' }}</td>
-        <td>
-          <a href="/jobs/{{ job.id }}" class="btn btn-xs btn-secondary">View</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
+    <!-- Table Card -->
+    {% if not jobs %}
+    <div class="bg-surface-container border border-outline rounded-xl p-12 text-center flex flex-col items-center gap-4">
+      <span class="material-symbols-outlined text-[48px] text-on-surface-variant opacity-60">hourglass_empty</span>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface">No import jobs found</h3>
+      <p class="font-body-md text-on-surface-variant max-w-sm">You haven't queued any audiobooks yet. Paste a YouTube URL on the import tab to get started.</p>
+      <a href="/" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg font-headline-sm text-[14px] hover:brightness-110 transition-all">Import a Video</a>
+    </div>
+    {% else %}
+    <div class="bg-surface-container border border-outline rounded-xl overflow-hidden shadow-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse" id="jobs-table">
+          <thead>
+            <tr class="bg-surface-container-high/50 border-b border-outline-variant">
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Video Title</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Destination</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Status</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Created</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant">
+            {% for job in jobs %}
+            <tr class="job-row hover:bg-surface-container-high/40 transition-colors" data-status="{{ job.status.value }}">
+              <td class="px-6 py-4 max-w-xs sm:max-w-sm truncate">
+                <a href="/jobs/{{ job.id }}" class="font-body-md text-on-surface font-semibold hover:text-primary transition-colors block truncate">
+                  {{ (job.output_title or job.source_title or job.url) | e }}
+                </a>
+                {% if job.uploader %}
+                <span class="text-[11px] text-on-surface-variant opacity-75 font-body-md block mt-0.5 truncate">{{ job.uploader | e }}</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 font-code text-[11px] text-on-surface-variant truncate max-w-[150px]">
+                {{ job.destination_folder | default('—') | e }}
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col gap-1">
+                  <!-- Badges matching status -->
+                  {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-[11px] border border-secondary-container w-fit">
+                    <span class="material-symbols-outlined text-[13px] animate-spin-slow">sync</span>
+                    {{ job.status.value }}
+                  </span>
+                  {% elif job.status.value == 'succeeded' %}
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 font-label-md text-[11px] border border-green-500/20 w-fit">
+                    <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                    completed
+                  </span>
+                  {% elif job.status.value in ['failed', 'cancelled'] %}
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container/40 text-error font-label-md text-[11px] border border-error/30 w-fit">
+                    <span class="material-symbols-outlined text-[13px]">error</span>
+                    {{ job.status.value }}
+                  </span>
+                  {% else %}
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-md text-[11px] border border-outline w-fit">
+                    <span class="material-symbols-outlined text-[13px]">schedule</span>
+                    {{ job.status.value }}
+                  </span>
+                  {% endif %}
+
+                  {% if job.progress_label %}
+                    <span class="text-[10px] text-primary font-code">{{ job.progress_label }}{% if job.progress_percent is not none %} ({{ job.progress_percent | round | int }}%){% endif %}</span>
+                  {% elif job.phase and job.phase != job.status.value %}
+                    <span class="text-[10px] text-tertiary font-code">{{ job.phase }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="px-6 py-4 font-code text-[11px] text-on-surface-variant">
+                {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                  <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-all hover:text-on-surface flex items-center justify-center" title="View details">
+                    <span class="material-symbols-outlined text-[18px]">description</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
 
 <script>
+  // Filter tabs logic
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      // Toggle active class
-      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+      // Toggle active classes
+      document.querySelectorAll('.filter-tab').forEach(t => {
+        t.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'active-tab');
+      });
+      tab.classList.add('bg-secondary-container', 'text-on-secondary-container', 'active-tab');
 
       const filter = tab.getAttribute('data-filter');
       const rows = document.querySelectorAll('.job-row');
@@ -145,5 +197,24 @@
       });
     });
   });
+
+  // Client-side search logic
+  const searchInput = document.getElementById('jobs-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('.job-row');
+      
+      rows.forEach(row => {
+        // Only search currently filtered rows or search all
+        const text = row.innerText.toLowerCase();
+        if (text.includes(term)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
 </script>
 {% endblock %}

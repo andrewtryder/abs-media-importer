@@ -2,185 +2,206 @@
 {% block title %}Preview: {{ meta.title | e }} — yt-abs-importer{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <a href="/" class="back-link">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
-      <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-    Back
-  </a>
-  <h1 class="page-title">Configure Import</h1>
-</div>
-
-<div class="preview-layout">
-
-  <!-- Left: Metadata Preview Card -->
-  <div class="preview-meta card">
-    <h3 class="card-title" style="margin-bottom: 1rem;">Video Preview</h3>
-    {% if meta.thumbnail %}
-    <div class="thumbnail-wrap">
-      <img src="{{ meta.thumbnail | e }}" alt="Video thumbnail" class="thumbnail" loading="lazy" />
+<main class="flex-grow w-full">
+  <div class="max-w-5xl mx-auto px-container-padding py-stack-lg">
+    <!-- Breadcrumb -->
+    <div class="mb-stack-md">
+      <a href="/" class="inline-flex items-center gap-2 text-primary hover:underline transition-all group">
+        <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        <span class="font-label-md text-label-md">Back</span>
+      </a>
     </div>
-    {% endif %}
 
-    <div class="meta-fields">
-      <div class="meta-row">
-        <span class="meta-label">Title</span>
-        <span class="meta-value" style="font-weight: 600;">{{ meta.title | e }}</span>
-      </div>
-      <div class="meta-row">
-        <span class="meta-label">Channel</span>
-        <span class="meta-value">{{ meta.uploader | default('—') | e }}</span>
-      </div>
-      {% if meta.uploader_id %}
-      <div class="meta-row">
-        <span class="meta-label">Handle</span>
-        <span class="meta-value mono">{{ meta.uploader_id | e }}</span>
-      </div>
-      {% endif %}
-      <div class="meta-row">
-        <span class="meta-label">Duration</span>
-        <span class="meta-value">{{ meta.duration | duration }}</span>
-      </div>
-      {% if meta.upload_date %}
-      <div class="meta-row">
-        <span class="meta-label">Uploaded</span>
-        <span class="meta-value">{{ meta.upload_date | format_date }}</span>
-      </div>
-      {% endif %}
-      <div class="meta-row">
-        <span class="meta-label">Chapters</span>
-        <span class="meta-value">
-          {% if meta.chapter_count > 0 %}
-            <span class="badge badge-success">{{ meta.chapter_count }} chapters detected</span>
-          {% else %}
-            <span class="badge badge-muted">No chapters detected</span>
-          {% endif %}
-        </span>
-      </div>
-      <div class="meta-row">
-        <span class="meta-label">Video ID</span>
-        <span class="meta-value mono">{{ meta.id | e }}</span>
-      </div>
-    </div>
-  </div>
+    <!-- Page Header -->
+    <header class="mb-stack-lg">
+      <h1 class="font-headline-md text-headline-md text-on-background">Preview &amp; Configure</h1>
+      <p class="font-body-md text-body-md text-on-surface-variant mt-1">Review fetched metadata and customize audiobook options.</p>
+    </header>
 
-  <!-- Right: Job Configuration Form -->
-  <div class="preview-form card">
-    <h3 class="card-title">Output Settings</h3>
-
-    <form method="POST" action="/jobs/create" id="import-form">
-      <!-- Hidden metadata fields -->
-      <input type="hidden" name="url" value="{{ url | e }}" />
-      <input type="hidden" name="video_id" value="{{ meta.id | e }}" />
-      <input type="hidden" name="source_title" value="{{ meta.title | e }}" />
-      <input type="hidden" name="uploader" value="{{ meta.uploader | default('') | e }}" />
-      <input type="hidden" name="uploader_id" value="{{ meta.uploader_id | default('') | e }}" />
-      <input type="hidden" name="channel" value="{{ meta.channel | default('') | e }}" />
-      <input type="hidden" name="channel_id" value="{{ meta.channel_id | default('') | e }}" />
-      <input type="hidden" name="duration" value="{{ meta.duration | default(0) }}" />
-      <input type="hidden" name="upload_date" value="{{ meta.upload_date | default('') | e }}" />
-      <input type="hidden" name="thumbnail_url" value="{{ meta.thumbnail | default('') | e }}" />
-      <input type="hidden" name="chapter_count" value="{{ meta.chapter_count | default(0) }}" />
-
-      <!-- Output title -->
-      <div class="form-group">
-        <label for="output_title" class="form-label">Book Title</label>
-        <input
-          id="output_title"
-          name="output_title"
-          type="text"
-          class="form-input"
-          value="{{ meta.title | e }}"
-          required
-        />
-        <p class="form-hint">Customize the title. This is used for the M4B metadata and output filename.</p>
-      </div>
-
-      <!-- Destination folder -->
-      <div class="form-group">
-        <label for="destination_folder" class="form-label">Destination Folder</label>
-        <select id="destination_folder" name="destination_folder" class="form-select">
-          <option value="">— Select folder —</option>
-          {% for folder in folders %}
-          <option value="{{ folder | e }}"
-            {% if folder == default_folder or folder == meta.uploader_id or folder == meta.uploader %}
-            selected
-            {% endif %}
-          >{{ folder | e }}</option>
-          {% endfor %}
-        </select>
-        <p class="form-hint">
-          Select a subdirectory under your Audiobookshelf root: <code>{{ settings.output_root }}</code>
-        </p>
-      </div>
-
-      <!-- New folder creation (visually subordinate) -->
-      <div class="form-group folder-sub-container">
-        <label for="new_folder" class="form-label">
-          Create New Subfolder
-          <span class="form-hint-inline">(optional)</span>
-        </label>
-        <input
-          id="new_folder"
-          name="new_folder"
-          type="text"
-          class="form-input"
-          placeholder="e.g. {{ meta.uploader_id or 'Author Name' }}"
-        />
-        <p class="form-hint">Enter a name to create a new folder under your library root. Leave empty to use selection above.</p>
-      </div>
-
-      <!-- Advanced options -->
-      <div class="advanced-options-group">
-        <h4 class="advanced-options-title">Metadata &amp; Integration Options</h4>
-        <fieldset class="form-group options-fieldset">
-          <legend class="form-label" style="display: none;">Embed Options</legend>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input type="checkbox" name="embed_metadata" value="true" checked id="embed_metadata" />
-              <span>Embed metadata (Author, title, video reference)</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="embed_thumbnail" value="true" checked id="embed_thumbnail" />
-              <span>Embed video thumbnail as cover art</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" name="embed_chapters" value="true" checked id="embed_chapters" />
-              <span>Embed chapters (uses YouTube video chapters if detected)</span>
-            </label>
-            {% if settings.abs_configured %}
-            <label class="checkbox-label">
-              <input type="checkbox" name="trigger_abs_scan" value="true"
-                {% if settings.abs_scan_after_success %}checked{% endif %}
-                id="trigger_abs_scan" />
-              <span>Trigger Audiobookshelf library scan on success</span>
-            </label>
-            {% endif %}
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+      <!-- Left Column: Video Metadata Card -->
+      <div class="md:col-span-5 flex flex-col gap-stack-md">
+        <div class="bg-surface-container border border-outline rounded-xl p-stack-md shadow-xl flex flex-col gap-4">
+          {% if meta.thumbnail %}
+          <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-outline-variant bg-surface-container-low">
+            <img src="{{ meta.thumbnail | e }}" alt="Video thumbnail" class="object-cover w-full h-full" loading="lazy" />
           </div>
-        </fieldset>
+          {% endif %}
+
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-0.5 border-b border-outline-variant/30 pb-2">
+              <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Title</span>
+              <span class="font-body-md text-on-surface font-semibold leading-snug">{{ meta.title | e }}</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Channel</span>
+                <span class="font-body-md text-on-surface">{{ meta.uploader | default('—') | e }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Duration</span>
+                <span class="font-body-md text-on-surface font-code">{{ meta.duration | duration }}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 border-t border-outline-variant/30 pt-2">
+              {% if meta.uploader_id %}
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Handle</span>
+                <span class="font-code text-[11px] text-on-surface truncate">{{ meta.uploader_id | e }}</span>
+              </div>
+              {% endif %}
+              {% if meta.upload_date %}
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Upload Date</span>
+                <span class="font-body-md text-on-surface">{{ meta.upload_date | format_date }}</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="flex justify-between items-center border-t border-outline-variant/30 pt-3">
+              <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Chapters</span>
+              <span>
+                {% if meta.chapter_count > 0 %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-container/20 border border-primary/30 text-primary font-label-md text-[11px]">
+                  <span class="material-symbols-outlined text-[12px]">format_list_bulleted</span>
+                  {{ meta.chapter_count }} chapters
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-md text-[11px]">
+                  None detected
+                </span>
+                {% endif %}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center border-t border-outline-variant/30 pt-3">
+              <span class="text-[10px] uppercase font-label-md text-on-surface-variant tracking-wider">Video ID</span>
+              <span class="font-code text-code text-primary">{{ meta.id | e }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-large" id="create-btn" style="margin-top: 1.5rem;">
-        <span class="btn-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </span>
-        Queue Import
-      </button>
-    </form>
-  </div>
+      <!-- Right Column: Configure Form Card -->
+      <div class="md:col-span-7">
+        <div class="bg-surface-container border border-outline rounded-xl p-stack-md shadow-xl">
+          <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">tune</span>
+            Configure Import
+          </h2>
 
-</div>
+          <form method="POST" action="/jobs/create" id="import-form" class="space-y-6">
+            <!-- Hidden metadata fields -->
+            <input type="hidden" name="url" value="{{ url | e }}" />
+            <input type="hidden" name="video_id" value="{{ meta.id | e }}" />
+            <input type="hidden" name="source_title" value="{{ meta.title | e }}" />
+            <input type="hidden" name="uploader" value="{{ meta.uploader | default('') | e }}" />
+            <input type="hidden" name="uploader_id" value="{{ meta.uploader_id | default('') | e }}" />
+            <input type="hidden" name="channel" value="{{ meta.channel | default('') | e }}" />
+            <input type="hidden" name="channel_id" value="{{ meta.channel_id | default('') | e }}" />
+            <input type="hidden" name="duration" value="{{ meta.duration | default(0) }}" />
+            <input type="hidden" name="upload_date" value="{{ meta.upload_date | default('') | e }}" />
+            <input type="hidden" name="thumbnail_url" value="{{ meta.thumbnail | default('') | e }}" />
+            <input type="hidden" name="chapter_count" value="{{ meta.chapter_count | default(0) }}" />
+
+            <!-- Output title -->
+            <div class="flex flex-col gap-2">
+              <label for="output_title" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Output Title</label>
+              <input
+                id="output_title"
+                name="output_title"
+                type="text"
+                class="w-full bg-surface-container-low border border-outline rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                value="{{ meta.title | e }}"
+                required
+              />
+              <p class="text-[11px] text-on-surface-variant opacity-70">This becomes the audiobook file name. Edit to customize.</p>
+            </div>
+
+            <!-- Destination folder -->
+            <div class="flex flex-col gap-2">
+              <label for="destination_folder" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Destination Folder</label>
+              <select
+                id="destination_folder"
+                name="destination_folder"
+                class="w-full bg-surface-container-low border border-outline rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+              >
+                <option value="">— Select folder —</option>
+                {% for folder in folders %}
+                <option value="{{ folder | e }}"
+                  {% if folder == default_folder or folder == meta.uploader_id or folder == meta.uploader %}
+                  selected
+                  {% endif %}
+                >{{ folder | e }}</option>
+                {% endfor %}
+              </select>
+              <p class="text-[11px] text-on-surface-variant opacity-70">Folder under media root: <code class="font-code text-[11px] text-primary">{{ settings.output_root }}</code></p>
+            </div>
+
+            <!-- New folder creation -->
+            <div class="flex flex-col gap-2">
+              <label for="new_folder" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+                Or Create New Folder
+                <span class="text-[10px] text-on-surface-variant lowercase normal-case">(leave empty to use selection above)</span>
+              </label>
+              <div class="relative flex items-center">
+                <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">create_new_folder</span>
+                <input
+                  id="new_folder"
+                  name="new_folder"
+                  type="text"
+                  class="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline rounded-lg font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                  placeholder="e.g. @mychannelname"
+                />
+              </div>
+            </div>
+
+            <!-- Embed options -->
+            <fieldset class="border border-outline-variant/30 rounded-lg p-4 bg-surface-container-low/50">
+              <legend class="font-label-md text-label-md text-primary uppercase tracking-wider px-2">Embed Options</legend>
+              <div class="space-y-3 mt-2">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" name="embed_metadata" value="true" checked id="embed_metadata" class="custom-checkbox" />
+                  <label class="font-body-md text-body-md cursor-pointer select-none" for="embed_metadata">Embed tags &amp; details</label>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" name="embed_thumbnail" value="true" checked id="embed_thumbnail" class="custom-checkbox" />
+                  <label class="font-body-md text-body-md cursor-pointer select-none" for="embed_thumbnail">Embed cover art / thumbnail</label>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" name="embed_chapters" value="true" checked id="embed_chapters" class="custom-checkbox" />
+                  <label class="font-body-md text-body-md cursor-pointer select-none" for="embed_chapters">Embed video chapters</label>
+                </div>
+                {% if settings.abs_configured %}
+                <div class="flex items-center gap-3 border-t border-outline-variant/30 pt-3 mt-2">
+                  <input type="checkbox" name="trigger_abs_scan" value="true"
+                    {% if settings.abs_scan_after_success %}checked{% endif %}
+                    id="trigger_abs_scan" class="custom-checkbox" />
+                  <label class="font-body-md text-body-md cursor-pointer select-none" for="trigger_abs_scan">Trigger Audiobookshelf library scan after success</label>
+                </div>
+                {% endif %}
+              </div>
+            </fieldset>
+
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container rounded-lg font-headline-sm text-headline-sm font-bold shadow-lg hover:shadow-primary/20 transition-all active:scale-95 cursor-pointer" id="create-btn">
+              <span class="material-symbols-outlined">play_arrow</span>
+              Create M4B
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
 
 <script>
   document.getElementById('import-form').addEventListener('submit', function(e) {
     const btn = document.getElementById('create-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Queueing Job...';
+      btn.innerHTML = '<span class="inline-block animate-spin mr-2"><span class="material-symbols-outlined text-[18px]">sync</span></span> Queuing Job...';
     }
   });
 </script>

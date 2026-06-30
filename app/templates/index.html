@@ -2,99 +2,108 @@
 {% block title %}Import — yt-abs-importer{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <h1 class="hero-title">YouTube to Audiobookshelf</h1>
-  <p class="hero-subtitle">Import YouTube videos directly into your Audiobookshelf library as high-quality M4B audiobooks</p>
-  
-  <div class="settings-badges">
-    {% if settings.dry_run %}
-    <span class="badge badge-warning">Dry Run Mode</span>
-    {% endif %}
-    {% if settings.allow_playlists %}
-    <span class="badge badge-success">Playlists Allowed</span>
-    {% else %}
-    <span class="badge badge-muted">Playlists Disabled</span>
-    {% endif %}
-    {% if settings.abs_configured %}
-    <span class="badge badge-success">Audiobookshelf Connected</span>
-    {% else %}
-    <span class="badge badge-warning">ABS Disconnected</span>
-    {% endif %}
-  </div>
-</div>
-
-<div class="card center-card">
-  {% if error %}
-  <div class="alert alert-error">
-    <span class="alert-icon">✕</span>
-    <span>{{ error | e }}</span>
-  </div>
-  {% endif %}
-
-  <form method="POST" action="/preview" class="url-form">
-    <div class="form-group">
-      <label for="url" class="form-label">YouTube URL</label>
-      <div class="input-row">
-        <input
-          id="url"
-          name="url"
-          type="url"
-          class="form-input url-input"
-          placeholder="https://www.youtube.com/watch?v=..."
-          value="{{ url | default('') | e }}"
-          required
-          autofocus
-        />
-        <button type="submit" class="btn btn-primary" id="preview-btn">
-          <span class="btn-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          Fetch Metadata
-        </button>
-      </div>
-      <p class="form-hint">
-        Single video URLs only. Output goes directly to your configured Audiobookshelf folder. 
-        {% if settings.allow_playlists or settings.allow_channels %}
-        (Note: Playlists/Channels are allowed under current settings).
-        {% endif %}
+<main class="flex-grow hero-gradient w-full">
+  <div class="max-w-5xl mx-auto px-container-padding py-stack-lg flex flex-col items-center">
+    <!-- Hero Header -->
+    <section class="text-center mb-12 mt-8 animate-in fade-in slide-in-from-top-4 duration-1000">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-4">YouTube → Audiobookshelf</h1>
+      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+        Paste a YouTube URL to convert a video to an M4B audiobook file. Seamless metadata extraction and automatic library sync for your self-hosted collection.
       </p>
-    </div>
-  </form>
-</div>
+    </section>
 
-<div class="how-it-works">
-  <div class="how-step">
-    <div class="how-step-num">1</div>
-    <div class="how-step-content">
-      <h4>Paste YouTube URL</h4>
-      <p>Enter any YouTube video link. The server will validate the URL and fetch metadata details.</p>
-    </div>
+    <!-- URL Submission Card -->
+    <section class="w-full max-w-3xl mb-16 animate-in zoom-in-95 duration-700 delay-200">
+      <div class="bg-surface-container rounded-xl p-stack-md border border-outline shadow-xl glass-card">
+        {% if error %}
+        <div class="bg-error-container/20 border border-error/30 text-error rounded-lg p-4 flex items-start gap-3 mb-6">
+          <span class="material-symbols-outlined shrink-0 text-error">cancel</span>
+          <span class="text-body-md">{{ error | e }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/preview" class="url-form flex flex-col gap-stack-md">
+          <div class="flex flex-col gap-stack-md">
+            <div class="flex flex-col gap-stack-sm">
+              <label class="font-label-md text-label-md text-primary uppercase tracking-wider" for="url">YouTube URL</label>
+              <div class="relative group flex items-center">
+                <input
+                  id="url"
+                  name="url"
+                  type="url"
+                  class="w-full bg-surface-container-low border border-outline rounded-lg pl-4 pr-36 py-3 font-code text-code text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value="{{ url | default('') | e }}"
+                  required
+                  autofocus
+                />
+                <div class="absolute inset-y-0 right-2 flex items-center">
+                  <button type="submit" class="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-headline-sm text-[14px] flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all" id="preview-btn">
+                    <span class="material-symbols-outlined text-[18px]">search</span>
+                    Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p class="text-on-surface-variant text-[11px] font-body-md">
+              Single video URLs only. Playlists and channel URLs are {{ "allowed" if settings.allow_playlists else "not allowed" }}.
+            </p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Info Grid (Bento Style) -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-gutter w-full">
+      <!-- M4B Output -->
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default">
+        <div class="bg-secondary-container w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-on-secondary-container group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined">audio_file</span>
+        </div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">M4B Output</h3>
+        <p class="font-body-md text-body-md text-on-surface-variant">
+          Native audio remuxing ensures zero quality loss. We bundle metadata, chapters, and high-bitrate streams into standard M4B containers.
+        </p>
+        <div class="mt-4 inline-flex">
+          <span class="font-label-md text-label-md bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded-full border border-tertiary/20">AAC/ALAC</span>
+        </div>
+      </div>
+      <!-- Audiobookshelf Ready -->
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default">
+        <div class="bg-secondary-container w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-on-secondary-container group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined">library_books</span>
+        </div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Audiobookshelf Ready</h3>
+        <p class="font-body-md text-body-md text-on-surface-variant">
+          Files are named and structured for instant library discovery. Automatic cover art downloading and folder organization included.
+        </p>
+        <div class="mt-4 inline-flex">
+          <span class="font-label-md text-label-md bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded-full border border-tertiary/20">Auto-Scan</span>
+        </div>
+      </div>
+      <!-- Background Jobs -->
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default">
+        <div class="bg-secondary-container w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-on-secondary-container group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined">settings_suggest</span>
+        </div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Background Jobs</h3>
+        <p class="font-body-md text-body-md text-on-surface-variant">
+          Powerful multi-threaded task tracking. Monitor conversion progress in real-time with automatic retry logic for network timeouts.
+        </p>
+        <div class="mt-4 inline-flex">
+          <span class="font-label-md text-label-md bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded-full border border-tertiary/20">Worker Nodes</span>
+        </div>
+      </div>
+    </section>
   </div>
-  <div class="how-step">
-    <div class="how-step-num">2</div>
-    <div class="how-step-content">
-      <h4>Customize Settings</h4>
-      <p>Configure the output title, select a destination folder under your library root, and adjust advanced options.</p>
-    </div>
-  </div>
-  <div class="how-step">
-    <div class="how-step-num">3</div>
-    <div class="how-step-content">
-      <h4>Queue Import</h4>
-      <p>The import runs in the background. It downloads audio, remuxes to M4B, embeds metadata, and scans your library.</p>
-    </div>
-  </div>
-</div>
+</main>
 
 <script>
   document.querySelector('.url-form').addEventListener('submit', function(e) {
     const btn = document.getElementById('preview-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Fetching metadata...';
+      btn.innerHTML = '<span class="inline-block animate-spin mr-2"><span class="material-symbols-outlined text-[18px]">sync</span></span> Previewing...';
     }
   });
 </script>

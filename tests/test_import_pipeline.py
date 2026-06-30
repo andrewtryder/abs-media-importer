@@ -342,6 +342,7 @@ def test_database_migration_columns(test_db):
     # Check jobs columns
     cursor = connection.execute(text("PRAGMA table_info(jobs)"))
     cols = [row[1] for row in cursor.fetchall()]
+    assert "progress" in cols
     assert "progress_percent" in cols
     assert "progress_eta" in cols
     assert "progress_speed" in cols
