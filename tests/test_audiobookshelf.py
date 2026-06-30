@@ -5,10 +5,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import httpx
-import pytest
-
 from app.config import Settings
-from app.services.audiobookshelf import AudiobookshelfClient, ScanResult
+from app.services.audiobookshelf import AudiobookshelfClient
 
 
 def make_client(
@@ -17,6 +15,7 @@ def make_client(
     library_id: str = "",
 ) -> AudiobookshelfClient:
     import os
+
     os.environ.setdefault("APP_SECRET_KEY", "test")
     os.environ["ABS_BASE_URL"] = base_url
     os.environ["ABS_API_TOKEN"] = api_token
@@ -26,6 +25,7 @@ def make_client(
 
 
 # ── Not configured ─────────────────────────────────────────────────────────────
+
 
 def test_scan_skipped_when_not_configured():
     client = make_client()  # no ABS config
@@ -41,6 +41,7 @@ def test_scan_skipped_missing_library_id():
 
 
 # ── Successful scan ────────────────────────────────────────────────────────────
+
 
 def test_scan_success():
     client = make_client(
@@ -120,6 +121,7 @@ def test_scan_connection_error():
 
 
 # ── Overriding library_id ─────────────────────────────────────────────────────
+
 
 def test_scan_with_explicit_library_id():
     client = make_client(

@@ -41,7 +41,7 @@ class VideoMetadata:
         return len(self.chapters)
 
     @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "VideoMetadata":
+    def from_json(cls, data: dict[str, Any]) -> VideoMetadata:
         return cls(
             id=data.get("id", ""),
             title=data.get("title", ""),
@@ -88,7 +88,7 @@ class YtDlpService:
 
         try:
             parsed = urlparse(url)
-        except Exception:  # noqa: BLE001
+        except Exception:
             return UrlValidationResult(False, "Malformed URL")
 
         if parsed.scheme not in {"http", "https"}:
@@ -103,21 +103,18 @@ class YtDlpService:
             return UrlValidationResult(False, f"Domain '{host}' is not in the allowlist")
 
         # Detect playlist / channel patterns
-        if not self.settings.allow_playlists:
-            if _is_playlist_url(url):
-                return UrlValidationResult(
-                    False,
-                    "Playlist URLs are not allowed (ALLOW_PLAYLISTS=false). "
-                    "Paste a single video URL.",
-                )
+        if not self.settings.allow_playlists and _is_playlist_url(url):
+            return UrlValidationResult(
+                False,
+                "Playlist URLs are not allowed (ALLOW_PLAYLISTS=false). "
+                "Paste a single video URL.",
+            )
 
-        if not self.settings.allow_channels:
-            if _is_channel_url(url):
-                return UrlValidationResult(
-                    False,
-                    "Channel URLs are not allowed (ALLOW_CHANNELS=false). "
-                    "Paste a single video URL.",
-                )
+        if not self.settings.allow_channels and _is_channel_url(url):
+            return UrlValidationResult(
+                False,
+                "Channel URLs are not allowed (ALLOW_CHANNELS=false). " "Paste a single video URL.",
+            )
 
         return UrlValidationResult(True)
 
@@ -144,7 +141,7 @@ class YtDlpService:
         cmd = self.build_preview_command(url)
         logger.debug("Preview command: %s", cmd)
 
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
@@ -228,8 +225,7 @@ class YtDlpService:
         """Return the yt-dlp output template for a job."""
         s = self.settings
         template = (
-            "%(uploader_id,channel_id,channel,uploader|Unknown Channel)s"
-            "/%(title)s.%(ext)s"
+            "%(uploader_id,channel_id,channel,uploader|Unknown Channel)s" "/%(title)s.%(ext)s"
         )
         return str(s.work_dir / job_id / "download" / template)
 

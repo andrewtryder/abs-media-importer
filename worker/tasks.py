@@ -7,12 +7,10 @@ All I/O is synchronous.
 
 from __future__ import annotations
 
+import contextlib
 import logging
-import shutil
 import subprocess
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 from app.config import get_settings
 from app.db import get_sync_db
@@ -31,7 +29,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
+def run_import_job(job_id: str) -> None:
     """
     Execute the full import pipeline for a job.
 
@@ -41,7 +39,7 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
     """
     settings = get_settings()
     db = get_sync_db()
-    started_at = datetime.now(tz=timezone.utc)
+    started_at = datetime.now(tz=UTC)
 
     try:
         job = sync_get_job(db, job_id)
@@ -113,7 +111,9 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
 
             fake_m4a = work_dir / "fake_download.m4a"
             log(f"ffmpeg primary: {ffmpeg_svc.build_remux_command(fake_m4a, output_path)}")
-            log(f"ffmpeg fallback: {ffmpeg_svc.build_remux_command_fallback(fake_m4a, output_path)}")
+            log(
+                f"ffmpeg fallback: {ffmpeg_svc.build_remux_command_fallback(fake_m4a, output_path)}"
+            )
 
             # Create a fake output file for UI testing
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,10 +129,11 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
             )
             db.commit()
             sync_record_attempt(
-                db, job,
+                db,
+                job,
                 status="succeeded",
                 started_at=started_at,
-                finished_at=datetime.now(tz=timezone.utc),
+                finished_at=datetime.now(tz=UTC),
             )
             db.commit()
             log_fh.close()
@@ -186,9 +187,12 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
                 err_msg = "Could not locate downloaded audio file in work directory"
 
             _fail(
-                db, job, log,
+                db,
+                job,
+                log,
                 err_msg,
-                log_fh, started_at,
+                log_fh,
+                started_at,
             )
             return
         log(f"Found downloaded file: {downloaded_file}")
@@ -203,9 +207,12 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
         remux_result = ffmpeg_svc.run_remux(downloaded_file, output_path, log_fh)
         if not remux_result.success:
             _fail(
-                db, job, log,
+                db,
+                job,
+                log,
                 f"ffmpeg remux failed: {remux_result.error}",
-                log_fh, started_at,
+                log_fh,
+                started_at,
             )
             if settings.cleanup_temp_on_failure:
                 fs.cleanup_work_dir(job_id)
@@ -251,17 +258,19 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
 
         # ── Done ──────────────────────────────────────────────────────────────
         sync_update_job(
-            db, job,
+            db,
+            job,
             status=JobStatus.succeeded,
             phase="succeeded",
             final_output_path=str(output_path),
         )
         db.commit()
         sync_record_attempt(
-            db, job,
+            db,
+            job,
             status="succeeded",
             started_at=started_at,
-            finished_at=datetime.now(tz=timezone.utc),
+            finished_at=datetime.now(tz=UTC),
         )
         db.commit()
 
@@ -269,27 +278,29 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
         log(f"Output: {output_path}")
         log_fh.close()
 
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Unhandled error in job %s", job_id)
         try:
             job = sync_get_job(db, job_id)
             if job:
                 sync_update_job(
-                    db, job,
+                    db,
+                    job,
                     status=JobStatus.failed,
                     phase="failed",
                     error_message=str(exc),
                 )
                 db.commit()
                 sync_record_attempt(
-                    db, job,
+                    db,
+                    job,
                     status="failed",
                     error_message=str(exc),
                     started_at=started_at,
-                    finished_at=datetime.now(tz=timezone.utc),
+                    finished_at=datetime.now(tz=UTC),
                 )
                 db.commit()
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("Could not record job failure in DB")
     finally:
         db.close()
@@ -300,7 +311,7 @@ def run_import_job(job_id: str) -> None:  # noqa: C901, PLR0912, PLR0915
 # ---------------------------------------------------------------------------
 
 
-def _run_subprocess(cmd: list[str], log: "callable") -> bool:  # type: ignore[type-arg]
+def _run_subprocess(cmd: list[str], log: callable) -> bool:  # type: ignore[type-arg]
     """
     Run *cmd* as a subprocess, streaming stdout/stderr to *log*.
 
@@ -309,7 +320,7 @@ def _run_subprocess(cmd: list[str], log: "callable") -> bool:  # type: ignore[ty
     """
     log(f"$ {' '.join(cmd)}")
     try:
-        proc = subprocess.Popen(  # noqa: S603
+        proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -319,7 +330,7 @@ def _run_subprocess(cmd: list[str], log: "callable") -> bool:  # type: ignore[ty
         log(f"ERROR: could not start process: {exc}")
         return False
 
-    assert proc.stdout is not None  # noqa: S101
+    assert proc.stdout is not None
     for line in proc.stdout:
         log(line.rstrip())
 
@@ -331,31 +342,31 @@ def _run_subprocess(cmd: list[str], log: "callable") -> bool:  # type: ignore[ty
 
 
 def _fail(
-    db: "object",  # type: ignore[type-arg]
-    job: "object",  # type: ignore[type-arg]
-    log: "callable",  # type: ignore[type-arg]
+    db: object,  # type: ignore[type-arg]
+    job: object,  # type: ignore[type-arg]
+    log: callable,  # type: ignore[type-arg]
     message: str,
-    log_fh: "object",  # type: ignore[type-arg]
+    log_fh: object,  # type: ignore[type-arg]
     started_at: datetime,
 ) -> None:
     """Mark job as failed and record attempt."""
     log(f"FAILED: {message}")
     sync_update_job(  # type: ignore[call-arg]
-        db, job,  # type: ignore[arg-type]
+        db,
+        job,  # type: ignore[arg-type]
         status=JobStatus.failed,
         phase="failed",
         error_message=message,
     )
     db.commit()  # type: ignore[union-attr]
     sync_record_attempt(  # type: ignore[call-arg]
-        db, job,  # type: ignore[arg-type]
+        db,
+        job,  # type: ignore[arg-type]
         status="failed",
         error_message=message,
         started_at=started_at,
-        finished_at=datetime.now(tz=timezone.utc),
+        finished_at=datetime.now(tz=UTC),
     )
     db.commit()  # type: ignore[union-attr]
-    try:
+    with contextlib.suppress(Exception):
         log_fh.close()  # type: ignore[union-attr]
-    except Exception:  # noqa: BLE001
-        pass

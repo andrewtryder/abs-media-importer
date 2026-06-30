@@ -8,7 +8,6 @@ from pathlib import Path
 
 from app.config import Settings
 
-
 # ---------------------------------------------------------------------------
 # Sanitization helpers
 # ---------------------------------------------------------------------------
@@ -64,9 +63,7 @@ def resolve_safe_path(root: Path, relative: str) -> Path:
     root = root.resolve()
     candidate = (root / relative).resolve()
     if not str(candidate).startswith(str(root)):
-        raise ValueError(
-            f"Path traversal detected: '{relative}' resolves outside root '{root}'"
-        )
+        raise ValueError(f"Path traversal detected: '{relative}' resolves outside root '{root}'")
     return candidate
 
 

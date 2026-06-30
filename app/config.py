@@ -144,7 +144,7 @@ class Settings(BaseSettings):
     )
 
     # ── App ──────────────────────────────────────────────────────────────────
-    app_host: str = Field("0.0.0.0", alias="APP_HOST")
+    app_host: str = Field("0.0.0.0", alias="APP_HOST")  # noqa: S104
     app_port: int = Field(8080, alias="APP_PORT")
     app_base_url: str | None = Field(None, alias="APP_BASE_URL")
     app_secret_key: str = Field("changeme-set-app-secret-key", alias="APP_SECRET_KEY")
@@ -158,26 +158,23 @@ class Settings(BaseSettings):
     redis_url: str = Field("redis://redis:6379/0", alias="REDIS_URL")
     database_url: str = Field(
         default_factory=lambda: f"sqlite+aiosqlite:///{_get_default_data_dir()}/app.db",
-        alias="DATABASE_URL"
+        alias="DATABASE_URL",
     )
 
     # ── Paths ─────────────────────────────────────────────────────────────────
     work_dir: Path = Field(
-        default_factory=lambda: _get_default_data_dir() / "work",
-        alias="WORK_DIR"
+        default_factory=lambda: _get_default_data_dir() / "work", alias="WORK_DIR"
     )
     archive_file: Path = Field(
         default_factory=lambda: _get_default_data_dir() / "config" / "youtube-archive.txt",
-        alias="ARCHIVE_FILE"
+        alias="ARCHIVE_FILE",
     )
     output_root: Path = Field(Path("/media/podcasts"), alias="OUTPUT_ROOT")
 
     # ── Download ─────────────────────────────────────────────────────────────
     allow_playlists: bool = Field(False, alias="ALLOW_PLAYLISTS")
     allow_channels: bool = Field(False, alias="ALLOW_CHANNELS")
-    default_destination_folder: str | None = Field(
-        None, alias="DEFAULT_DESTINATION_FOLDER"
-    )
+    default_destination_folder: str | None = Field(None, alias="DEFAULT_DESTINATION_FOLDER")
 
     ytdlp_bin: str = Field("yt-dlp", alias="YTDLP_BIN")
     ffmpeg_bin: str = Field("ffmpeg", alias="FFMPEG_BIN")
@@ -280,7 +277,7 @@ _settings: Settings | None = None
 
 def get_settings() -> Settings:
     """Return cached settings instance, merging YAML values under env vars."""
-    global _settings  # noqa: PLW0603
+    global _settings
     if _settings is None:
         yaml_values = _load_yaml()
         # Set missing env vars from YAML so pydantic picks them up

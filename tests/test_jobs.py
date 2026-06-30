@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
-
 from app.models import JobStatus
 
-
 # ── JobStatus enum ─────────────────────────────────────────────────────────────
+
 
 def test_job_status_values():
     assert JobStatus.queued == "queued"
@@ -24,9 +22,16 @@ def test_job_status_values():
 
 def test_job_status_all_statuses():
     expected = {
-        "queued", "running", "downloading", "postprocessing",
-        "converting", "verifying", "scanning",
-        "succeeded", "failed", "cancelled",
+        "queued",
+        "running",
+        "downloading",
+        "postprocessing",
+        "converting",
+        "verifying",
+        "scanning",
+        "succeeded",
+        "failed",
+        "cancelled",
     }
     actual = {s.value for s in JobStatus}
     assert actual == expected
@@ -34,8 +39,10 @@ def test_job_status_all_statuses():
 
 # ── Job model ─────────────────────────────────────────────────────────────────
 
+
 def test_job_duration_formatted_seconds():
     from app.models import Job
+
     job = Job()
     job.duration = 90
     assert job.duration_formatted == "1:30"
@@ -43,6 +50,7 @@ def test_job_duration_formatted_seconds():
 
 def test_job_duration_formatted_hours():
     from app.models import Job
+
     job = Job()
     job.duration = 3661
     assert job.duration_formatted == "1:01:01"
@@ -50,6 +58,7 @@ def test_job_duration_formatted_hours():
 
 def test_job_duration_formatted_none():
     from app.models import Job
+
     job = Job()
     job.duration = None
     assert job.duration_formatted == "--:--"
@@ -59,8 +68,12 @@ def test_job_duration_formatted_none():
 
 TERMINAL_STATUSES = {JobStatus.failed, JobStatus.cancelled}
 ACTIVE_STATUSES = {
-    JobStatus.queued, JobStatus.running, JobStatus.downloading,
-    JobStatus.postprocessing, JobStatus.converting, JobStatus.verifying,
+    JobStatus.queued,
+    JobStatus.running,
+    JobStatus.downloading,
+    JobStatus.postprocessing,
+    JobStatus.converting,
+    JobStatus.verifying,
     JobStatus.scanning,
 }
 
@@ -80,11 +93,18 @@ def test_succeeded_job_not_retryable():
 
 # ── Phase transitions ─────────────────────────────────────────────────────────
 
+
 def test_expected_phase_progression():
     """Verify the happy-path phase order is defined correctly."""
     happy_path = [
-        "queued", "running", "downloading", "postprocessing",
-        "converting", "verifying", "scanning", "succeeded",
+        "queued",
+        "running",
+        "downloading",
+        "postprocessing",
+        "converting",
+        "verifying",
+        "scanning",
+        "succeeded",
     ]
     # All phases should be valid JobStatus values
     valid = {s.value for s in JobStatus}

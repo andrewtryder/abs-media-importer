@@ -5,7 +5,6 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -18,7 +17,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
 
 # ---------------------------------------------------------------------------
 # Base
@@ -70,21 +68,21 @@ class Job(Base):
 
     # Source
     url: Mapped[str] = mapped_column(Text, nullable=False)
-    video_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    source_title: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    uploader: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    uploader_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    channel: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    channel_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    duration: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    upload_date: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
-    chapter_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    thumbnail_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    video_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    uploader: Mapped[str | None] = mapped_column(Text, nullable=True)
+    uploader_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    channel: Mapped[str | None] = mapped_column(Text, nullable=True)
+    channel_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    upload_date: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    chapter_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Output configuration
-    output_title: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    destination_folder: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    final_output_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    output_title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    destination_folder: Mapped[str | None] = mapped_column(Text, nullable=True)
+    final_output_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     collision_mode: Mapped[str] = mapped_column(String(20), default="append_id")
 
     # Job options (stored as booleans)
@@ -99,16 +97,16 @@ class Job(Base):
         default=JobStatus.queued,
         nullable=False,
     )
-    phase: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    phase: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Paths
-    work_dir: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    log_file_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    work_dir: Mapped[str | None] = mapped_column(Text, nullable=True)
+    log_file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # RQ job id
-    rq_job_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    rq_job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -120,11 +118,11 @@ class Job(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
-    attempts_log: Mapped[List["JobAttempt"]] = relationship(
+    attempts_log: Mapped[list[JobAttempt]] = relationship(
         "JobAttempt", back_populates="job", cascade="all, delete-orphan"
     )
 
@@ -156,14 +154,12 @@ class JobAttempt(Base):
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    job_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("jobs.id"), nullable=False
-    )
+    job_id: Mapped[str] = mapped_column(String(36), ForeignKey("jobs.id"), nullable=False)
     attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    rq_job_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rq_job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
-    job: Mapped["Job"] = relationship("Job", back_populates="attempts_log")
+    job: Mapped[Job] = relationship("Job", back_populates="attempts_log")

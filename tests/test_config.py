@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
 import yaml
-
 from app.config import Settings
+from pydantic import ValidationError
 
 
 def test_defaults(monkeypatch: pytest.MonkeyPatch):
@@ -62,7 +61,7 @@ def test_folder_name_fallbacks_from_env(monkeypatch: pytest.MonkeyPatch):
 def test_invalid_collision_mode(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("APP_SECRET_KEY", "test")
     monkeypatch.setenv("COLLISION_MODE", "bogus")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Settings()
 
 
