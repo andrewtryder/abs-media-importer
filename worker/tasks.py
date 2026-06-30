@@ -10,16 +10,18 @@ from __future__ import annotations
 import contextlib
 import logging
 import subprocess
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from app.config import get_settings
 from app.db import get_sync_db
-from app.models import JobStatus
+from app.models import Job, JobStatus
 from app.services.audiobookshelf import AudiobookshelfClient
 from app.services.ffmpeg import FfmpegService
 from app.services.filesystem import FilesystemService
 from app.services.jobs import sync_get_job, sync_record_attempt, sync_update_job
 from app.services.ytdlp import YtDlpService
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -311,7 +313,7 @@ def run_import_job(job_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _run_subprocess(cmd: list[str], log: callable) -> bool:  # type: ignore[type-arg]
+def _run_subprocess(cmd: list[str], log: Callable[[str], None]) -> bool:
     """
     Run *cmd* as a subprocess, streaming stdout/stderr to *log*.
 
@@ -342,31 +344,31 @@ def _run_subprocess(cmd: list[str], log: callable) -> bool:  # type: ignore[type
 
 
 def _fail(
-    db: object,  # type: ignore[type-arg]
-    job: object,  # type: ignore[type-arg]
-    log: callable,  # type: ignore[type-arg]
+    db: Session,
+    job: Job,
+    log: Callable[[str], None],
     message: str,
-    log_fh: object,  # type: ignore[type-arg]
+    log_fh: object,
     started_at: datetime,
 ) -> None:
     """Mark job as failed and record attempt."""
     log(f"FAILED: {message}")
-    sync_update_job(  # type: ignore[call-arg]
+    sync_update_job(
         db,
-        job,  # type: ignore[arg-type]
+        job,
         status=JobStatus.failed,
         phase="failed",
         error_message=message,
     )
-    db.commit()  # type: ignore[union-attr]
-    sync_record_attempt(  # type: ignore[call-arg]
+    db.commit()
+    sync_record_attempt(
         db,
-        job,  # type: ignore[arg-type]
+        job,
         status="failed",
         error_message=message,
         started_at=started_at,
         finished_at=datetime.now(tz=UTC),
     )
-    db.commit()  # type: ignore[union-attr]
+    db.commit()
     with contextlib.suppress(Exception):
-        log_fh.close()  # type: ignore[union-attr]
+        log_fh.close()  # type: ignore[attr-defined]

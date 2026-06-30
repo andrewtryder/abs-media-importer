@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from app.services.filesystem import (
     FilesystemService,
+    assert_within_root,
     create_destination_folder,
     list_folders,
     resolve_output_path,
@@ -76,6 +77,34 @@ def test_resolve_safe_path_double_dot(tmp_path: Path):
         resolve_safe_path(root, "a/../../etc")
 
 
+def test_resolve_safe_path_sibling_prefix_escape(tmp_path: Path):
+    root = tmp_path / "out"
+    root.mkdir()
+    sibling = tmp_path / "outside"
+    sibling.mkdir()
+    with pytest.raises(ValueError, match="outside root|traversal"):
+        resolve_safe_path(root, "../outside")
+
+
+def test_assert_within_root_ok(tmp_path: Path):
+    root = tmp_path / "root"
+    root.mkdir()
+    child = root / "subdir"
+    child.mkdir()
+    # Should not raise ValueError
+    assert_within_root(root, child)
+    assert_within_root(root, root)
+
+
+def test_assert_within_root_sibling_prefix_escape(tmp_path: Path):
+    root = tmp_path / "out"
+    root.mkdir()
+    sibling = tmp_path / "outside"
+    sibling.mkdir()
+    with pytest.raises(ValueError, match="outside output root|outside"):
+        assert_within_root(root, sibling)
+
+
 # ── list_folders ──────────────────────────────────────────────────────────────
 
 
@@ -100,6 +129,29 @@ def test_list_folders_single_level(tmp_path: Path):
 def test_list_folders_nonexistent_root(tmp_path: Path):
     result = list_folders(tmp_path / "nope")
     assert result == []
+
+
+def test_list_folders_handles_os_error(tmp_path: Path, mocker):
+    root = tmp_path / "podcasts"
+    root.mkdir()
+    (root / "ChannelA").mkdir()
+    (root / "ChannelB").mkdir()
+
+    import os
+
+    original_stat = os.stat
+
+    def dummy_stat(path, *args, **kwargs):
+        if "ChannelA" in str(path):
+            raise OSError("Operation not supported")
+        return original_stat(path, *args, **kwargs)
+
+    mocker.patch("os.stat", side_effect=dummy_stat)
+
+    # ChannelA should be gracefully skipped due to OSError, and ChannelB should be listed
+    result = list_folders(root)
+    assert "ChannelB" in result
+    assert "ChannelA" not in result
 
 
 def test_list_folders_recursive(tmp_path: Path):

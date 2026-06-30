@@ -9,11 +9,11 @@ from app.config import get_settings
 
 QUEUE_NAME = "ytabs"
 
-_redis_conn: Redis | None = None  # type: ignore[type-arg]
+_redis_conn: Redis | None = None
 _queue: Queue | None = None
 
 
-def get_redis() -> Redis:  # type: ignore[type-arg]
+def get_redis() -> Redis:
     global _redis_conn
     if _redis_conn is None:
         settings = get_settings()
@@ -44,7 +44,7 @@ def enqueue_job_task(job_id: str) -> str:
         job_timeout=settings.job_timeout_seconds,
         retry=_build_rq_retry(),
     )
-    return rq_job.id
+    return str(rq_job.id)
 
 
 def _build_rq_retry() -> object | None:

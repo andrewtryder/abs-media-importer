@@ -106,7 +106,7 @@ Our installer provisions a Debian 12 virtual machine on your Proxmox host runnin
 
 > [!WARNING]
 > **Security Check:** Always inspect scripts before running them as `root` on your Proxmox host.
-> You can inspect the installer script at [scripts/proxmox/proxmox-install.sh](file:///Users/atr/code/yt-abs-importer/scripts/proxmox/proxmox-install.sh).
+> You can inspect the installer script at [scripts/proxmox/proxmox-install.sh](scripts/proxmox/proxmox-install.sh).
 
 SSH to your Proxmox host as `root` and run the interactive installer:
 
@@ -114,7 +114,7 @@ SSH to your Proxmox host as `root` and run the interactive installer:
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/andrewtryder/yt-abs-importer/main/scripts/proxmox/proxmox-install.sh)"
 ```
 
-For complete instructions on configuration, mounts, logs, updates, and troubleshooting, read the [Proxmox Installer Documentation](file:///Users/atr/code/yt-abs-importer/scripts/proxmox/README.md).
+For complete instructions on configuration, mounts, logs, updates, and troubleshooting, read the [Proxmox Installer Documentation](scripts/proxmox/README.md).
 
 ### 2. Manual LXC Container Setup
 
@@ -171,7 +171,7 @@ ls -la /mnt/podcasts
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/yourname/yt-abs-importer.git
+git clone https://github.com/andrewtryder/yt-abs-importer.git
 cd yt-abs-importer
 
 cp .env.example .env

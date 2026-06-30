@@ -257,7 +257,7 @@ EOF
 
 if [ "$MODE" = "docker-vm" ]; then
     cat <<EOF >> "$SNIPPET_FILE"
-  - log "Installing Docker Engine..."
+  - echo "Installing Docker Engine..."
   - curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
   - sh /tmp/get-docker.sh
   - systemctl enable docker --now
@@ -267,12 +267,12 @@ if [ "$MODE" = "docker-vm" ]; then
   - sed -i "s|^APP_SECRET_KEY=.*|APP_SECRET_KEY=\${SECRET_KEY}|" .env
   - sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://redis:6379/0|" .env
   - sed -i "s|^DATABASE_URL=.*|DATABASE_URL=sqlite+aiosqlite:////data/app.db|" .env
-  - log "Starting Docker Compose stack..."
+  - echo "Starting Docker Compose stack..."
   - docker compose up -d
 EOF
 elif [ "$MODE" = "native-vm" ]; then
     cat <<EOF >> "$SNIPPET_FILE"
-  - log "Running guest-install.sh..."
+  - echo "Running guest-install.sh..."
   - bash /opt/yt-abs-importer/scripts/proxmox/guest-install.sh
 EOF
 fi
