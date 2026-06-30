@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.0.1...v1.1.0) (2026-06-30)
+
+
+### Features
+
+* **web:** allow output root directory configuration from settings page ([3f23fe4](https://github.com/andrewtryder/yt-abs-importer/commit/3f23fe4a19ae2a4b456c3b0d3fc26fa8aeaf9062))
+* **web:** allow output root directory configuration from settings page ([d52daac](https://github.com/andrewtryder/yt-abs-importer/commit/d52daacea5a2ef131fef3b3e1c0e835050b3bd60))
+
 ## [1.0.1](https://github.com/andrewtryder/yt-abs-importer/compare/v1.0.0...v1.0.1) (2026-06-30)
 
 
