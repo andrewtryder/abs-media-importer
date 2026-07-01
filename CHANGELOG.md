@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/andrewtryder/yt-abs-importer/compare/v1.4.0...v1.4.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **frontend:** self-host fonts and fix Material Icons rendering ([f9d94b0](https://github.com/andrewtryder/yt-abs-importer/commit/f9d94b0bba46b98eebdcd62b858fabec64973922))
+* **frontend:** self-host fonts and fix Material Icons rendering ([4154dcf](https://github.com/andrewtryder/yt-abs-importer/commit/4154dcfcb53bcd377938a949e91146ea4e3fd0f4))
+
 ## [1.4.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.3.0...v1.4.0) (2026-06-30)
 
 
