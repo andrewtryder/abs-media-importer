@@ -16,6 +16,7 @@ from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.websockets import WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings, save_custom_settings
@@ -154,7 +155,142 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-def _register_routes(app: FastAPI, settings: Settings) -> None:
+def _extension_api_auth(request: Request, cfg: SettingsDep) -> Settings:
+    """Check if extension API is enabled and authorized.
+
+    Returns the settings object if access is permitted. Raises HTTPException
+    with 404 if disabled, 401 if the token is missing/wrong.
+    """
+    if not cfg.extension_api_enabled:
+        raise HTTPException(status_code=404, detail="Extension API not enabled")
+
+    if cfg.extension_api_token:
+        # Authorization: Bearer <token> or X-YTABS-Token header
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        x_token = request.headers.get("X-YTABS-Token")
+        if x_token:
+            token = x_token
+
+        if not token or not secrets.compare_digest(token, cfg.extension_api_token):
+            raise HTTPException(status_code=401, detail="Invalid extension API token")
+
+    return cfg
+
+
+ExtensionAuthDep = Annotated[Settings, Depends(_extension_api_auth)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+DbDep = Annotated[AsyncSession, Depends(get_db)]
+
+
+async def _validate_websocket_token(
+    job_id: str, request: Request, settings: SettingsDep
+) -> None:
+    """Validate extension API token for WebSocket authentication."""
+    if not settings.extension_api_enabled:
+        raise HTTPException(status_code=404, detail="Extension API not enabled")
+
+    if settings.extension_api_token:
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        x_token = request.headers.get("X-YTABS-Token")
+        if x_token:
+            token = x_token
+
+        if not token or not secrets.compare_digest(token, settings.extension_api_token):
+            raise HTTPException(status_code=401, detail="Invalid extension API token")
+        if x_token:
+            token = x_token
+
+        if not token or not secrets.compare_digest(token, settings.extension_api_token):
+            raise HTTPException(status_code=401, detail="Invalid extension API token")
+
+
+async def _websocket_endpoint(
+    websocket: WebSocket,
+    job_id: str,
+    request: Request,
+    cfg: SettingsDep,
+    db: AsyncSession,
+) -> None:
+    """WebSocket endpoint for real-time job status updates."""
+    await websocket.accept()
+
+    # Validate token authentication
+    try:
+        await _validate_websocket_token(job_id, request, cfg)
+    except HTTPException as e:
+        if e.status_code == 404:
+            await websocket.close(code=1008)
+        else:
+            await websocket.close(code=1008, reason=e.detail)
+        return
+
+    # Validate job exists
+    job = await get_job(db, job_id)
+    if not job:
+        await websocket.close(code=1008, reason="Job not found")
+        return
+
+    # Initial snapshot
+    await websocket.send_json({
+        "type": "job_update",
+        "job": _job_dict(job)
+    })
+
+    # WebSocket polling loop
+    try:
+        last_data = _job_dict(job)
+        while True:
+            # Get current job state
+            current_job = await get_job(db, job_id)
+            if not current_job:
+                await websocket.close(code=1000, reason="Job no longer exists")
+                return
+
+            current_data = _job_dict(current_job)
+
+            # Check for meaningful changes (fields that trigger UI updates)
+            meaningful_changes = False
+            fields_to_check = [
+                "status", "phase", "progress", "progress_percent", "progress_label",
+                "progress_eta", "progress_speed", "error_message", "final_output_path"
+            ]
+
+            for field in fields_to_check:
+                if last_data.get(field) != current_data.get(field):
+                    meaningful_changes = True
+                    break
+
+            if meaningful_changes:
+                await websocket.send_json({
+                    "type": "job_update",
+                    "job": current_data
+                })
+                last_data = current_data
+
+            # Check for terminal status
+            if current_job.status in {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}:
+                await websocket.send_json({
+                    "type": "job_update",
+                    "job": current_data
+                })
+                break
+
+            # Wait before next poll
+            await websocket.receive_text(timeout=5)
+
+    except (WebSocketDisconnect, Exception):
+        pass
+    finally:
+        await websocket.close(code=1000)
+
+
+async def _register_routes(app: FastAPI, settings: Settings) -> None:
     # ── Health ────────────────────────────────────────────────────────────────
 
     @app.get("/health")
@@ -553,6 +689,108 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:
                 "settings": new_cfg,
                 "success": "Settings saved successfully and reloaded.",
             },
+        )
+
+    # ── Extension API ────────────────────────────────────────────────────────────
+
+    @app.websocket("/api/ws/jobs/{job_id}")
+    async def api_websocket_job_status(
+        websocket: WebSocket,
+        job_id: str,
+        request: Request,
+        cfg: SettingsDep,
+        db: DbDep,
+    ) -> None:
+        """WebSocket endpoint for real-time job status updates."""
+        await _websocket_endpoint(websocket, job_id, request, cfg, db)
+
+    @app.get("/api/extension/status")
+    async def api_extension_status(cfg: ExtensionAuthDep) -> dict[str, Any]:
+        # Return a subset of settings that is safe to expose
+        return {
+            "ok": True,
+            "app": "yt-abs-importer",
+            "extension_api_enabled": cfg.extension_api_enabled,
+            "auth_required": bool(cfg.extension_api_token),
+            "dry_run": cfg.dry_run,
+            "abs_configured": cfg.abs_configured,
+            "allow_playlists": cfg.allow_playlists,
+            "allow_channels": cfg.allow_channels,
+        }
+
+    @app.post("/api/extension/queue", status_code=201)
+    async def api_extension_queue(
+        request: Request,
+        db: DbDep,
+        cfg: ExtensionAuthDep,
+    ) -> JSONResponse:
+        try:
+            data = await request.json()
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="Invalid JSON body") from exc
+
+        url = data.get("url")
+        if not url:
+            raise HTTPException(status_code=400, detail="URL is required")
+
+        # Validate URL
+        svc = YtDlpService(cfg)
+        validation = svc.validate_url(url)
+        if not validation.valid:
+            raise HTTPException(status_code=400, detail=validation.error)
+
+        # Fetch metadata
+        try:
+            meta = svc.run_preview(url)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        # Extract parameters
+        destination_folder = data.get("destination_folder", "")
+        output_title = data.get("output_title", "")
+        embed_metadata = data.get("embed_metadata", True)
+        embed_thumbnail = data.get("embed_thumbnail", True)
+        embed_chapters = data.get("embed_chapters", True)
+        trigger_abs_scan = data.get("trigger_abs_scan", False)
+
+        # Create job
+        job = await create_job(
+            db,
+            url,
+            cfg,
+            video_id=meta.id,
+            source_title=meta.title,
+            uploader=meta.uploader,
+            uploader_id=meta.uploader_id,
+            channel=meta.channel,
+            channel_id=meta.channel_id,
+            duration=meta.duration,
+            upload_date=meta.upload_date,
+            thumbnail_url=meta.thumbnail,
+            chapter_count=meta.chapter_count,
+            output_title=output_title or meta.title,
+            destination_folder=destination_folder or cfg.default_destination_folder,
+            embed_metadata=embed_metadata,
+            embed_thumbnail=embed_thumbnail,
+            embed_chapters=embed_chapters,
+            trigger_abs_scan=trigger_abs_scan,
+        )
+
+        # Enqueue task
+        rq_id = enqueue_job_task(job.id)
+        await update_job_status(db, job.id, JobStatus.queued, rq_job_id=rq_id)
+
+        return JSONResponse(
+            {
+                "ok": True,
+                "job_id": job.id,
+                "rq_job_id": rq_id,
+                "status": "queued",
+                "title": meta.title,
+                "uploader": meta.uploader,
+                "job_url": f"/jobs/{job.id}",
+            },
+            status_code=201,
         )
 
 

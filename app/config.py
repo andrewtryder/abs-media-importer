@@ -154,6 +154,19 @@ class Settings(BaseSettings):
     auth_username: str | None = Field(None, alias="AUTH_USERNAME")
     auth_password: str | None = Field(None, alias="AUTH_PASSWORD")
 
+    # ── Browser Extension API ──────────────────────────────────────────────
+    extension_api_enabled: bool = Field(
+        False,
+        alias="EXTENSION_API_ENABLED",
+        description="Enable extension API endpoints (returns 404 if false)",
+    )
+    extension_api_token: str | None = Field(
+        None,
+        alias="EXTENSION_API_TOKEN",
+        description="Optional bearer token for extension API. "
+        "If set, requires Authorization: Bearer <token> or X-YTABS-Token headers.",
+    )
+
     # ── Infrastructure ───────────────────────────────────────────────────────
     redis_url: str = Field("redis://redis:6379/0", alias="REDIS_URL")
     database_url: str = Field(
@@ -254,6 +267,14 @@ class Settings(BaseSettings):
         valid = {"skip", "overwrite", "append_id", "append_counter"}
         if v not in valid:
             raise ValueError(f"collision_mode must be one of {valid}")
+        return v
+
+    @field_validator("extension_api_token", mode="before")
+    @classmethod
+    def validate_extension_api_token(cls, v: str) -> str | None:
+        if v is None or v == "":
+            return None
+        # Optionally validate length if you want
         return v
 
     # ── Computed helpers ──────────────────────────────────────────────────────

@@ -79,3 +79,211 @@ input:focus, select:focus, textarea:focus {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+/* ── Mobile Responsive Improvements ────────────────────────────────── */
+
+@media (max-width: 640px) {
+  /* Job Detail Page Responsive Adjustments */
+  .p-container-padding {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Stack info bar items on mobile */
+  .grid.grid-cols-2.md\\:grid-cols-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\\:col-span-1 {
+    grid-column: span 1 / span 1;
+  }
+
+  /* Progress card fixes for mobile */
+  #progress-row {
+    margin-left: -16px;
+    margin-right: -16px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    padding: 16px;
+  }
+
+  .flex.items-center.justify-between.mb-stack-md {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .flex.gap-gutter.text-right {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  /* Logs console height adjustment for mobile */
+  .flex.flex-col.h-\[480px\] {
+    height: 300px;
+  }
+
+  /* Hide ETA and Speed on very small screens */
+  @media (max-width: 380px) {
+    #speed-eta-row {
+      display: none;
+    }
+
+    .flex.items-baseline.gap-2 {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .font-headline-lg.text-\[42px\] {
+      font-size: 32px;
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  /* Ultra-small screen optimizations */
+  .grid.grid-cols-2.md\\:grid-cols-5 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Single column layout for critical information */
+  .grid.grid-cols-2.md\\:grid-cols-5 > div {
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  /* Adjust button sizes */
+  .px-4.py-2 {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+  }
+
+  /* Progress bar height adjustment */
+  .w-full.h-3 {
+    height: 4px;
+  }
+
+  /* Source URL truncation */
+  .font-code.text-body-md a {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+}
+
+/* Extension Popup Responsive Adjustments */
+@media (max-width: 320px) {
+  body {
+    width: 280px;
+    padding: 8px;
+  }
+
+  h1 {
+    font-size: 1rem;
+  }
+
+  .app-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+
+  button {
+    padding: 8px;
+    font-size: 0.875rem;
+  }
+
+  .progress-bar {
+    height: 4px;
+  }
+
+  .result-title {
+    font-size: 0.85rem;
+  }
+
+  .status-badge {
+    padding: 1px 6px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Extension Options Page Responsive Adjustments */
+@media (max-width: 360px) {
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .checkbox-wrapper {
+    margin-bottom: 8px;
+  }
+
+  button {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  #status-panel {
+    padding: 12px;
+  }
+
+  .status-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .status-value {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}
+
+/* Safe area for mobile browsers with rounded corners */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  @media (max-width: 640px) {
+    .p-container-padding {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+  }
+}
+
+/* Print styles */
+@media print {
+  /* Hide navigation and controls */
+  aside, footer, button, .no-print {
+    display: none !important;
+  }
+
+  /* Optimize for print */
+  body {
+    background: white;
+    color: black;
+  }
+
+  .bg-surface-container, .bg-surface-variant, .border-outline-variant {
+    background: white !important;
+    border-color: #ccc !important;
+  }
+
+  /* Ensure progress bars are visible */
+  .progress-fill {
+    background: #6c8ef7 !important;
+  }
+
+  /* Hide status indicators in print */
+  .status-indicator, .status-badge {
+    display: none !important;
+  }
+}
