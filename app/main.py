@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import asyncio
 import contextlib
 import html
 import logging
@@ -271,7 +272,7 @@ async def _websocket_endpoint(
                 break
 
             # Wait before next poll
-            await websocket.receive_text(timeout=5)
+            await asyncio.sleep(5)
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected for job %s", job_id)
