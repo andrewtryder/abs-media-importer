@@ -249,7 +249,11 @@ ExtensionAuthDep = Annotated[Settings, Depends(_extension_api_auth)]
 async def _validate_websocket_token(
     job_id: str, websocket: WebSocket, settings: SettingsDep
 ) -> None:
-    """Validate extension API token for WebSocket authentication."""
+    """Validate extension API token for WebSocket authentication.
+
+    Browser extension WebSocket clients cannot reliably set custom Authorization
+    headers, so we support `?token=` in addition to Bearer and X-YTABS-Token.
+    """
     if not settings.extension_api_enabled:
         raise HTTPException(status_code=404, detail="Extension API not enabled")
 
@@ -261,6 +265,9 @@ async def _validate_websocket_token(
         x_token = websocket.headers.get("X-YTABS-Token")
         if x_token:
             token = x_token
+        query_token = websocket.query_params.get("token")
+        if query_token:
+            token = query_token
 
         if not token or not secrets.compare_digest(token, settings.extension_api_token):
             raise HTTPException(status_code=401, detail="Invalid extension API token")

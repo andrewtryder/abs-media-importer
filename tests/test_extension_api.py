@@ -12,6 +12,7 @@ import pytest
 from app.main import create_app
 from app.services.ytdlp import YtDlpService
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 
 @pytest.fixture(autouse=True)
@@ -29,8 +30,13 @@ def isolated_db(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
 
 
 @pytest.fixture
-def client() -> Iterator[TestClient]:
+def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     """Create a test client for the FastAPI app."""
+    monkeypatch.setenv("EXTENSION_API_ENABLED", "false")
+    monkeypatch.setenv("EXTENSION_API_TOKEN", "")
+    import app.config as cfg_module
+
+    cfg_module._settings = None
     with TestClient(create_app()) as test_client:
         yield test_client
 
@@ -409,20 +415,78 @@ def test_extension_queue_no_url_field(
 
 
 # ---------------------------------------------------------------------------
+# Extension WebSocket Auth Tests
+# ---------------------------------------------------------------------------
+
+
+def test_extension_websocket_accepts_query_token(
+    extension_enabled_client, mocked_ytdlp, mocked_queue
+):
+    """WebSocket auth should accept `?token=` for browser extension clients."""
+    queue_response = extension_enabled_client.post(
+        "/api/extension/queue",
+        headers={"Authorization": "Bearer test-token-12345"},
+        json={
+            "url": "https://www.youtube.com/watch?v=test123",
+            "destination_folder": "",
+            "output_title": "",
+            "embed_metadata": True,
+            "embed_thumbnail": True,
+            "embed_chapters": True,
+            "trigger_abs_scan": False,
+        },
+    )
+    assert queue_response.status_code == 201
+    job_id = queue_response.json()["job_id"]
+
+    with extension_enabled_client.websocket_connect(
+        f"/api/ws/jobs/{job_id}?token=test-token-12345"
+    ) as websocket:
+        payload = websocket.receive_json()
+        assert payload["type"] == "job_update"
+        assert payload["job"]["id"] == job_id
+
+
+def test_extension_websocket_rejects_wrong_query_token(
+    extension_enabled_client, mocked_ytdlp, mocked_queue
+):
+    """WebSocket auth should reject invalid query tokens."""
+    queue_response = extension_enabled_client.post(
+        "/api/extension/queue",
+        headers={"Authorization": "Bearer test-token-12345"},
+        json={
+            "url": "https://www.youtube.com/watch?v=test123",
+            "destination_folder": "",
+            "output_title": "",
+            "embed_metadata": True,
+            "embed_thumbnail": True,
+            "embed_chapters": True,
+            "trigger_abs_scan": False,
+        },
+    )
+    assert queue_response.status_code == 201
+    job_id = queue_response.json()["job_id"]
+
+    with extension_enabled_client.websocket_connect(
+        f"/api/ws/jobs/{job_id}?token=wrong-token"
+    ) as ws:
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive_json()
+        assert exc.value.code == 1008
+
+
+# ---------------------------------------------------------------------------
 # Integration Tests
 # ---------------------------------------------------------------------------
 
 
-def test_extension_api_disabled_in_settings(extension_enabled_no_token_client):
+def test_extension_api_disabled_in_settings(monkeypatch: pytest.MonkeyPatch):
     """Test that extension API disabled setting is reflected in status."""
-    # The fixture sets EXTENSION_API_ENABLED=true, so we need to test with default
     import app.config as cfg_module
 
     cfg_module._settings = None
-
-    if "EXTENSION_API_ENABLED" in os.environ:
-        del os.environ["EXTENSION_API_ENABLED"]
-
+    monkeypatch.setenv("EXTENSION_API_ENABLED", "false")
+    monkeypatch.setenv("EXTENSION_API_TOKEN", "")
     client = TestClient(create_app())
     response = client.get("/api/extension/status")
     assert response.status_code == 404
