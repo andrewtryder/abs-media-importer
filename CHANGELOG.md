@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/andrewtryder/yt-abs-importer/compare/v1.5.0...v1.5.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **extension:** harden popup and optional auth websocket flow ([41a4542](https://github.com/andrewtryder/yt-abs-importer/commit/41a454215f3037b5f8eb42a7793a10d218bac933))
+* **extension:** harden popup flow and align optional auth websocket behavior ([8ed0097](https://github.com/andrewtryder/yt-abs-importer/commit/8ed009701b72223c0393199e478493eff880713f))
+
 ## [1.5.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.4.1...v1.5.0) (2026-07-02)
 
 
