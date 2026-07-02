@@ -36,16 +36,16 @@ jobs:
           uv pip sync requirements-dev.lock
 
       - name: Run Ruff check
-        run: ruff check .
+        run: uv run --no-project ruff check .
 
       - name: Run Ruff format check
-        run: ruff format --check .
+        run: uv run --no-project ruff format --check .
 
       - name: Run Mypy
-        run: mypy app worker
+        run: uv run --no-project mypy app worker
 
       - name: Run tests
-        run: pytest
+        run: uv run --no-project pytest
 
       - name: Docker build smoke test
         run: docker build .
