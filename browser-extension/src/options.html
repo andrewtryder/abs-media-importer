@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>yt-abs-importer options</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --primary: #6c8ef7;
+      --primary-container: #dbe1ff;
+      --on-primary-container: #00297a;
+      --background: #121319;
+      --surface: #1e1f26;
+      --surface-variant: #33343b;
+      --outline-variant: #444653;
+      --error: #f87171;
+      --error-container: #93000a;
+      --on-error: #690005;
+      --success: #4caf50;
+      --success-container: #c8e6c9;
+      --on-success-container: #1b5e20;
+      --warning: #ffb74d;
+      --warning-container: #ffe0b2;
+      --on-warning-container: #e65100;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 520px;
+      margin: 24px auto;
+      padding: 0 16px;
+      background: var(--background);
+      color: #e2e1eb;
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      margin: 0 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 12px 0 4px;
+      color: #c4c6d5;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 8px;
+      font: inherit;
+      box-sizing: border-box;
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: 6px;
+      color: #e2e1eb;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(108, 142, 247, 0.2);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .row label {
+      margin: 0;
+      font-weight: normal;
+      color: #c4c6d5;
+    }
+
+    .checkbox-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+    }
+
+    .checkbox-wrapper input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .checkbox-custom {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 18px;
+      width: 18px;
+      background-color: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .checkbox-wrapper input:checked ~ .checkbox-custom {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .checkbox-wrapper .checkbox-custom::after {
+      content: "";
+      position: absolute;
+      display: none;
+      left: 5px;
+      top: 2px;
+      width: 5px;
+      height: 9px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .checkbox-wrapper input:checked ~ .checkbox-custom::after {
+      display: block;
+    }
+
+    button {
+      padding: 10px 16px;
+      font: inherit;
+      cursor: pointer;
+      margin-top: 16px;
+      background: var(--primary);
+      color: var(--on-primary-container);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #5a7bd8;
+    }
+
+    button:disabled {
+      background: var(--surface-variant);
+      color: var(--outline-variant);
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 12px;
+      min-height: 1.2em;
+      font-weight: 600;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    #status.ok {
+      background: var(--success-container);
+      color: var(--on-success-container);
+      border: 1px solid var(--success);
+    }
+
+    #status.err {
+      background: var(--error-container);
+      color: var(--on-error);
+      border: 1px solid var(--error);
+    }
+
+    /* Status Panel Styles */
+    #status-panel {
+      margin-top: 20px;
+      padding: 16px;
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--outline-variant);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .status-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-indicator.status-connected {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-indicator.status-disconnected {
+      background: var(--error);
+    }
+
+    .status-indicator.status-warning {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+    }
+
+    .status-section {
+      margin: 12px 0;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .status-row:last-child {
+      border-bottom: none;
+    }
+
+    .status-label {
+      font-size: 0.85rem;
+      color: #c4c6d5;
+    }
+
+    .status-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .status-badge-success {
+      background: var(--success-container);
+      color: var(--on-success-container);
+    }
+
+    .status-badge-error {
+      background: var(--error-container);
+      color: var(--on-error);
+    }
+
+    .status-badge-warning {
+      background: var(--warning-container);
+      color: var(--on-warning-container);
+    }
+
+    .status-badge-primary {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    /* Mobile responsive adjustments */
+    @media (max-width: 360px) {
+      body {
+        max-width: 100%;
+        padding: 8px;
+      }
+
+      button {
+        padding: 12px;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <div class="app-icon">Y</div>
+    yt-abs-importer Options
+  </h1>
+
+  <label for="serverUrl">Server URL</label>
+  <input id="serverUrl" type="text" placeholder="http://192.168.1.50:8080" />
+
+  <label for="apiToken">API token (optional)</label>
+  <input id="apiToken" type="password" placeholder="EXTENSION_API_TOKEN from backend" />
+
+  <label for="defaultDestinationFolder">Default destination folder (optional)</label>
+  <input id="defaultDestinationFolder" type="text" placeholder="Podcasts" />
+
+  <div class="row">
+    <div class="checkbox-wrapper">
+      <input id="embedMetadata" type="checkbox" />
+      <span class="checkbox-custom"></span>
+    </div>
+    <label for="embedMetadata">Embed metadata</label>
+  </div>
+
+  <div class="row">
+    <div class="checkbox-wrapper">
+      <input id="embedThumbnail" type="checkbox" />
+      <span class="checkbox-custom"></span>
+    </div>
+    <label for="embedThumbnail">Embed thumbnail</label>
+  </div>
+
+  <div class="row">
+    <div class="checkbox-wrapper">
+      <input id="embedChapters" type="checkbox" />
+      <span class="checkbox-custom"></span>
+    </div>
+    <label for="embedChapters">Embed chapters</label>
+  </div>
+
+  <div class="row">
+    <div class="checkbox-wrapper">
+      <input id="triggerAbsScan" type="checkbox" />
+      <span class="checkbox-custom"></span>
+    </div>
+    <label for="triggerAbsScan">Trigger Audiobookshelf scan after success</label>
+  </div>
+
+  <button id="save">Save settings</button>
+  <button id="test">Test connection</button>
+  <div id="status"></div>
+
+  <!-- Status Panel -->
+  <div id="status-panel">
+    <div class="status-panel-header">
+      <span class="status-indicator" id="status-indicator"></span>
+      <h2 style="margin: 0; font-size: 1.1rem;">Connection Status</h2>
+    </div>
+
+    <div class="status-section" id="connection-info">
+      <div class="status-row">
+        <span class="status-label">Overall Status</span>
+        <span>
+          <span class="status-indicator" id="overall-status-indicator"></span>
+          <span id="overall-status">Unknown</span>
+        </span>
+      </div>
+
+      <div class="status-row">
+        <span class="status-label">Connection</span>
+        <span>
+          <span id="connection-status">Unknown</span>
+          <span id="api-status" class="status-badge">Unknown</span>
+        </span>
+      </div>
+
+      <div class="status-row">
+        <span class="status-label">Dry Run</span>
+        <span id="dry-run-status">Unknown</span>
+      </div>
+
+      <div class="status-row">
+        <span class="status-label">Audiobookshelf</span>
+        <span id="abs-configured">Unknown</span>
+      </div>
+
+      <div class="status-row">
+        <span class="status-label">Playlists</span>
+        <span id="playlists-allowed">Unknown</span>
+      </div>
+
+      <div class="status-row">
+        <span class="status-label">Channels</span>
+        <span id="channels-allowed">Unknown</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

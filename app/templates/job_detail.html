@@ -403,5 +403,253 @@
     });
   }
 </script>
-{% block content_end %}{% endblock %}
+  {% block content_end %}{% endblock %}
 {% endblock %}
+
+<script>
+  // WebSocket connection for real-time updates
+  let ws = null;
+  let wsReconnectTimeout = null;
+  let currentJobId = '{{ job.id | e }}';
+
+  function connectWebSocket() {
+    // Build WebSocket URL with optional token from current page
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/api/ws/jobs/${currentJobId}`;
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = function() {
+      console.log('WebSocket connected');
+      const wsStatus = document.getElementById('ws-status');
+      if (wsStatus) {
+        wsStatus.style.display = 'none';
+      }
+      // Clear any reconnect timeout
+      if (wsReconnectTimeout) {
+        clearTimeout(wsReconnectTimeout);
+        wsReconnectTimeout = null;
+      }
+    };
+
+    ws.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'job_update') {
+          // Update UI with WebSocket data
+          const job = data.job;
+          
+          // Update status badge
+          const badgeContainer = document.getElementById('status-badge-container');
+          if (badgeContainer) {
+            let badgeHtml = '';
+            if (activeStatuses.has(job.status)) {
+              badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-label-md border border-secondary-container"><span class="material-symbols-outlined text-[12px] animate-spin-slow">sync</span> ${job.status}</span>`;
+            } else if (job.status === 'succeeded') {
+              badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-green-500/10 text-green-400 font-label-md text-label-md border border-green-500/20"><span class="material-symbols-outlined text-[12px]">check_circle</span> completed</span>`;
+            } else {
+              badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-error-container/40 text-error font-label-md text-label-md border border-error/30"><span class="material-symbols-outlined text-[12px]">error</span> ${job.status}</span>`;
+            }
+            badgeContainer.innerHTML = badgeHtml;
+          }
+
+          // Update duration
+          const durationLabel = document.getElementById('duration-label');
+          if (durationLabel && job.duration) {
+            const secs = job.duration;
+            const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(secs % 60).toString().padStart(2, '0');
+            durationLabel.textContent = `${h}:${m}:${s}`;
+          }
+
+          // Update progress
+          const progressRow = document.getElementById('progress-row');
+          const progressBar = document.getElementById('job-progress-bar');
+          const progressText = document.getElementById('job-progress-text');
+          const progressLabel = document.getElementById('job-progress-label');
+          const progressSpeed = document.getElementById('job-progress-speed');
+          const progressEta = document.getElementById('job-progress-eta');
+          const processingLabel = document.getElementById('processing-label');
+          const speedEtaRow = document.getElementById('speed-eta-row');
+
+          const hasProgress = (job.progress_percent !== null && job.progress_percent !== undefined) || (job.progress !== null && job.progress !== undefined);
+          const hasLabel = !!job.progress_label;
+          const isActive = activeStatuses.has(job.status);
+          const isTerminal = terminalStatuses.has(job.status);
+          const showDetail = progressDetailStatuses.has(job.status);
+
+          if (hasProgress || hasLabel || isActive) {
+            if (progressRow) progressRow.style.display = '';
+
+            const pct = job.progress_percent !== null ? job.progress_percent : (job.progress !== null ? job.progress : 0);
+            const clampedPct = Math.max(0, Math.min(100, pct));
+            if (progressBar) progressBar.style.width = clampedPct + '%';
+            if (progressText) {
+              if (pct < 100 && pct !== Math.floor(pct)) {
+                progressText.textContent = pct.toFixed(1) + '%';
+              } else {
+                progressText.textContent = Math.round(pct) + '%';
+              }
+            }
+
+            if (processingLabel) {
+              if (job.status === 'succeeded') processingLabel.textContent = 'COMPLETE';
+              else if (job.status === 'failed') processingLabel.textContent = 'FAILED';
+              else if (job.status === 'cancelled') processingLabel.textContent = 'CANCELLED';
+              else processingLabel.textContent = 'PROCESSING';
+            }
+
+            if (speedEtaRow) {
+              speedEtaRow.style.display = showDetail ? '' : 'none';
+            }
+
+            if (progressLabel) {
+              progressLabel.textContent = job.progress_label || `Stage: ${job.phase || job.status}`;
+            }
+
+            if (progressSpeed) {
+              progressSpeed.textContent = (showDetail && job.progress_speed) ? job.progress_speed : '—';
+            }
+
+            if (progressEta) {
+              progressEta.textContent = (showDetail && job.progress_eta) ? job.progress_eta : '—';
+            }
+
+            // Reload page if status changed to terminal
+            if (job.status !== currentStatus) {
+              if (activeStatuses.has(job.status)) {
+                currentStatus = job.status;
+              } else {
+                window.location.reload();
+              }
+            }
+          } else {
+            if (progressRow) progressRow.style.display = 'none';
+          }
+
+          // Update error message if present
+          const errorMessage = job.error_message;
+          if (errorMessage) {
+            let errorSection = document.querySelector('.bg-error-container/10');
+            if (!errorSection) {
+              const progressRow = document.getElementById('progress-row');
+              const errorHtml = `<div class="bg-error-container/10 border border-error/30 text-error rounded-xl p-stack-md mb-stack-lg shadow-md">
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined shrink-0 text-error">warning</span>
+                  <div class="overflow-hidden w-full">
+                    <h4 class="font-label-md text-label-md uppercase tracking-wider mb-2">Error Message</h4>
+                    <pre class="font-code text-code text-on-surface bg-black/45 p-3 rounded-lg border border-outline-variant/30 overflow-x-auto whitespace-pre-wrap">${errorMessage}</pre>
+                  </div>
+                </div>
+              </div>`;
+              if (progressRow && progressRow.parentNode) {
+                progressRow.parentNode.insertBefore(errorSection, progressRow.nextSibling);
+              }
+            } else {
+              const errorPre = errorSection.querySelector('pre');
+              if (errorPre) {
+                errorPre.textContent = errorMessage;
+              }
+            }
+          }
+
+          // Update final output path if available
+          if (job.final_output_path) {
+            let outputPathElement = document.getElementById('final-output-path');
+            if (!outputPathElement) {
+              const logsSection = document.querySelector('.flex.flex-col.h-\[480px\]');
+              if (logsSection) {
+                const outputHtml = `<div class="mt-stack-md p-3 bg-surface-container rounded border border-outline-variant">
+                  <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Final Output Path</span>
+                  <div class="font-code text-code text-on-surface break-all">${job.final_output_path}</div>
+                </div>`;
+                logsSection.appendChild(outputPathElement);
+              }
+            } else {
+              outputPathElement.textContent = job.final_output_path;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+
+    ws.onerror = function(error) {
+      console.error('WebSocket error:', error);
+      showWebSocketStatus('Connection failed');
+    };
+
+    ws.onclose = function(event) {
+      console.log('WebSocket closed:', event.code, event.reason);
+      showWebSocketStatus('Reconnecting...');
+      // Reconnect after 5 seconds
+      wsReconnectTimeout = setTimeout(connectWebSocket, 5000);
+    };
+  }
+
+  function showWebSocketStatus(message) {
+    const wsStatus = document.getElementById('ws-status');
+    if (wsStatus) {
+      wsStatus.textContent = message;
+      wsStatus.style.display = 'inline-flex';
+    }
+  }
+
+  // Initialize WebSocket connection
+  const activeStatuses = new Set(['queued', 'running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning']);
+  const terminalStatuses = new Set(['succeeded', 'failed', 'cancelled']);
+  const progressDetailStatuses = new Set(['downloading', 'converting']);
+  let currentStatus = '{{ job.status.value | e }}';
+
+  // Start WebSocket connection
+  connectWebSocket();
+
+  // Keep existing HTTP polling as fallback
+  function refreshLog() {
+    fetch('/api/jobs/{{ job.id }}/log')
+      .then(r => r.json())
+      .then(d => {
+        if (logViewer) {
+          const isAtBottom = logViewer.scrollHeight - logViewer.clientHeight <= logViewer.scrollTop + 60;
+          logViewer.textContent = d.log;
+          if (isAtBottom) {
+            logViewer.scrollTop = logViewer.scrollHeight;
+          }
+        }
+      });
+  }
+
+  if (activeStatuses.has(currentStatus)) {
+    const intervalId = setInterval(() => {
+      // If WebSocket is not connected, refresh log
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        refreshLog();
+      }
+
+      // HTTP fallback for job details when WebSocket is not connected
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        fetch('/api/jobs/{{ job.id }}')
+          .then(r => r.json())
+          .then(d => {
+            // Update status badge
+            const badgeContainer = document.getElementById('status-badge-container');
+            if (badgeContainer) {
+              let badgeHtml = '';
+              if (activeStatuses.has(d.status)) {
+                badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-md text-label-md border border-secondary-container"><span class="material-symbols-outlined text-[12px] animate-spin-slow">sync</span> ${d.status}</span>`;
+              } else if (d.status === 'succeeded') {
+                badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-green-500/10 text-green-400 font-label-md text-label-md border border-green-500/20"><span class="material-symbols-outlined text-[12px]">check_circle</span> completed</span>`;
+              } else {
+                badgeHtml = `<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-error-container/40 text-error font-label-md text-label-md border border-error/30"><span class="material-symbols-outlined text-[12px]">error</span> ${d.status}</span>`;
+              }
+              badgeContainer.innerHTML = badgeHtml;
+            }
+          })
+          .catch(err => console.error("Error polling job details:", err));
+      }
+    }, 2000);
+  }
+</script>

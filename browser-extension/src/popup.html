@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>yt-abs-importer</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --primary: #6c8ef7;
+      --primary-container: #dbe1ff;
+      --on-primary-container: #00297a;
+      --background: #121319;
+      --surface: #1e1f26;
+      --surface-variant: #33343b;
+      --outline-variant: #444653;
+      --error: #f87171;
+      --error-container: #93000a;
+      --on-error: #690005;
+      --success: #4caf50;
+      --success-container: #c8e6c9;
+      --on-success-container: #1b5e20;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      width: 320px;
+      margin: 0;
+      padding: 12px;
+      background: var(--background);
+      color: #e2e1eb;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      margin: 0 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    #status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 8px;
+    }
+
+    #status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    #status-dot.disconnected {
+      background: var(--error);
+    }
+
+    #video {
+      margin: 8px 0;
+      font-size: 0.9rem;
+      min-height: 2.4em;
+      padding: 8px;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--outline-variant);
+    }
+
+    #video a {
+      word-break: break-all;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    #video a:hover {
+      text-decoration: underline;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      font: inherit;
+      cursor: pointer;
+      background: var(--primary);
+      color: var(--on-primary-container);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #5a7bd8;
+    }
+
+    button:disabled {
+      background: var(--surface-variant);
+      color: var(--outline-variant);
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      min-height: 1.2em;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    #status.err {
+      background: var(--error-container);
+      color: var(--on-error);
+      border: 1px solid var(--error);
+    }
+
+    #status.ok {
+      background: var(--success-container);
+      color: var(--on-success-container);
+      border: 1px solid var(--success);
+    }
+
+    #status.pending {
+      background: var(--surface-variant);
+      color: #c4c6d5;
+      border: 1px solid var(--outline-variant);
+    }
+
+    #result {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--outline-variant);
+      display: none;
+    }
+
+    #result.visible {
+      display: block;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .result-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .result-id {
+      font-size: 0.75rem;
+      color: var(--outline-variant);
+      font-family: monospace;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--surface-variant);
+      border-radius: 3px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    .status-queued {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    .status-running {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .status-succeeded {
+      background: var(--success-container);
+      color: var(--on-success-container);
+    }
+
+    .status-failed {
+      background: var(--error-container);
+      color: var(--on-error);
+    }
+
+    .status-cancelled {
+      background: var(--surface-variant);
+      color: #c4c6d5;
+    }
+
+    footer {
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: var(--outline-variant);
+      text-align: center;
+    }
+
+    /* Mobile responsive adjustments */
+    @media (max-width: 360px) {
+      body {
+        width: 300px;
+        padding: 8px;
+      }
+
+      button {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <div class="app-icon">Y</div>
+    yt-abs-importer
+    <div id="status-dot" class="disconnected"></div>
+  </h1>
+
+  <div id="video">Checking current tab…</div>
+
+  <div id="queue-form">
+    <button id="queue" disabled>Queue video</button>
+  </div>
+
+  <div id="result">
+    <div class="result-header">
+      <div class="result-title">Queued Video</div>
+      <div class="result-id">ID: <span id="job-id">...</span></div>
+    </div>
+    <div id="queued-title">Loading...</div>
+    <div id="queued-uploader">by ...</div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-bar-fill" style="width: 0%"></div>
+    </div>
+
+    <div id="job-status">
+      <span class="status-badge status-queued" id="status-badge">queued</span>
+      <span id="status-text">Queued</span>
+    </div>
+
+    <div id="progress-info" style="margin-top: 8px; font-size: 0.85rem;">
+      <span id="progress-label">Processing...</span>
+      <span id="progress-percentage">0%</span>
+    </div>
+
+    <div style="margin-top: 8px;">
+      <a href="#/jobs/" id="job-link" target="_blank" style="color: var(--primary); text-decoration: none;">View job details</a>
+    </div>
+  </div>
+
+  <div id="status" class="pending">Ready to queue</div>
+
+  <footer>v0.1.0</footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
