@@ -1,4 +1,4 @@
-name: yt-abs-importer
+name: abs-media-importer
 profile: python-service
 visibility: public
 license: MIT

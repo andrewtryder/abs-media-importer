@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This guide details how to deploy `yt-abs-importer` using Docker Compose, verify your configuration, and troubleshoot volume access issues.
+This guide details how to deploy `abs-media-importer` using Docker Compose, verify your configuration, and troubleshoot volume access issues.
 
 ## 1. Setup
 
@@ -51,7 +51,7 @@ Verify the `volumes` output for the `app` and `worker` services. You should see 
 ```yaml
     volumes:
       - type: bind
-        source: /Users/username/yt-abs-importer/data
+        source: /Users/username/abs-media-importer/data
         target: /data
       - type: bind
         source: /Volumes/Synology/Media/Podcasts  # This should match your HOST_PODCASTS_DIR

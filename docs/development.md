@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide is for developers looking to modify or contribute to `yt-abs-importer`.
+This guide is for developers looking to modify or contribute to `abs-media-importer`.
 
 ## 1. Local Environment Setup
 
@@ -39,7 +39,7 @@ Configure the local environment variables and start the server using `uvicorn`:
 export REDIS_URL=redis://localhost:6379/0
 export DATABASE_URL=sqlite+aiosqlite:///./app.db
 export OUTPUT_ROOT=/tmp/test-podcasts
-export WORK_DIR=/tmp/ytabs-work
+export WORK_DIR=/tmp/abs_media_importer-work
 export DRY_RUN=true  # Set to true to avoid running actual yt-dlp/ffmpeg processes
 
 # Start uvicorn server
@@ -53,7 +53,7 @@ In a new terminal window with the virtual environment active, start the worker:
 
 ```bash
 # Start background worker
-rq worker ytabs --url redis://localhost:6379/0
+rq worker abs_media_importer --url redis://localhost:6379/0
 ```
 
 ---

@@ -149,7 +149,7 @@ def test_extension_status_enabled_no_token(extension_enabled_no_token_client):
     assert data["ok"] is True
     assert data["extension_api_enabled"] is True
     assert data["auth_required"] is False
-    assert data["app"] == "yt-abs-importer"
+    assert data["app"] == "abs-media-importer"
 
 
 def test_extension_status_enabled_with_token(extension_enabled_client):
@@ -178,10 +178,10 @@ def test_extension_status_with_wrong_token(extension_enabled_client):
 
 
 def test_extension_status_with_xtabs_token(extension_enabled_client):
-    """Test extension status with X-YTABS-Token header."""
+    """Test extension status with X-ABS-MEDIA-IMPORTER-Token header."""
     response = extension_enabled_client.get(
         "/api/extension/status",
-        headers={"X-YTABS-Token": "test-token-12345"},
+        headers={"X-ABS-MEDIA-IMPORTER-Token": "test-token-12345"},
     )
     assert response.status_code == 200
 
@@ -255,10 +255,10 @@ def test_extension_queue_enabled_with_token(extension_enabled_client, mocked_ytd
 
 
 def test_extension_queue_with_xtabs_token(extension_enabled_client, mocked_ytdlp, mocked_queue):
-    """Test extension queue with X-YTABS-Token header."""
+    """Test extension queue with X-ABS-MEDIA-IMPORTER-Token header."""
     response = extension_enabled_client.post(
         "/api/extension/queue",
-        headers={"X-YTABS-Token": "test-token-12345"},
+        headers={"X-ABS-MEDIA-IMPORTER-Token": "test-token-12345"},
         json={
             "url": "https://www.youtube.com/watch?v=test123",
             "destination_folder": "",

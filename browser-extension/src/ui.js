@@ -1,4 +1,4 @@
-// Shared UI helper functions for yt-abs-importer browser extension
+// Shared UI helper functions for abs-media-importer browser extension
 // Lightweight, dependency-free utility library
 
 /**

@@ -1,5 +1,5 @@
 # ============================================================
-# config.example.yml — yt-abs-importer
+# config.example.yml — abs-media-importer
 # ============================================================
 #
 # Custom YAML configuration file. Environment variables will take
@@ -26,10 +26,10 @@ app:
 paths:
   # DOWNLOAD_DIR / TEMP_DIR placeholder mapping:
   work_dir: "/data/work"
-  
+
   # METADATA_DIR placeholder mappings (youtube-archive.txt):
   archive_file: "/data/config/youtube-archive.txt"
-  
+
   # AUDIOBOOKSHELF_IMPORT_DIR placeholder mapping:
   output_root: "/media/podcasts"
 
@@ -39,12 +39,12 @@ download:
   default_destination_folder: ~
   audio_format: "m4a"
   audio_quality: ~
-  
+
   # COOKIES_FILE placeholder mapping:
   # To supply a cookies file, uncomment and specify --cookies argument:
   # yt_dlp_extra_args: "--cookies /data/config/cookies.txt"
   yt_dlp_extra_args: ""
-  
+
   ffmpeg_extra_args: ""
   output_extension: "m4b"
   filename_template: "{title}.m4b"

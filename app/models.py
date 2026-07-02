@@ -33,7 +33,7 @@ class Base(DeclarativeBase):
 # ---------------------------------------------------------------------------
 
 
-class JobStatus(str, enum.Enum):
+class JobStatus(enum.StrEnum):
     queued = "queued"
     running = "running"
     downloading = "downloading"
@@ -46,7 +46,7 @@ class JobStatus(str, enum.Enum):
     cancelled = "cancelled"
 
 
-class CollisionMode(str, enum.Enum):
+class CollisionMode(enum.StrEnum):
     skip = "skip"
     overwrite = "overwrite"
     append_id = "append_id"

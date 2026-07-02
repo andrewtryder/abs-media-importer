@@ -61,7 +61,7 @@ def test_scan_success():
     assert result.error is None
 
     # Verify the correct URL was called
-    args, kwargs = mock_post.call_args
+    args, _kwargs = mock_post.call_args
     assert "lib-001" in args[0]
     assert "http://abs:13378" in args[0]
 
@@ -79,7 +79,7 @@ def test_scan_token_not_in_url():
     with patch("app.services.audiobookshelf.httpx.post", return_value=mock_response) as mock_post:
         client.trigger_scan()
 
-    args, kwargs = mock_post.call_args
+    args, _kwargs = mock_post.call_args
     url = args[0]
     assert "super-secret-token" not in url
 

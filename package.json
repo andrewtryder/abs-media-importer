@@ -6,5 +6,5 @@
   "devDependencies": {
     "rulesync": "^9.0.2"
   },
-  "name": "yt-abs-importer"
+  "name": "abs-media-importer"
 }

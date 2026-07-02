@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "YouTube ABS Importer",
-  "description": "Queue YouTube videos into a local YouTube ABS Importer instance.",
+  "name": "ABS Media Importer",
+  "description": "Queue YouTube videos into a local ABS Media Importer instance.",
   "version": "1.5.0",
   "icons": {
     "16": "icons/icon-16.png",
@@ -11,7 +11,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Queue video with YouTube ABS Importer",
+    "default_title": "Queue video with ABS Media Importer",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",

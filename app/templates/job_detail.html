@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Job: {{ (job.output_title or job.source_title or job.id) | truncate(50) | e }} — yt-abs-importer{% endblock %}
+{% block title %}Job: {{ (job.output_title or job.source_title or job.id) | truncate(50) | e }} — abs-media-importer{% endblock %}
 
 {% block content %}
 {% set status = job.status.value %}

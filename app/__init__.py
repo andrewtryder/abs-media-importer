@@ -1,1 +1,1 @@
-"""yt-abs-importer application package."""
+"""abs-media-importer application package."""
