@@ -122,7 +122,7 @@ def test_pipeline_happy_path(
     # Mock verification output
     final_output = mock_settings.output_root / "Happy" / "Happy Path Video.m4b"
     final_output.parent.mkdir(parents=True, exist_ok=True)
-    final_output.write_bytes(b"final m4b")
+    final_output.write_bytes(b"x" * 1000)
     mock_verify.return_value = FfprobeResult(
         file_size=1000,
         has_audio=True,
