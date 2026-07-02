@@ -4,16 +4,27 @@ This guide is for developers looking to modify or contribute to `abs-media-impor
 
 ## 1. Local Environment Setup
 
-To run the application locally without Docker, install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync the development lock file:
+To run the application locally without Docker, install [uv](https://docs.astral.sh/uv/getting-started/installation/) at the version pinned in [`.uv-version`](.uv-version) and sync the development lock file:
 
 ```bash
-# Create and activate virtual environment
 uv venv
-source .venv/bin/activate
-
-# Install development packages from the pinned lock file
 uv pip sync requirements-dev.lock
 ```
+
+Run project tools through the synced virtualenv:
+
+```bash
+uv run --no-project pytest
+uv run --no-project ruff check .
+```
+
+Or run the full CI-equivalent check suite:
+
+```bash
+./scripts/check.sh
+```
+
+Set `SKIP_DOCKER=1` if you do not want the Docker build smoke test locally (CI skips Docker inside `check.sh` and runs it separately).
 
 ### Updating dependencies
 
@@ -22,9 +33,8 @@ When adding or changing dependencies:
 1. Edit `requirements.txt` and/or `requirements-dev.txt`
 2. Run `./scripts/compile-requirements.sh`
 3. Run `uv pip sync requirements-dev.lock`
-4. Run tests and commit both source and lock files
-
-CI verifies lock freshness with `./scripts/check-requirements-lock.sh`.
+4. Run `./scripts/check.sh`
+5. Commit both source and lock files
 
 ---
 
@@ -54,17 +64,16 @@ export WORK_DIR=/tmp/abs_media_importer-work
 export DRY_RUN=true  # Set to true to avoid running actual yt-dlp/ffmpeg processes
 
 # Start uvicorn server
-uvicorn app.main:app --reload --port 8080
+uv run --no-project uvicorn app.main:app --reload --port 8080
 ```
 
 The web interface will be accessible at `http://localhost:8080`.
 
 ### B. Start the Background RQ Worker
-In a new terminal window with the virtual environment active, start the worker:
+In a new terminal window, start the worker:
 
 ```bash
-# Start background worker
-rq worker abs_media_importer --url redis://localhost:6379/0
+uv run --no-project rq worker abs_media_importer --url redis://localhost:6379/0
 ```
 
 ---
@@ -73,10 +82,14 @@ rq worker abs_media_importer --url redis://localhost:6379/0
 
 The repository includes a comprehensive test suite using `pytest`.
 
-Ensure your virtual environment is active, then run:
+```bash
+./scripts/check.sh
+```
+
+Or run tests only:
 
 ```bash
-pytest
+uv run --no-project pytest
 ```
 
 ---
@@ -86,12 +99,11 @@ pytest
 The codebase uses `ruff` to enforce code quality and styling consistency.
 
 ```bash
-# Run code check and linting
-ruff check .
-
-# Check formatting
-ruff format --check .
+uv run --no-project ruff check .
+uv run --no-project ruff format --check .
 
 # Auto-format codebase
-ruff format .
+uv run --no-project ruff format .
 ```
+
+Pre-commit hooks use the same Ruff version pinned in `requirements-dev.lock`.

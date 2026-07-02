@@ -20,11 +20,12 @@ commands:
   install_dev: uv venv && uv pip sync requirements-dev.lock
   compile_requirements: scripts/compile-requirements.sh
   check_requirements_lock: scripts/check-requirements-lock.sh
-  format_check: ruff format --check .
-  lint: ruff check .
-  typecheck: ""
-  test: coverage run -m pytest
-  coverage: coverage report
+  check: SKIP_DOCKER=1 scripts/check.sh
+  format_check: uv run --no-project ruff format --check .
+  lint: uv run --no-project ruff check .
+  typecheck: uv run --no-project mypy app worker
+  test: uv run --no-project pytest
+  coverage: uv run --no-project coverage run -m pytest && uv run --no-project coverage report
 
 quality_gates:
   semantic_pr_title: required

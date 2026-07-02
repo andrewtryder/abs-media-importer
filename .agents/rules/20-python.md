@@ -9,6 +9,7 @@ Use uv for dependency management with editable requirements sources and pinned l
 - Runtime dependencies: `requirements.txt` → compile to `requirements.lock`
 - Development dependencies: `requirements-dev.txt` → compile to `requirements-dev.lock`
 - Dev-only tools include pytest, coverage, Ruff, mypy, and pre-commit.
+- Pin uv to the version in `.uv-version` (must match CI).
 
 Dependency workflow:
 
@@ -21,16 +22,24 @@ Local setup:
 
 ```bash
 uv venv
-source .venv/bin/activate
 uv pip sync requirements-dev.lock
 ```
 
-Preferred checks:
+Before opening a PR, run the same checks as CI:
 
+```bash
+./scripts/check.sh
+```
+
+Use `uv run --no-project <tool>` when running individual commands outside `./scripts/check.sh`.
+
+Preferred checks (via `./scripts/check.sh`):
+
+- Lock freshness (`scripts/check-requirements-lock.sh`)
 - `ruff format --check .`
 - `ruff check .`
+- `mypy app worker`
 - `pytest`
-- `coverage run -m pytest && coverage report`
 
 Use Ruff for formatting/linting and pytest for tests when configured.
 File patterns determine execution: Python checks apply to `*.py` files when those files exist.

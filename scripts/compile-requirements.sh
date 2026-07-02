@@ -5,13 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-if ! command -v uv >/dev/null 2>&1; then
-  echo "error: uv is not installed." >&2
-  echo "Install uv: https://docs.astral.sh/uv/getting-started/installation/" >&2
-  exit 1
-fi
-
-PYTHON_VERSION="${PYTHON_VERSION:-3.12}"
+# shellcheck source=scripts/uv-env.sh
+source "$ROOT/scripts/uv-env.sh"
+require_uv
 
 echo "Compiling requirements.lock from requirements.txt..."
 uv pip compile requirements.txt -o requirements.lock \

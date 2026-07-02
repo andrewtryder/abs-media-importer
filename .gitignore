@@ -101,6 +101,9 @@ ipython_config.py
 # PEP 582; used by e.g. github.com/lincolnloop/layman and github.com/pdm-project/pdm
 __pypackages__/
 
+# uv project lockfile (this repo uses requirements*.lock instead)
+uv.lock
+
 # Celery stuff
 celerybeat-schedule
 celerybeat.pid

@@ -140,19 +140,14 @@ Refer to the documents in the `/docs` directory for detailed deployment and conf
 To run tests and code quality checks locally:
 
 ```bash
-# Install uv: https://docs.astral.sh/uv/getting-started/installation/
+# Install uv at the version in .uv-version:
+# https://docs.astral.sh/uv/getting-started/installation/
 
-# Set up virtual environment and dependencies
 uv venv
-source .venv/bin/activate
 uv pip sync requirements-dev.lock
 
-# Run pytest suite
-pytest
-
-# Check code formatting and linting
-ruff check .
-ruff format --check .
+# Run the same checks as CI
+./scripts/check.sh
 ```
 
 See the [Development Guide](docs/development.md) for full instructions.
