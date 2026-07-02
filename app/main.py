@@ -292,7 +292,7 @@ async def _websocket_endpoint(
         await websocket.close(code=1000)
 
 
-async def _register_routes(app: FastAPI, settings: Settings) -> None:
+def _register_routes(app: FastAPI, settings: Settings) -> None:
     # ── Health ────────────────────────────────────────────────────────────────
 
     @app.get("/health")
