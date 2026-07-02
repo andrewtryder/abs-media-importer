@@ -83,9 +83,9 @@ def test_resolve_safe_path_sibling_prefix_escape(tmp_path: Path):
     # Test sibling directory whose name starts with root's name
     sibling = tmp_path / "outside"
     sibling.mkdir()
-    with pytest.raises(ValueError, match="outside root|traversal"):
+    with pytest.raises(ValueError, match=r"outside root|traversal"):
         resolve_safe_path(root, "../outside")
-    with pytest.raises(ValueError, match="outside root|traversal"):
+    with pytest.raises(ValueError, match=r"outside root|traversal"):
         resolve_safe_path(root, "../out2")
 
 
@@ -104,9 +104,9 @@ def test_assert_within_root_sibling_prefix_escape(tmp_path: Path):
     root.mkdir()
     sibling = tmp_path / "outside"
     sibling.mkdir()
-    with pytest.raises(ValueError, match="outside output root|outside"):
+    with pytest.raises(ValueError, match=r"outside output root|outside"):
         assert_within_root(root, sibling)
-    with pytest.raises(ValueError, match="outside output root|outside"):
+    with pytest.raises(ValueError, match=r"outside output root|outside"):
         assert_within_root(root, tmp_path / "out2")
 
 

@@ -1,6 +1,6 @@
 # Quickstart Guide
 
-This guide will walk you through setting up `yt-abs-importer` using Docker Compose.
+This guide will walk you through setting up `abs-media-importer` using Docker Compose.
 
 ## 1. Prerequisites
 
@@ -9,8 +9,8 @@ Ensure you have Docker and Docker Compose v2 installed on your system.
 ## 2. Clone the Repository
 
 ```bash
-git clone https://github.com/andrewtryder/yt-abs-importer.git
-cd yt-abs-importer
+git clone https://github.com/andrewtryder/abs-media-importer.git
+cd abs-media-importer
 ```
 
 ## 3. Configure the Environment

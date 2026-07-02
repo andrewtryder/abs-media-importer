@@ -1,7 +1,7 @@
 {
-  "name": "yt-abs-importer-extension",
+  "name": "abs-media-importer-extension",
   "version": "1.6.0",
-  "description": "Browser extension for queuing YouTube videos into a local yt-abs-importer instance.",
+  "description": "Browser extension for queuing YouTube videos into a local abs-media-importer instance.",
   "private": true,
   "type": "module",
   "scripts": {

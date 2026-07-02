@@ -1,0 +1,21 @@
+[Unit]
+Description=abs-media-importer Background Worker
+After=network.target redis-server.service abs-media-importer-app.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=abs-media-importer
+Group=abs-media-importer
+WorkingDirectory=/opt/abs-media-importer
+EnvironmentFile=/etc/abs-media-importer/.env
+
+# Fail gracefully with a clear error message if config is missing
+ExecStartPre=/bin/sh -c 'if [ ! -f /etc/abs-media-importer/.env ]; then echo "ERROR: /etc/abs-media-importer/.env is missing. Please copy /opt/abs-media-importer/.env.example and populate it."; exit 1; fi'
+
+ExecStart=/opt/abs-media-importer/.venv/bin/python -m rq.cli worker abs_media_importer --url ${REDIS_URL}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

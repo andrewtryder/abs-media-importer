@@ -2,9 +2,9 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in yt-abs-importer, please report it responsibly:
+If you discover a security vulnerability in abs-media-importer, please report it responsibly:
 
-1. Open a [private GitHub security advisory](https://github.com/andrewtryder/yt-abs-importer/security/advisories/new) on this repository, or
+1. Open a [private GitHub security advisory](https://github.com/andrewtryder/abs-media-importer/security/advisories/new) on this repository, or
 2. Contact the repository owner through GitHub.
 
 Do not disclose vulnerabilities publicly until a fix is coordinated.

@@ -1,7 +1,7 @@
-# yt-abs-importer
+# abs-media-importer
 
 <p align="center">
-  <img src="assets/yt-abs-importer-icon.svg" alt="yt-abs-importer Icon" width="240" />
+  <img src="assets/abs-media-importer-icon.svg" alt="abs-media-importer Icon" width="240" />
 </p>
 
 A self-hosted sidecar application that converts individual YouTube videos into `.m4b` audiobook files and writes them directly to the directory that [Audiobookshelf](https://www.audiobookshelf.org/) scans.
@@ -42,8 +42,8 @@ Deploy the application stack in minutes:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/andrewtryder/yt-abs-importer.git
-cd yt-abs-importer
+git clone https://github.com/andrewtryder/abs-media-importer.git
+cd abs-media-importer
 
 # 2. Configure paths in .env
 cp .env.example .env
@@ -59,6 +59,18 @@ docker compose up -d
 The web interface will be available at **`http://localhost:8080`** (localhost only by default).
 
 For a complete walkthrough, see the [Quickstart Guide](docs/quickstart.md).
+
+---
+
+## Rename Migration Notice
+
+Recent releases finalized the project rename to `abs-media-importer`.
+
+- Update clone/remotes to `github.com/andrewtryder/abs-media-importer`.
+- Rename any leftover local paths/service names/images to `abs-media-importer`.
+- Reinstall the Firefox extension if you were using the previous extension ID.
+- If you automate extension API auth, use `ABS_MEDIA_IMPORTER_*` and `X-ABS-MEDIA-IMPORTER-Token`.
+- If you use native/systemd deployments, migrate queue/service identifiers to `abs_media_importer` and `abs-media-importer-*`.
 
 ---
 

@@ -22,7 +22,7 @@ async function main() {
     mkdirSync(ARTIFACTS, { recursive: true });
   }
 
-  const zipName = `yt-abs-importer-firefox-v${version}.zip`;
+  const zipName = `abs-media-importer-firefox-v${version}.zip`;
   const zipPath = resolve(ARTIFACTS, zipName);
 
   // Remove existing artifact

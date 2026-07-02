@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
 [project]
-name = "yt-abs-importer"
+name = "abs-media-importer"
 version = "1.5.1"
 description = "Selective YouTube-to-Audiobookshelf importer"
 readme = "README.md"

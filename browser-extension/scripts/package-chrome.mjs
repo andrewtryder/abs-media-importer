@@ -22,7 +22,7 @@ async function main() {
     mkdirSync(ARTIFACTS, { recursive: true });
   }
 
-  const zipName = `yt-abs-importer-chrome-v${version}.zip`;
+  const zipName = `abs-media-importer-chrome-v${version}.zip`;
   const zipPath = resolve(ARTIFACTS, zipName);
 
   // Remove existing artifact

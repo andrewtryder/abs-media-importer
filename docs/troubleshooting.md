@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide covers common issues and questions when running `yt-abs-importer`.
+This guide covers common issues and questions when running `abs-media-importer`.
 
 ## 1. yt-dlp Extractor Errors
 
@@ -61,7 +61,7 @@ Jobs fail during the final phase with a log message indicating `Permission denie
 
 ## 4. Files Not Appearing in Audiobookshelf
 
-If downloads complete successfully in `yt-abs-importer` but do not show up in Audiobookshelf:
+If downloads complete successfully in `abs-media-importer` but do not show up in Audiobookshelf:
 1. Verify directory alignment (see [Audiobookshelf Guide](audiobookshelf.md)).
 2. Make sure the files are inside a subfolder of your Audiobookshelf library directory (e.g. `/media/podcasts/ChannelName/Title.m4b`). ABS requires files to be at least one level deep to detect them.
 3. Trigger a manual library scan in the Audiobookshelf UI (**Settings** -> **Libraries** -> **Scan**).

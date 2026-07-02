@@ -1,6 +1,6 @@
 # Security Guidelines
 
-Security is a primary consideration when self-hosting web applications. This guide describes the built-in security features of `yt-abs-importer` and best practices for secure deployment.
+Security is a primary consideration when self-hosting web applications. This guide describes the built-in security features of `abs-media-importer` and best practices for secure deployment.
 
 ## 1. Localhost Binding (Default)
 
@@ -48,7 +48,7 @@ Ensure your reverse proxy is configured with valid SSL/TLS certificates (e.g. vi
 
 ## 4. Path Traversal Protection
 
-`yt-abs-importer` contains built-in validation to prevent path traversal vulnerabilities.
+`abs-media-importer` contains built-in validation to prevent path traversal vulnerabilities.
 * The application validates all destination folder paths and output filenames.
 * Any request to write to a path outside the configured `OUTPUT_ROOT` directory will be rejected with an HTTP 400 bad request error.
 

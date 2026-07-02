@@ -101,12 +101,12 @@ templates.env.globals["format_free_space"] = _format_free_space
 
 def _resolve_ui_version(default_version: str) -> str:
     """Resolve UI version from env override or latest GitHub release."""
-    env_version = os.getenv("YTABS_UI_VERSION", "").strip()
+    env_version = os.getenv("ABS_MEDIA_IMPORTER_UI_VERSION", "").strip()
     if env_version:
         return env_version
 
     fallback = default_version if default_version.startswith("v") else f"v{default_version}"
-    repo = os.getenv("YTABS_GITHUB_REPO", "andrewtryder/yt-abs-importer").strip()
+    repo = os.getenv("ABS_MEDIA_IMPORTER_GITHUB_REPO", "andrewtryder/abs-media-importer").strip()
     if "/" not in repo:
         return fallback
 
@@ -115,7 +115,7 @@ def _resolve_ui_version(default_version: str) -> str:
         api_url,
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": "yt-abs-importer",
+            "User-Agent": "abs-media-importer",
         },
     )
     try:
@@ -151,7 +151,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="yt-abs-importer",
+        title="abs-media-importer",
         description="Selective YouTube → Audiobookshelf importer",
         version="1.5.0",
         lifespan=lifespan,
@@ -203,7 +203,7 @@ def _attach_basic_auth(app: FastAPI, settings: Settings) -> None:
             return Response(
                 "Unauthorized",
                 status_code=401,
-                headers={"WWW-Authenticate": 'Basic realm="yt-abs-importer"'},
+                headers={"WWW-Authenticate": 'Basic realm="abs-media-importer"'},
             )
 
     app.add_middleware(BasicAuthMiddleware)
@@ -228,12 +228,12 @@ def _extension_api_auth(request: Request, cfg: SettingsDep) -> Settings:
         raise HTTPException(status_code=404, detail="Extension API not enabled")
 
     if cfg.extension_api_token:
-        # Authorization: Bearer <token> or X-YTABS-Token header
+        # Authorization: Bearer <token> or X-ABS-MEDIA-IMPORTER-Token header
         token = None
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
-        x_token = request.headers.get("X-YTABS-Token")
+        x_token = request.headers.get("X-ABS-MEDIA-IMPORTER-Token")
         if x_token:
             token = x_token
 
@@ -252,7 +252,7 @@ async def _validate_websocket_token(
     """Validate extension API token for WebSocket authentication.
 
     Browser extension WebSocket clients cannot reliably set custom Authorization
-    headers, so we support `?token=` in addition to Bearer and X-YTABS-Token.
+    headers, so we support `?token=` in addition to Bearer and X-ABS-MEDIA-IMPORTER-Token.
     """
     if not settings.extension_api_enabled:
         raise HTTPException(status_code=404, detail="Extension API not enabled")
@@ -262,7 +262,7 @@ async def _validate_websocket_token(
         auth_header = websocket.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
-        x_token = websocket.headers.get("X-YTABS-Token")
+        x_token = websocket.headers.get("X-ABS-MEDIA-IMPORTER-Token")
         if x_token:
             token = x_token
         query_token = websocket.query_params.get("token")
@@ -819,7 +819,7 @@ def _register_routes(app: FastAPI, settings: Settings) -> None:
         # Return a subset of settings that is safe to expose
         return {
             "ok": True,
-            "app": "yt-abs-importer",
+            "app": "abs-media-importer",
             "extension_api_enabled": cfg.extension_api_enabled,
             "auth_required": bool(cfg.extension_api_token),
             "dry_run": cfg.dry_run,

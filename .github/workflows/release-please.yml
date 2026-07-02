@@ -42,6 +42,6 @@ jobs:
           EXT_TAG: ${{ steps.release.outputs['browser-extension--tag_name'] }}
         run: |
           gh release upload "$EXT_TAG" \
-            "browser-extension/artifacts/yt-abs-importer-chrome-v$EXT_VERSION.zip" \
-            "browser-extension/artifacts/yt-abs-importer-firefox-v$EXT_VERSION.zip" \
+            "browser-extension/artifacts/abs-media-importer-chrome-v$EXT_VERSION.zip" \
+            "browser-extension/artifacts/abs-media-importer-firefox-v$EXT_VERSION.zip" \
             --clobber

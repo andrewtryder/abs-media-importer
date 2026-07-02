@@ -1,13 +1,13 @@
-# Browser extension for yt-abs-importer
+# Browser extension for abs-media-importer
 
 An unpacked WebExtension (Manifest V3) that lets you queue the YouTube video open in
-your browser into a local `yt-abs-importer` instance. Works with Chrome and Firefox
+your browser into a local `abs-media-importer` instance. Works with Chrome and Firefox
 development builds. Nothing is published to a browser store.
 
 ## Features
 
 - **Popup** on YouTube video pages with a one-click "Queue video" button.
-- **Context menu** "Send to yt-abs-importer" on YouTube pages and links.
+- **Context menu** "Send to abs-media-importer" on YouTube pages and links.
 - **Options page** to configure the server URL, API token, default destination
   folder, embed flags, the "trigger Audiobookshelf scan" toggle, and a default
   "allow re-import" toggle.
@@ -28,11 +28,11 @@ Then restart the backend. Verify with:
 
 ```bash
 curl http://127.0.0.1:8080/api/extension/status
-# {"ok": true, "app": "yt-abs-importer", "auth_required": false, ...}
+# {"ok": true, "app": "abs-media-importer", "auth_required": false, ...}
 ```
 
 If a token is set, requests must include `Authorization: Bearer <token>` or
-`X-YTABS-Token: <token>`. The extension sends the Bearer header.
+`X-ABS-MEDIA-IMPORTER-Token: <token>`. The extension sends the Bearer header.
 
 ## 2. Build and load the extension
 

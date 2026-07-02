@@ -1,5 +1,5 @@
 # ============================================================
-# docker-compose.yml — yt-abs-importer
+# docker-compose.yml — abs-media-importer
 # ============================================================
 #
 # Three services:
@@ -30,8 +30,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: yt-abs-importer:latest
-    container_name: yt-abs-importer-app
+    image: abs-media-importer:latest
+    container_name: abs-media-importer-app
     command: app
     restart: unless-stopped
     # By default, bind only to localhost for safety.
@@ -76,8 +76,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: yt-abs-importer:latest
-    container_name: yt-abs-importer-worker
+    image: abs-media-importer:latest
+    container_name: abs-media-importer-worker
     command: worker
     restart: unless-stopped
     volumes:
@@ -101,7 +101,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: yt-abs-importer-redis
+    container_name: abs-media-importer-redis
     restart: unless-stopped
     volumes:
       - redis-data:/data

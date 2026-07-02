@@ -1,5 +1,5 @@
 ---
-name: yt-abs-importer Design System
+name: abs-media-importer Design System
 colors:
   surface: '#13161e'
   surface-dim: '#0d0f14'
@@ -105,7 +105,7 @@ spacing:
 ---
 
 ## Brand & Style
-The design system of **yt-abs-importer** is engineered to be a dark-mode first, clean, and highly focused utility for importing YouTube audiobooks to Audiobookshelf. The overall style is modern developer-centric, leaning into sleek high-contrast containers, solid accent borders, and elegant state alerts. It prioritizes legibility, spatial clarity, and responsiveness.
+The design system of **abs-media-importer** is engineered to be a dark-mode first, clean, and highly focused utility for importing YouTube audiobooks to Audiobookshelf. The overall style is modern developer-centric, leaning into sleek high-contrast containers, solid accent borders, and elegant state alerts. It prioritizes legibility, spatial clarity, and responsiveness.
 
 The brand color palette balances deep cosmic dark grays and blues with a bright electric-blue primary accent (`#6c8ef7`) to drive user interaction. High density data tables, progress monitors, and terminal log components provide immediate clarity for background task operations.
 

@@ -1,7 +1,7 @@
 # Browser extension
 
 An unpacked WebExtension (Manifest V3) that lets you queue the YouTube video open in
-your browser into a local `yt-abs-importer` instance. Supports Chrome and Firefox
+your browser into a local `abs-media-importer` instance. Supports Chrome and Firefox
 development builds. Not published to any browser store.
 
 For setup, build, and load instructions, see
@@ -25,7 +25,7 @@ EXTENSION_API_TOKEN=          # openssl rand -hex 32
 
 - With `EXTENSION_API_ENABLED=false` (default), both endpoints return `404`.
 - With a token set, requests must include `Authorization: Bearer <token>` **or**
-  `X-YTABS-Token: <token>`. Missing/wrong tokens return `401`.
+  `X-ABS-MEDIA-IMPORTER-Token: <token>`. Missing/wrong tokens return `401`.
 
 See [configuration.md](configuration.md) for the full environment variable reference.
 

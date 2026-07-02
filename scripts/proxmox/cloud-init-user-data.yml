@@ -25,7 +25,7 @@ users:
 runcmd:
   # Clone the app repository
   - mkdir -p /opt
-  - git clone https://github.com/andrewtryder/yt-abs-importer.git /opt/yt-abs-importer
-  
+  - git clone https://github.com/andrewtryder/abs-media-importer.git /opt/abs-media-importer
+
   # Trigger mode-specific provisioning (Docker VM or Native VM)
   # NOTE: The installer script on the host will append the bootstrap command here.

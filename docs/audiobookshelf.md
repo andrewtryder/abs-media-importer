@@ -1,13 +1,13 @@
 # Audiobookshelf Setup & Integration
 
-`yt-abs-importer` is designed to run alongside [Audiobookshelf](https://www.audiobookshelf.org/) (ABS). It writes files to a directory that ABS monitors and can automatically trigger an ABS library scan when a job completes.
+`abs-media-importer` is designed to run alongside [Audiobookshelf](https://www.audiobookshelf.org/) (ABS). It writes files to a directory that ABS monitors and can automatically trigger an ABS library scan when a job completes.
 
 ## 1. Directory Alignment
 
-Ensure your Audiobookshelf instance is pointed to the same physical storage folder that `yt-abs-importer` writes to.
+Ensure your Audiobookshelf instance is pointed to the same physical storage folder that `abs-media-importer` writes to.
 
-* **Docker setup**: If both ABS and `yt-abs-importer` are run on the same Docker host, they should both mount the same host directory.
-  * In `yt-abs-importer` `.env`:
+* **Docker setup**: If both ABS and `abs-media-importer` are run on the same Docker host, they should both mount the same host directory.
+  * In `abs-media-importer` `.env`:
     `HOST_PODCASTS_DIR=/mnt/podcasts`
   * In your Audiobookshelf Docker Compose config:
     ```yaml
@@ -22,7 +22,7 @@ Ensure your Audiobookshelf instance is pointed to the same physical storage fold
 
 Audiobookshelf scans files based on directory groupings. By default, it expects a structure of **`LibraryRoot/PodcastTitle/Episode.m4b`**.
 
-`yt-abs-importer` automatically handles this:
+`abs-media-importer` automatically handles this:
 1. When submitting a video, you choose or create a destination folder (e.g. `TechTalk`).
 2. The background worker downloads the video, converts it, and writes it to `/media/podcasts/TechTalk/Video Title.m4b`.
 3. In Audiobookshelf, `TechTalk` will appear as a Podcast or Audiobook series, and `Video Title.m4b` will appear as an episode/track.
@@ -31,7 +31,7 @@ Audiobookshelf scans files based on directory groupings. By default, it expects 
 
 ## 3. Automatic Library Scan API Integration
 
-You can configure `yt-abs-importer` to automatically tell Audiobookshelf to scan for new files as soon as a download finishes.
+You can configure `abs-media-importer` to automatically tell Audiobookshelf to scan for new files as soon as a download finishes.
 
 ### Configuration
 

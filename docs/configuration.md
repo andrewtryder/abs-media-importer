@@ -1,6 +1,6 @@
 # Configuration Reference
 
-`yt-abs-importer` supports flexible configuration using environment variables, a YAML configuration file, or dynamically through the Web UI.
+`abs-media-importer` supports flexible configuration using environment variables, a YAML configuration file, or dynamically through the Web UI.
 
 ## Configuration Precedence
 

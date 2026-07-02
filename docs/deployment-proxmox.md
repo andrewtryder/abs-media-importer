@@ -1,6 +1,6 @@
 # Proxmox VE Deployment Guide
 
-`yt-abs-importer` can be deployed in a Proxmox VE environment as either a dedicated Virtual Machine (VM) running Debian or inside a Linux Container (LXC).
+`abs-media-importer` can be deployed in a Proxmox VE environment as either a dedicated Virtual Machine (VM) running Debian or inside a Linux Container (LXC).
 
 For complete interactive installer details, refer to the [Proxmox Installer Script README](../scripts/proxmox/README.md).
 
@@ -50,7 +50,7 @@ If deploying via LXC, mount the NFS share on your Proxmox VE host and bind-mount
 Instead of editing `docker-compose.yml` directly, configure your VM/container path variables in the `.env` file.
 
 ### For Docker VM Deployments
-SSH into the guest VM, open `/opt/yt-abs-importer/.env`, and configure:
+SSH into the guest VM, open `/opt/abs-media-importer/.env`, and configure:
 ```env
 HOST_PODCASTS_DIR=/mnt/podcasts
 CONTAINER_PODCASTS_DIR=/media/podcasts
@@ -58,16 +58,16 @@ OUTPUT_ROOT=/media/podcasts
 ```
 Then restart the containers:
 ```bash
-cd /opt/yt-abs-importer
+cd /opt/abs-media-importer
 docker compose up -d
 ```
 
 ### For Native VM Deployments
-In a native systemd deployment, open `/etc/yt-abs-importer/.env` and update the output root directly:
+In a native systemd deployment, open `/etc/abs-media-importer/.env` and update the output root directly:
 ```env
 OUTPUT_ROOT=/mnt/podcasts
 ```
 Then restart the services:
 ```bash
-sudo systemctl restart yt-abs-importer-app yt-abs-importer-worker
+sudo systemctl restart abs-media-importer-app abs-media-importer-worker
 ```
