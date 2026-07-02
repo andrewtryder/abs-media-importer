@@ -21,6 +21,7 @@ check_lock() {
   tmp="$(mktemp)"
   uv pip compile "$source_file" -o "$tmp" \
     --python-version "$PYTHON_VERSION" \
+    --no-annotate \
     --custom-compile-command "./scripts/compile-requirements.sh" \
     -q
 
