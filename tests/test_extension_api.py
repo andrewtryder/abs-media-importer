@@ -62,7 +62,7 @@ def mocked_ytdlp(monkeypatch):
 
     # app.main imports YtDlpService by name, so patch the binding in app.main
     # (and in app.services.ytdlp for any code that resolves it from there).
-    def _factory(*args, **kwargs):  # noqa: E731 - thin constructor mock
+    def _factory(*args, **kwargs):
         return mock_svc
 
     monkeypatch.setattr("app.main.YtDlpService", _factory)

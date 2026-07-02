@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, WebSocket
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -284,8 +284,10 @@ async def _websocket_endpoint(
             # Wait before next poll
             await websocket.receive_text(timeout=5)
 
-    except (WebSocketDisconnect, Exception):
-        pass
+    except WebSocketDisconnect:
+        logger.debug("WebSocket disconnected for job %s", job_id)
+    except Exception:
+        logger.exception("Unexpected WebSocket error for job %s", job_id)
     finally:
         await websocket.close(code=1000)
 
