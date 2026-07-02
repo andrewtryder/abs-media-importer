@@ -1,0 +1,33 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "exclude-paths": [
+        "browser-extension/**"
+      ],
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "pyproject.toml",
+          "jsonpath": "$.project.version"
+        },
+        {
+          "type": "generic",
+          "path": "app/main.py"
+        }
+      ]
+    },
+    "browser-extension": {
+      "component": "browser-extension",
+      "release-type": "node",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "browser-extension/manifests/base.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}

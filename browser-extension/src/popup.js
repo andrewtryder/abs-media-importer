@@ -2,6 +2,13 @@ import { isYouTubeWatchUrl } from './settings.js';
 
 function $(id) { return document.getElementById(id); }
 
+function setExtensionVersionLabel() {
+  const versionEl = $('extension-version');
+  if (!versionEl) return;
+  const runtimeVersion = chrome.runtime?.getManifest?.().version;
+  versionEl.textContent = runtimeVersion || 'unknown';
+}
+
 function setStatus(text, className = 'pending') {
   const el = $('status');
   el.textContent = text;
@@ -227,6 +234,7 @@ chrome.runtime.onMessage.addListener((message) => {
 
 // Event listeners
 $('queue').addEventListener('click', onQueue);
+setExtensionVersionLabel();
 
 // Initialize
 init();

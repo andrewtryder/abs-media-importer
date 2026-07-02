@@ -119,6 +119,7 @@ Refer to the documents in the `/docs` directory for detailed deployment and conf
 * 🛠️ **[Troubleshooting Guide](docs/troubleshooting.md)**: Fixes for permission errors, extractor issues, and missing metadata.
 * 🔒 **[Security Guidelines](docs/security.md)**: Localhost binding, Basic Auth configuration, and reverse proxying.
 * 💻 **[Development Guide](docs/development.md)**: Setting up a local virtual environment, starting Redis, running tests, and linting.
+* 🚀 **[Releasing Guide](docs/releasing.md)**: Release Please workflow, component-based version bumps, and extension asset publishing.
 
 ---
 
