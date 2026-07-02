@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import contextlib
 import html
@@ -181,13 +182,9 @@ def _extension_api_auth(request: Request, cfg: SettingsDep) -> Settings:
 
 
 ExtensionAuthDep = Annotated[Settings, Depends(_extension_api_auth)]
-SettingsDep = Annotated[Settings, Depends(get_settings)]
-DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-async def _validate_websocket_token(
-    job_id: str, request: Request, settings: SettingsDep
-) -> None:
+async def _validate_websocket_token(job_id: str, request: Request, settings: SettingsDep) -> None:
     """Validate extension API token for WebSocket authentication."""
     if not settings.extension_api_enabled:
         raise HTTPException(status_code=404, detail="Extension API not enabled")
@@ -198,11 +195,6 @@ async def _validate_websocket_token(
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
         x_token = request.headers.get("X-YTABS-Token")
-        if x_token:
-            token = x_token
-
-        if not token or not secrets.compare_digest(token, settings.extension_api_token):
-            raise HTTPException(status_code=401, detail="Invalid extension API token")
         if x_token:
             token = x_token
 
@@ -237,10 +229,7 @@ async def _websocket_endpoint(
         return
 
     # Initial snapshot
-    await websocket.send_json({
-        "type": "job_update",
-        "job": _job_dict(job)
-    })
+    await websocket.send_json({"type": "job_update", "job": _job_dict(job)})
 
     # WebSocket polling loop
     try:
@@ -257,8 +246,15 @@ async def _websocket_endpoint(
             # Check for meaningful changes (fields that trigger UI updates)
             meaningful_changes = False
             fields_to_check = [
-                "status", "phase", "progress", "progress_percent", "progress_label",
-                "progress_eta", "progress_speed", "error_message", "final_output_path"
+                "status",
+                "phase",
+                "progress",
+                "progress_percent",
+                "progress_label",
+                "progress_eta",
+                "progress_speed",
+                "error_message",
+                "final_output_path",
             ]
 
             for field in fields_to_check:
@@ -267,22 +263,16 @@ async def _websocket_endpoint(
                     break
 
             if meaningful_changes:
-                await websocket.send_json({
-                    "type": "job_update",
-                    "job": current_data
-                })
+                await websocket.send_json({"type": "job_update", "job": current_data})
                 last_data = current_data
 
             # Check for terminal status
             if current_job.status in {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}:
-                await websocket.send_json({
-                    "type": "job_update",
-                    "job": current_data
-                })
+                await websocket.send_json({"type": "job_update", "job": current_data})
                 break
 
             # Wait before next poll
-            await websocket.receive_text(timeout=5)
+            await asyncio.sleep(5)
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected for job %s", job_id)
@@ -292,7 +282,7 @@ async def _websocket_endpoint(
         await websocket.close(code=1000)
 
 
-async def _register_routes(app: FastAPI, settings: Settings) -> None:
+def _register_routes(app: FastAPI, settings: Settings) -> None:
     # ── Health ────────────────────────────────────────────────────────────────
 
     @app.get("/health")

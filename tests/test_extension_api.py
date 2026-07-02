@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from unittest.mock import Mock
 
 import pytest
@@ -11,14 +12,29 @@ from app.services.ytdlp import YtDlpService
 from fastapi.testclient import TestClient
 
 
+@pytest.fixture(autouse=True)
+def isolated_db(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    """Use an isolated SQLite DB per test and clear cached engines."""
+    db_path = tmp_path / "test-extension-api.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
+
+    import app.db as db_module
+
+    db_module._async_engine = None
+    db_module._async_session_factory = None
+    db_module._sync_engine = None
+    db_module._sync_session_factory = None
+
+
 @pytest.fixture
-def client() -> TestClient:
+def client() -> Iterator[TestClient]:
     """Create a test client for the FastAPI app."""
-    return TestClient(create_app())
+    with TestClient(create_app()) as test_client:
+        yield test_client
 
 
 @pytest.fixture
-def extension_enabled_client(monkeypatch) -> TestClient:
+def extension_enabled_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     """Create a test client with extension API enabled."""
     monkeypatch.setenv("EXTENSION_API_ENABLED", "true")
     monkeypatch.setenv("EXTENSION_API_TOKEN", "test-token-12345")
@@ -26,18 +42,20 @@ def extension_enabled_client(monkeypatch) -> TestClient:
     import app.config as cfg_module
 
     cfg_module._settings = None
-    return TestClient(create_app())
+    with TestClient(create_app()) as test_client:
+        yield test_client
 
 
 @pytest.fixture
-def extension_enabled_no_token_client(monkeypatch) -> TestClient:
+def extension_enabled_no_token_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     """Create a test client with extension API enabled but no token."""
     monkeypatch.setenv("EXTENSION_API_ENABLED", "true")
     monkeypatch.setenv("EXTENSION_API_TOKEN", "")
     import app.config as cfg_module
 
     cfg_module._settings = None
-    return TestClient(create_app())
+    with TestClient(create_app()) as test_client:
+        yield test_client
 
 
 @pytest.fixture
