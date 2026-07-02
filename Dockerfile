@@ -28,10 +28,12 @@ RUN curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
 # ── Python dependencies ─────────────────────────────────────
 FROM base AS deps
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 WORKDIR /build
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+ENV UV_SYSTEM_PYTHON=1
+COPY requirements.lock .
+RUN uv pip sync requirements.lock
 
 # ── Final image ─────────────────────────────────────────────
 FROM base AS final

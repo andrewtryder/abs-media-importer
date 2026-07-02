@@ -140,10 +140,12 @@ Refer to the documents in the `/docs` directory for detailed deployment and conf
 To run tests and code quality checks locally:
 
 ```bash
+# Install uv: https://docs.astral.sh/uv/getting-started/installation/
+
 # Set up virtual environment and dependencies
-python -m venv .venv
+uv venv
 source .venv/bin/activate
-pip install -r requirements-dev.txt
+uv pip sync requirements-dev.lock
 
 # Run pytest suite
 pytest

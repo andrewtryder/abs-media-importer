@@ -4,16 +4,27 @@ This guide is for developers looking to modify or contribute to `abs-media-impor
 
 ## 1. Local Environment Setup
 
-To run the application locally without Docker, set up a Python virtual environment and install the development dependencies:
+To run the application locally without Docker, install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync the development lock file:
 
 ```bash
 # Create and activate virtual environment
-python -m venv .venv
+uv venv
 source .venv/bin/activate
 
-# Install development packages
-pip install -r requirements-dev.txt
+# Install development packages from the pinned lock file
+uv pip sync requirements-dev.lock
 ```
+
+### Updating dependencies
+
+When adding or changing dependencies:
+
+1. Edit `requirements.txt` and/or `requirements-dev.txt`
+2. Run `./scripts/compile-requirements.sh`
+3. Run `uv pip sync requirements-dev.lock`
+4. Run tests and commit both source and lock files
+
+CI verifies lock freshness with `./scripts/check-requirements-lock.sh`.
 
 ---
 

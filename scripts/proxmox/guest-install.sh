@@ -23,7 +23,6 @@ apt-get update -y
 log "Installing required packages..."
 apt-get install -y --no-install-recommends \
     python3 \
-    python3-pip \
     python3-venv \
     python3-dev \
     ffmpeg \
@@ -34,6 +33,10 @@ apt-get install -y --no-install-recommends \
     sqlite3 \
     ca-certificates \
     qemu-guest-agent
+
+# Install uv (https://docs.astral.sh/uv/getting-started/installation/)
+log "Installing uv..."
+curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
 
 # 2. Install latest yt-dlp binary
 log "Installing latest yt-dlp binary..."
@@ -65,9 +68,8 @@ fi
 cd "$APP_DIR"
 
 log "Creating Python virtual environment..."
-python3 -m venv .venv
-.venv/bin/pip install --no-cache-dir --upgrade pip
-.venv/bin/pip install --no-cache-dir -r requirements.txt
+uv venv
+uv pip sync requirements.lock
 
 # 5. Create directories
 log "Creating config, data, and log directories..."

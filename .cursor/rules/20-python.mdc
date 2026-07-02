@@ -5,10 +5,26 @@ globs: **/*.py
 
 # Python Rules
 
-Use the existing dependency workflow unless the task explicitly migrates package management.
-For pip requirements repos, keep runtime dependencies in `requirements.txt` and
-put development-only tools in `requirements-dev.txt`. Dev-only tools include
-pytest, coverage, Ruff, and test helpers such as httpx for FastAPI tests.
+Use uv for dependency management with editable requirements sources and pinned lock files.
+
+- Runtime dependencies: `requirements.txt` → compile to `requirements.lock`
+- Development dependencies: `requirements-dev.txt` → compile to `requirements-dev.lock`
+- Dev-only tools include pytest, coverage, Ruff, mypy, and pre-commit.
+
+Dependency workflow:
+
+1. Edit `requirements.txt` and/or `requirements-dev.txt`
+2. Run `./scripts/compile-requirements.sh`
+3. Run `uv pip sync requirements-dev.lock`
+4. Commit source and lock files together
+
+Local setup:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip sync requirements-dev.lock
+```
 
 Preferred checks:
 

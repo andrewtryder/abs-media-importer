@@ -6,16 +6,20 @@ governance:
   contributing: required
   pull_request_template: required
 python_version: "3.12"
-package_manager: pip-requirements
+package_manager: uv
 dependency_standards:
   runtime: requirements.txt
   development: requirements-dev.txt
+  runtime_lock: requirements.lock
+  development_lock: requirements-dev.lock
   repo_tooling: package.json devDependencies for Rulesync
   policy: keep dev/test tools out of runtime requirements
 
 commands:
-  install: python -m pip install -r requirements.txt -r requirements-dev.txt
-  install_dev: python -m pip install -r requirements.txt -r requirements-dev.txt
+  install: uv venv && uv pip sync requirements-dev.lock
+  install_dev: uv venv && uv pip sync requirements-dev.lock
+  compile_requirements: scripts/compile-requirements.sh
+  check_requirements_lock: scripts/check-requirements-lock.sh
   format_check: ruff format --check .
   lint: ruff check .
   typecheck: ""

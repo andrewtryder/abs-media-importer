@@ -213,7 +213,7 @@ SSH into the VM and run:
 ```bash
 cd /opt/abs-media-importer
 sudo git pull
-sudo /opt/abs-media-importer/.venv/bin/pip install -r requirements.txt
+sudo uv pip sync requirements.lock --python /opt/abs-media-importer/.venv/bin/python
 sudo systemctl restart abs-media-importer-app abs-media-importer-worker
 ```
 
