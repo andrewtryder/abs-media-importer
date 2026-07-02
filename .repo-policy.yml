@@ -35,7 +35,7 @@ release:
 
 deploy:
   provider: repo-specific
-  workflow: .github/workflows/publish-dockerhub.yml
+  workflow: .github/workflows/docker.yml
 
 migration_notes: >
   Docker images published to Docker Hub and GHCR after successful CI on main
