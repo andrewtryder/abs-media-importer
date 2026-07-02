@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.5.0](https://github.com/andrewtryder/yt-abs-importer/compare/v1.4.1...v1.5.0) (2026-07-02)
+
+
+### Features
+
+* **app:** add dedup ledger, output filesize, and extension UX updates ([664cf27](https://github.com/andrewtryder/yt-abs-importer/commit/664cf276316a41d313026bab1eaef97539b884a8))
+* **app:** ship jobs dedup, output metadata, and extension updates ([5b58813](https://github.com/andrewtryder/yt-abs-importer/commit/5b5881305f491731ccff14fb9564f422574c2b07))
+* **branding:** replace app and extension icons ([a32f026](https://github.com/andrewtryder/yt-abs-importer/commit/a32f02601bffe82f1f1b5fe5598487eb775ada5c))
+* **branding:** replace app and extension icons ([26cf385](https://github.com/andrewtryder/yt-abs-importer/commit/26cf38507872046537451c6d05e471cd426bdaca))
+* **browser-extension:** add extension integration and UI updates ([0b97341](https://github.com/andrewtryder/yt-abs-importer/commit/0b97341f1fc785bccae56a2cf73d22d2c9cfc26b))
+* **browser-extension:** add extension integration and UI updates ([1da5904](https://github.com/andrewtryder/yt-abs-importer/commit/1da59042c94165cd3a9afd6a87da7a7f397caff1))
+
+
+### Bug Fixes
+
+* **api:** register routes during app startup ([6f93169](https://github.com/andrewtryder/yt-abs-importer/commit/6f93169e0fc0baffcae2a79f75e406797d6f5a12))
+* **api:** register routes synchronously at startup ([ab56418](https://github.com/andrewtryder/yt-abs-importer/commit/ab5641832166a89db4d44381b889ebb2d9c27419))
+* **api:** remove duplicated extension auth logic ([2a69408](https://github.com/andrewtryder/yt-abs-importer/commit/2a69408de8d1cec63038ecdca99239b3cfcabe00))
+* **api:** replace websocket timeout call for mypy ([ae5b4b2](https://github.com/andrewtryder/yt-abs-importer/commit/ae5b4b244a7fd8d54106f5f0d27f65a0b26a4c6e))
+* **api:** resolve Ruff failures in extension websocket path ([6caeec6](https://github.com/andrewtryder/yt-abs-importer/commit/6caeec636f1c6e1c7fbe679cf5a0bde039089714))
+* **tests:** align mocked and on-disk output filesize ([6e48fe6](https://github.com/andrewtryder/yt-abs-importer/commit/6e48fe6bb62c64e34162bc32d50132ba0609e408))
+* **tests:** initialize extension API DB via lifespan ([3f03b65](https://github.com/andrewtryder/yt-abs-importer/commit/3f03b65ef02ac32560a5e81d16749ed38e7de043))
+
 ## [1.4.1](https://github.com/andrewtryder/yt-abs-importer/compare/v1.4.0...v1.4.1) (2026-06-30)
 
 
