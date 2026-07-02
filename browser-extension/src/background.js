@@ -32,7 +32,9 @@ function buildRequestBody(url, options = {}) {
 
 function authHeaders() {
   const headers = { 'Content-Type': 'application/json' };
-  if (settings.apiToken) headers['Authorization'] = `Bearer ${settings.apiToken}`;
+  if (settings.authEnabled && settings.apiToken) {
+    headers['Authorization'] = `Bearer ${settings.apiToken}`;
+  }
   return headers;
 }
 
@@ -85,31 +87,43 @@ async function handleQueue(url, options = {}) {
   }
   try {
     const data = await queueVideo(url, options);
-    notify(`Queued successfully: ${data.title || data.job_id}`);
-    await openJobPage(data.job_url);
+    if (!data?.job_id) {
+      throw new Error('Queue response missing job_id');
+    }
+    const responsePayload = {
+      ok: true,
+      job_id: data.job_id,
+      rq_job_id: data.rq_job_id || null,
+      status: data.status || 'queued',
+      title: data.title || null,
+      uploader: data.uploader || null,
+      job_url: data.job_url || null,
+      serverUrl: settings.serverUrl,
+    };
+
+    notify(`Queued successfully: ${responsePayload.title || responsePayload.job_id}`);
+    await openJobPage(responsePayload.job_url);
 
     // Start WebSocket connection for real-time updates
-    startJobWebSocket(data.job_id);
+    startJobWebSocket(responsePayload.job_id);
 
     // Send message to popup to update UI
     chrome.runtime.sendMessage({
       action: 'queueSuccess',
-      jobId: data.job_id,
-      title: data.title,
-      uploader: data.uploader,
-      status: 'queued',
+      jobId: responsePayload.job_id,
+      job_id: responsePayload.job_id,
+      title: responsePayload.title,
+      uploader: responsePayload.uploader,
+      status: responsePayload.status,
       progress: 0,
       progressLabel: 'Queued',
-      jobUrl: data.job_url,
+      jobUrl: responsePayload.job_url,
+      job_url: responsePayload.job_url,
       serverUrl: settings.serverUrl,
     }).catch(err => {
       console.error('Failed to send queue success message to popup:', err);
     });
-    return {
-      ok: true,
-      ...data,
-      serverUrl: settings.serverUrl,
-    };
+    return responsePayload;
   } catch (err) {
     console.error('Queue failed:', err);
     notify(err.message || 'Failed to queue video');
@@ -168,21 +182,34 @@ async function refreshSettings() {
 }
 
 // WebSocket connection manager
+function buildJobWebSocketUrl(jobId) {
+  const baseUrl = settings.serverUrl.replace(/\/+$/, '');
+  const base = new URL(baseUrl);
+  const wsProtocol = base.protocol === 'http:' ? 'ws:' : 'wss:';
+  const wsUrl = new URL(`${wsProtocol}//${base.host}/api/ws/jobs/${encodeURIComponent(jobId)}`);
+  if (settings.authEnabled && settings.apiToken) {
+    wsUrl.searchParams.set('token', settings.apiToken);
+  }
+  return wsUrl.toString();
+}
+
 function startJobWebSocket(jobId) {
   if (!settings.serverUrl) {
     console.error('Cannot start WebSocket: server URL not configured');
     return null;
   }
 
-  const baseUrl = settings.serverUrl.replace(/\/+$/, '');
-  let wsUrl = `${baseUrl.startsWith('http://') ? 'ws://' : 'wss://'}${baseUrl.replace(/^https?:\/\//, '')}/api/ws/jobs/${jobId}`;
-
-  // Add auth token if configured
-  if (settings.apiToken) {
-    // WebSocket auth via query parameter
-    wsUrl += `?token=${settings.apiToken}`;
+  const existing = activeWebSockets.get(jobId);
+  if (existing && (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)) {
+    return existing;
   }
-  const ws = new WebSocket(wsUrl);
+  let ws;
+  try {
+    ws = new WebSocket(buildJobWebSocketUrl(jobId));
+  } catch (error) {
+    console.error(`Cannot start WebSocket for job ${jobId}:`, error);
+    return null;
+  }
 
   ws.onopen = function() {
     console.log(`WebSocket connected for job ${jobId}`);

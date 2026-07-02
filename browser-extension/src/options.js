@@ -2,8 +2,17 @@ import { DEFAULT_SETTINGS, STORAGE_KEYS, loadSettings, saveSettings } from './se
 
 function $(id) { return document.getElementById(id); }
 
+function syncAuthUi(authEnabled) {
+  const tokenRow = $('apiTokenRow');
+  const tokenInput = $('apiToken');
+  if (!tokenRow || !tokenInput) return;
+  tokenRow.classList.toggle('hidden', !authEnabled);
+  tokenInput.disabled = !authEnabled;
+}
+
 function populate(settings) {
   $('serverUrl').value = settings.serverUrl || '';
+  $('authEnabled').checked = Boolean(settings.authEnabled);
   $('apiToken').value = settings.apiToken || '';
   $('defaultDestinationFolder').value = settings.defaultDestinationFolder || '';
   $('embedMetadata').checked = settings.embedMetadata;
@@ -11,12 +20,15 @@ function populate(settings) {
   $('embedChapters').checked = settings.embedChapters;
   $('triggerAbsScan').checked = settings.triggerAbsScan;
   $('allowReimport').checked = settings.allowReimport;
+  syncAuthUi(Boolean(settings.authEnabled));
 }
 
 function collect() {
+  const authEnabled = $('authEnabled').checked;
   return {
     serverUrl: $('serverUrl').value.trim(),
-    apiToken: $('apiToken').value.trim(),
+    authEnabled,
+    apiToken: authEnabled ? $('apiToken').value.trim() : '',
     defaultDestinationFolder: $('defaultDestinationFolder').value.trim(),
     embedMetadata: $('embedMetadata').checked,
     embedThumbnail: $('embedThumbnail').checked,
@@ -103,7 +115,7 @@ function updateStatusPanel(statusData, settings) {
   document.getElementById('overall-status-indicator').className = `status-indicator ${overallClass}`;
 }
 
-async function loadStatusFromServer(serverUrl, apiToken = null) {
+async function loadStatusFromServer(serverUrl, authEnabled = false, apiToken = null) {
   if (!serverUrl) {
     throw new Error('Server URL is required');
   }
@@ -111,7 +123,7 @@ async function loadStatusFromServer(serverUrl, apiToken = null) {
   try {
     const base = serverUrl.replace(/\/+$/, '');
     const headers = {};
-    if (apiToken) headers['Authorization'] = `Bearer ${apiToken}`;
+    if (authEnabled && apiToken) headers['Authorization'] = `Bearer ${apiToken}`;
 
     const res = await fetch(`${base}/api/extension/status`, { headers });
     if (!res.ok) {
@@ -138,7 +150,7 @@ async function onSave() {
 }
 
 async function onTest() {
-  const { serverUrl, apiToken } = collect();
+  const { serverUrl, authEnabled, apiToken } = collect();
 
   if (!serverUrl) {
     setStatus('Enter a server URL first.', false);
@@ -150,7 +162,7 @@ async function onTest() {
   document.getElementById('status-panel').style.display = 'none';
 
   try {
-    const statusData = await loadStatusFromServer(serverUrl, apiToken);
+    const statusData = await loadStatusFromServer(serverUrl, authEnabled, apiToken);
     const showDetailedStatus = !statusData.ok;
     if (showDetailedStatus) {
       // Only show detailed status when there is a problem.
@@ -191,6 +203,9 @@ async function onTest() {
 
 (async () => {
   populate(await loadSettings());
+  $('authEnabled').addEventListener('change', (event) => {
+    syncAuthUi(Boolean(event.target?.checked));
+  });
   $('save').addEventListener('click', onSave);
   $('test').addEventListener('click', onTest);
 
@@ -200,7 +215,11 @@ async function onTest() {
     // Small delay to allow page render
     setTimeout(async () => {
       try {
-        const statusData = await loadStatusFromServer(initialSettings.serverUrl, initialSettings.apiToken);
+        const statusData = await loadStatusFromServer(
+          initialSettings.serverUrl,
+          Boolean(initialSettings.authEnabled),
+          initialSettings.apiToken
+        );
         if (!statusData.ok) {
           updateStatusPanel(statusData, initialSettings);
           document.getElementById('status-panel').style.display = 'block';
