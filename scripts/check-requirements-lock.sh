@@ -11,6 +11,8 @@ if ! command -v uv >/dev/null 2>&1; then
   exit 1
 fi
 
+PYTHON_VERSION="${PYTHON_VERSION:-3.12}"
+
 check_lock() {
   local source_file=$1
   local lock_file=$2
@@ -18,6 +20,7 @@ check_lock() {
 
   tmp="$(mktemp)"
   uv pip compile "$source_file" -o "$tmp" \
+    --python-version "$PYTHON_VERSION" \
     --custom-compile-command "./scripts/compile-requirements.sh" \
     -q
 

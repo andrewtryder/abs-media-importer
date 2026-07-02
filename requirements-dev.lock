@@ -135,10 +135,12 @@ types-pyyaml==6.0.12.20260518
 typing-extensions==4.16.0
     # via
     #   aiosqlite
+    #   anyio
     #   fastapi
     #   mypy
     #   pydantic
     #   pydantic-core
+    #   pytest-asyncio
     #   sqlalchemy
     #   typing-inspection
 typing-inspection==0.4.2
