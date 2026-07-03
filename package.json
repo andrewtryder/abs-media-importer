@@ -4,7 +4,7 @@
     "rulesync": "rulesync generate"
   },
   "devDependencies": {
-    "rulesync": "^9.0.2"
+    "rulesync": "^9.1.1"
   },
   "name": "abs-media-importer"
 }
