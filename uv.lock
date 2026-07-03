@@ -4,7 +4,7 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "abs-media-importer"
-version = "1.5.2"
+version = "1.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },

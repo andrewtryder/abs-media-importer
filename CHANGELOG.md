@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.0](https://github.com/andrewtryder/abs-media-importer/compare/v1.5.2...v1.6.0) (2026-07-03)
+
+
+### Features
+
+* **branding:** replace logo, favicon, and extension icons ([36eec2a](https://github.com/andrewtryder/abs-media-importer/commit/36eec2a774576b2f5a6bbc64203cbb97b144e762))
+* **branding:** replace logo, favicon, and extension icons ([69c5d19](https://github.com/andrewtryder/abs-media-importer/commit/69c5d19b2901d46b3b76bcd7dff4c5f9b6b17867))
+
+
+### Bug Fixes
+
+* **api:** source FastAPI version from package metadata ([e6c91a2](https://github.com/andrewtryder/abs-media-importer/commit/e6c91a222e276128c4aa7504fa90cf5246911e7d))
+* **api:** source FastAPI version from package metadata ([0d79b1d](https://github.com/andrewtryder/abs-media-importer/commit/0d79b1d1017289fa7e6d77193fd622aae943ad68))
+* **ci:** sync uv.lock and prevent release-please lockfile drift ([6e6a730](https://github.com/andrewtryder/abs-media-importer/commit/6e6a73085b65627c9df359ac940f93df36a62ba4))
+
 ## [1.5.2](https://github.com/andrewtryder/abs-media-importer/compare/v1.5.1...v1.5.2) (2026-07-03)
 
 

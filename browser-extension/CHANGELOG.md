@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](https://github.com/andrewtryder/abs-media-importer/compare/browser-extension-v1.6.0...browser-extension-v1.7.0) (2026-07-03)
+
+
+### Features
+
+* **branding:** replace logo, favicon, and extension icons ([36eec2a](https://github.com/andrewtryder/abs-media-importer/commit/36eec2a774576b2f5a6bbc64203cbb97b144e762))
+* **branding:** replace logo, favicon, and extension icons ([69c5d19](https://github.com/andrewtryder/abs-media-importer/commit/69c5d19b2901d46b3b76bcd7dff4c5f9b6b17867))
+
 ## [1.6.0](https://github.com/andrewtryder/yt-abs-importer/compare/browser-extension-v1.5.0...browser-extension-v1.6.0) (2026-07-02)
 
 
