@@ -8,6 +8,20 @@
 * **ui:** add Diagnostics page with health checks for yt-dlp, ffmpeg, ffprobe, Redis, database, paths, disk space, cookies, and ABS API.
 * **ui:** unify page headers, shared badge tokens, success/warning palette, and layout polish across Import, Jobs, Settings, Preview, Job Detail, and Diagnostics.
 
+## [1.7.0](https://github.com/andrewtryder/abs-media-importer/compare/v1.6.1...v1.7.0) (2026-07-03)
+
+
+### Features
+
+* **db:** add Alembic migrations for versioned schema changes ([c642033](https://github.com/andrewtryder/abs-media-importer/commit/c642033bf7897751f129ae70bd8505a20ff176f5))
+* **db:** add Alembic migrations for versioned schema changes ([dfadd94](https://github.com/andrewtryder/abs-media-importer/commit/dfadd94dcb2d698ef40015d997ae52971af303d1))
+* **docker:** add path validation, readiness probe, and settings registry ([a49663e](https://github.com/andrewtryder/abs-media-importer/commit/a49663e0989e5e5480d3de76a5f160c9383e21a5))
+* **docker:** add path validation, readiness probe, and settings registry ([53d3649](https://github.com/andrewtryder/abs-media-importer/commit/53d3649eaeb25cb1b8b68de6c408055c5a08732e))
+* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([1ffc0f3](https://github.com/andrewtryder/abs-media-importer/commit/1ffc0f34e63df2f7363e53fd0e8a5072eed8a3fb))
+* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([a0f5eab](https://github.com/andrewtryder/abs-media-importer/commit/a0f5eab4ca6cf7a071b8dc844d6cc96d9ddf2f88))
+* **ui:** unify design system and add diagnostics page ([9e55f3e](https://github.com/andrewtryder/abs-media-importer/commit/9e55f3e4012ff176bec60ce731faab5974f718c8))
+* **ui:** unify design system and add diagnostics page ([3f3858c](https://github.com/andrewtryder/abs-media-importer/commit/3f3858ca5bf24a4a6da8d2cb688613b593beb4c8))
+
 ## [1.6.1](https://github.com/andrewtryder/abs-media-importer/compare/v1.6.0...v1.6.1) (2026-07-03)
 
 

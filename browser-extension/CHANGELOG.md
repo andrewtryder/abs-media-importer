@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/andrewtryder/abs-media-importer/compare/browser-extension-v1.7.1...browser-extension-v1.8.0) (2026-07-03)
+
+
+### Features
+
+* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([1ffc0f3](https://github.com/andrewtryder/abs-media-importer/commit/1ffc0f34e63df2f7363e53fd0e8a5072eed8a3fb))
+* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([a0f5eab](https://github.com/andrewtryder/abs-media-importer/commit/a0f5eab4ca6cf7a071b8dc844d6cc96d9ddf2f88))
+
 ## [1.7.1](https://github.com/andrewtryder/abs-media-importer/compare/browser-extension-v1.7.0...browser-extension-v1.7.1) (2026-07-03)
 
 
