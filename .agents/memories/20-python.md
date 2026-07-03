@@ -1,32 +1,32 @@
 # Python Rules
 
-Use uv for dependency management with editable requirements sources and pinned lock files.
+Use uv project mode with dependencies declared in `pyproject.toml` and locked in `uv.lock`.
 
-- Runtime dependencies: `requirements.txt` → compile to `requirements.lock`
-- Development dependencies: `requirements-dev.txt` → compile to `requirements-dev.lock`
-- Dev-only tools include pytest, coverage, Ruff, mypy, and pre-commit.
+- Runtime dependencies: `[project.dependencies]`
+- Development dependencies: `[dependency-groups].dev`
 
 Dependency workflow:
 
-1. Edit `requirements.txt` and/or `requirements-dev.txt`
-2. Run `./scripts/compile-requirements.sh`
-3. Run `uv pip sync requirements-dev.lock`
-4. Commit source and lock files together
+1. Edit dependencies in `pyproject.toml`
+2. Run `uv lock`
+3. Run `uv sync --dev`
+4. Commit `pyproject.toml` and `uv.lock` together
 
 Local setup:
 
 ```bash
-uv venv
-source .venv/bin/activate
-uv pip sync requirements-dev.lock
+uv sync --dev
 ```
 
-Preferred checks:
+Before opening a PR, run the same checks as CI:
 
-- `ruff format --check .`
-- `ruff check .`
-- `pytest`
-- `coverage run -m pytest && coverage report`
+```bash
+uv sync --locked --dev
+uv run --frozen ruff format --check .
+uv run --frozen ruff check .
+uv run --frozen mypy app worker
+uv run --frozen pytest
+```
 
 Use Ruff for formatting/linting and pytest for tests when configured.
 File patterns determine execution: Python checks apply to `*.py` files when those files exist.

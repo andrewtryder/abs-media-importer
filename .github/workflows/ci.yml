@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHON_VERSION: "3.12"
+  REQUIRED_UV_VERSION: "0.11.26"
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -20,32 +24,27 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.11.26"
-          python-version: "3.12"
+          version: ${{ env.REQUIRED_UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
           cache-dependency-glob: |
-            **/requirements*.txt
-            **/requirements*.lock
-
-      - name: Verify lock files are up to date
-        run: ./scripts/check-requirements-lock.sh
+            **/pyproject.toml
+            **/uv.lock
 
       - name: Install dependencies
-        run: |
-          uv venv
-          uv pip sync requirements-dev.lock
+        run: uv sync --locked --dev
 
       - name: Run Ruff check
-        run: uv run --no-project ruff check .
+        run: uv run --frozen ruff check .
 
       - name: Run Ruff format check
-        run: uv run --no-project ruff format --check .
+        run: uv run --frozen ruff format --check .
 
       - name: Run Mypy
-        run: uv run --no-project mypy app worker
+        run: uv run --frozen mypy app worker
 
       - name: Run tests
-        run: uv run --no-project pytest
+        run: uv run --frozen pytest
 
       - name: Docker build smoke test
         run: docker build .

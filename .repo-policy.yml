@@ -8,23 +8,19 @@ governance:
 python_version: "3.12"
 package_manager: uv
 dependency_standards:
-  runtime: requirements.txt
-  development: requirements-dev.txt
-  runtime_lock: requirements.lock
-  development_lock: requirements-dev.lock
+  project: pyproject.toml
+  lock: uv.lock
   repo_tooling: package.json devDependencies for Rulesync
-  policy: keep dev/test tools out of runtime requirements
+  policy: keep dev/test tools in dependency-groups.dev only
 
 commands:
-  install: uv venv && uv pip sync requirements-dev.lock
-  install_dev: uv venv && uv pip sync requirements-dev.lock
-  compile_requirements: scripts/compile-requirements.sh
-  check_requirements_lock: scripts/check-requirements-lock.sh
-  format_check: ruff format --check .
-  lint: ruff check .
-  typecheck: ""
-  test: coverage run -m pytest
-  coverage: coverage report
+  install: uv sync --dev
+  install_dev: uv sync --dev
+  format_check: uv run --frozen ruff format --check .
+  lint: uv run --frozen ruff check .
+  typecheck: uv run --frozen mypy app worker
+  test: uv run --frozen pytest
+  coverage: uv run --frozen coverage run -m pytest && uv run --frozen coverage report
 
 quality_gates:
   semantic_pr_title: required
@@ -46,5 +42,3 @@ migration_notes: >
   or semver tags. Proxmox installer validation is a separate domain-specific
   workflow. Coverage default threshold (report-only) is safe for migration.
   Add --fail-under=<threshold> to the coverage command when ready.
-  typecheck is left empty by design. Python typechecking (mypy, pyright)
-  is adopted repo-by-repo; add a typecheck command when the repo is ready.

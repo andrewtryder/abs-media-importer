@@ -4,27 +4,38 @@ This guide is for developers looking to modify or contribute to `abs-media-impor
 
 ## 1. Local Environment Setup
 
-To run the application locally without Docker, install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync the development lock file:
+To run the application locally without Docker, install [uv](https://docs.astral.sh/uv/getting-started/installation/) and sync the project environment:
 
 ```bash
-# Create and activate virtual environment
-uv venv
-source .venv/bin/activate
+uv sync --dev
+```
 
-# Install development packages from the pinned lock file
-uv pip sync requirements-dev.lock
+Run project tools through uv:
+
+```bash
+uv run pytest
+uv run ruff check .
+```
+
+Run the same checks as CI before opening a PR:
+
+```bash
+uv sync --locked --dev
+uv run --frozen ruff format --check .
+uv run --frozen ruff check .
+uv run --frozen mypy app worker
+uv run --frozen pytest
 ```
 
 ### Updating dependencies
 
 When adding or changing dependencies:
 
-1. Edit `requirements.txt` and/or `requirements-dev.txt`
-2. Run `./scripts/compile-requirements.sh`
-3. Run `uv pip sync requirements-dev.lock`
-4. Run tests and commit both source and lock files
-
-CI verifies lock freshness with `./scripts/check-requirements-lock.sh`.
+1. Edit `[project.dependencies]` and/or `[dependency-groups].dev` in `pyproject.toml`
+2. Run `uv lock`
+3. Run `uv sync --dev`
+4. Run the CI-equivalent checks above
+5. Commit `pyproject.toml` and `uv.lock`
 
 ---
 
@@ -54,17 +65,16 @@ export WORK_DIR=/tmp/abs_media_importer-work
 export DRY_RUN=true  # Set to true to avoid running actual yt-dlp/ffmpeg processes
 
 # Start uvicorn server
-uvicorn app.main:app --reload --port 8080
+uv run uvicorn app.main:app --reload --port 8080
 ```
 
 The web interface will be accessible at `http://localhost:8080`.
 
 ### B. Start the Background RQ Worker
-In a new terminal window with the virtual environment active, start the worker:
+In a new terminal window, start the worker:
 
 ```bash
-# Start background worker
-rq worker abs_media_importer --url redis://localhost:6379/0
+uv run rq worker abs_media_importer --url redis://localhost:6379/0
 ```
 
 ---
@@ -73,10 +83,14 @@ rq worker abs_media_importer --url redis://localhost:6379/0
 
 The repository includes a comprehensive test suite using `pytest`.
 
-Ensure your virtual environment is active, then run:
+```bash
+uv run pytest
+```
+
+For CI parity:
 
 ```bash
-pytest
+uv run --frozen pytest
 ```
 
 ---
@@ -86,12 +100,11 @@ pytest
 The codebase uses `ruff` to enforce code quality and styling consistency.
 
 ```bash
-# Run code check and linting
-ruff check .
-
-# Check formatting
-ruff format --check .
+uv run ruff check .
+uv run ruff format --check .
 
 # Auto-format codebase
-ruff format .
+uv run ruff format .
 ```
+
+Pre-commit hooks use the same Ruff version from `uv.lock` via `uv run --frozen`.

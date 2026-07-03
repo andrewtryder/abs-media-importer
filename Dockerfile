@@ -31,18 +31,17 @@ FROM base AS deps
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /build
-ENV UV_SYSTEM_PYTHON=1
-COPY requirements.lock .
-RUN uv pip sync requirements.lock
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-install-project
 
 # ── Final image ─────────────────────────────────────────────
 FROM base AS final
 
 WORKDIR /app
 
-# Copy installed Python packages from deps stage
-COPY --from=deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=deps /usr/local/bin /usr/local/bin
+# Copy installed Python environment from deps stage
+COPY --from=deps /build/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy application code
 COPY app/ app/
@@ -66,7 +65,6 @@ ENV ARCHIVE_FILE=/data/config/youtube-archive.txt
 ENV OUTPUT_ROOT=/media/podcasts
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PATH="/usr/local/bin:$PATH"
 
 EXPOSE 8080
 

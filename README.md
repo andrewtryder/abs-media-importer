@@ -142,17 +142,14 @@ To run tests and code quality checks locally:
 ```bash
 # Install uv: https://docs.astral.sh/uv/getting-started/installation/
 
-# Set up virtual environment and dependencies
-uv venv
-source .venv/bin/activate
-uv pip sync requirements-dev.lock
+uv sync --dev
 
-# Run pytest suite
-pytest
-
-# Check code formatting and linting
-ruff check .
-ruff format --check .
+# Run the same checks as CI
+uv sync --locked --dev
+uv run --frozen ruff format --check .
+uv run --frozen ruff check .
+uv run --frozen mypy app worker
+uv run --frozen pytest
 ```
 
 See the [Development Guide](docs/development.md) for full instructions.
