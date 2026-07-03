@@ -11,8 +11,10 @@ import logging
 import os
 import secrets
 import shutil
+import tomllib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Annotated, Any
 from urllib import request as urllib_request
@@ -99,6 +101,15 @@ templates.env.filters["escape_html"] = _escape_html
 templates.env.globals["format_free_space"] = _format_free_space
 
 
+def _package_version() -> str:
+    """Return the installed package version from pyproject.toml metadata."""
+    try:
+        return version("abs-media-importer")
+    except PackageNotFoundError:
+        data = tomllib.loads((Path(__file__).resolve().parents[1] / "pyproject.toml").read_text())
+        return str(data["project"]["version"])
+
+
 def _resolve_ui_version(default_version: str) -> str:
     """Resolve UI version from env override or latest GitHub release."""
     env_version = os.getenv("ABS_MEDIA_IMPORTER_UI_VERSION", "").strip()
@@ -153,7 +164,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="abs-media-importer",
         description="Selective YouTube → Audiobookshelf importer",
-        version="1.5.0",
+        version=_package_version(),
         lifespan=lifespan,
     )
     ui_version = _resolve_ui_version(app.version)

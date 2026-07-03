@@ -48,6 +48,10 @@ COPY app/ app/
 COPY worker/ worker/
 COPY pyproject.toml .
 
+# Register package metadata so importlib.metadata.version() works at runtime
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+RUN uv pip install --python /app/.venv/bin/python --no-deps .
+
 # Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
