@@ -20,7 +20,7 @@ Thank you for your interest in contributing to this project! We welcome contribu
    ```
 5. **Open a pull request** with a clear title and description of your changes.
 
-When changing dependencies, edit `pyproject.toml`, run `uv lock`, sync with `uv sync --dev`, and commit the updated `uv.lock`.
+When changing dependencies or the project version in `pyproject.toml`, run `uv lock`, sync with `uv sync --dev`, and commit the updated `uv.lock`. Release Please bumps the version in `pyproject.toml`; a follow-up workflow keeps `uv.lock` in sync on those PRs, but run `uv lock --check` locally before pushing if CI reports lockfile drift.
 
 ## Pull request guidelines
 

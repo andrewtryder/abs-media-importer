@@ -1,7 +1,7 @@
 # abs-media-importer
 
 <p align="center">
-  <img src="assets/abs-media-importer-icon.svg" alt="abs-media-importer Icon" width="240" />
+  <img src="assets/abs-badge.png" alt="abs-media-importer" />
 </p>
 
 A self-hosted sidecar application that converts individual YouTube videos into `.m4b` audiobook files and writes them directly to the directory that [Audiobookshelf](https://www.audiobookshelf.org/) scans.
