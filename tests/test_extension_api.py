@@ -86,12 +86,11 @@ def mocked_ytdlp(monkeypatch):
         webpage_url="https://youtube.com/watch?v=test123",
     )
 
-    # app.main imports YtDlpService by name, so patch the binding in app.main
-    # (and in app.services.ytdlp for any code that resolves it from there).
+    # Patch where extension routes import these symbols.
     def _factory(*args, **kwargs):
         return mock_svc
 
-    monkeypatch.setattr("app.main.YtDlpService", _factory)
+    monkeypatch.setattr("app.routes.extension.YtDlpService", _factory)
     monkeypatch.setattr("app.services.ytdlp.YtDlpService", _factory)
     yield mock_svc
 
@@ -104,9 +103,9 @@ def mocked_queue(monkeypatch):
         async def _noop(*a, **kw):
             return None
 
-        # app.main imports these by name, so patch the bindings in app.main
-        m.setattr("app.main.enqueue_job_task", lambda job_id: "rq-job-123")
-        m.setattr("app.main.update_job_status", _noop)
+        # Patch where extension routes import these symbols.
+        m.setattr("app.services.jobs.enqueue_job_task", lambda job_id: "rq-job-123")
+        m.setattr("app.services.jobs.update_job_status", _noop)
         yield m
 
 
