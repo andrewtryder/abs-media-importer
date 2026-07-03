@@ -20,7 +20,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "browser-extension/manifests/base.json",
+          "path": "manifests/base.json",
           "jsonpath": "$.version"
         }
       ]
