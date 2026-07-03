@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from sqlalchemy import desc, select, update
@@ -12,6 +13,9 @@ from sqlalchemy.orm import Session
 
 from app.config import Settings
 from app.models import ImportedVideo, Job, JobAttempt, JobStatus
+from app.queue import enqueue_job_task
+from app.services.filesystem import FilesystemService
+from app.services.ytdlp import YtDlpService
 
 
 def _utcnow() -> datetime:
@@ -20,6 +24,94 @@ def _utcnow() -> datetime:
 
 class DuplicateVideoError(ValueError):
     """Raised when a video has already been imported previously."""
+
+
+class InvalidJobUrlError(ValueError):
+    """Raised when a job URL fails validation."""
+
+    def __init__(self, error: str) -> None:
+        self.error = error
+        super().__init__(error)
+
+
+@dataclass
+class JobSubmitParams:
+    url: str
+    video_id: str | None = None
+    source_title: str | None = None
+    uploader: str | None = None
+    uploader_id: str | None = None
+    channel: str | None = None
+    channel_id: str | None = None
+    duration: int | None = None
+    upload_date: str | None = None
+    thumbnail_url: str | None = None
+    chapter_count: int | None = None
+    output_title: str | None = None
+    destination_folder: str | None = None
+    new_folder: str = ""
+    embed_metadata: bool = True
+    embed_thumbnail: bool = True
+    embed_chapters: bool = True
+    trigger_abs_scan: bool = False
+    allow_reimport: bool = False
+    validate_url: bool = True
+
+
+def _or_none(value: str | None) -> str | None:
+    return (value or "").strip() or None
+
+
+def _or_none_int(value: int | None) -> int | None:
+    if value is None or value == 0:
+        return None
+    return value
+
+
+async def submit_job(
+    session: AsyncSession,
+    settings: Settings,
+    params: JobSubmitParams,
+) -> tuple[Job, str]:
+    """Validate, optionally create folder, persist job, and enqueue work."""
+    if params.validate_url:
+        svc = YtDlpService(settings)
+        validation = svc.validate_url(params.url)
+        if not validation.valid:
+            raise InvalidJobUrlError(validation.error or "Invalid URL")
+
+    destination_folder = params.destination_folder or ""
+    if params.new_folder.strip():
+        fs = FilesystemService(settings)
+        fs.create_folder(params.new_folder.strip())
+        destination_folder = params.new_folder.strip()
+
+    job = await create_job(
+        session,
+        params.url,
+        settings,
+        video_id=_or_none(params.video_id),
+        source_title=_or_none(params.source_title),
+        uploader=_or_none(params.uploader),
+        uploader_id=_or_none(params.uploader_id),
+        channel=_or_none(params.channel),
+        channel_id=_or_none(params.channel_id),
+        duration=_or_none_int(params.duration),
+        upload_date=_or_none(params.upload_date),
+        thumbnail_url=_or_none(params.thumbnail_url),
+        chapter_count=_or_none_int(params.chapter_count),
+        output_title=_or_none(params.output_title) or _or_none(params.source_title),
+        destination_folder=_or_none(destination_folder),
+        embed_metadata=params.embed_metadata,
+        embed_thumbnail=params.embed_thumbnail,
+        embed_chapters=params.embed_chapters,
+        trigger_abs_scan=params.trigger_abs_scan,
+        allow_reimport=params.allow_reimport,
+    )
+
+    rq_id = enqueue_job_task(job.id)
+    await update_job_status(session, job.id, JobStatus.queued, rq_job_id=rq_id)
+    return job, rq_id
 
 
 # ---------------------------------------------------------------------------

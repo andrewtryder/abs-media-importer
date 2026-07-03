@@ -33,8 +33,8 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     async def _noop(*a, **kw):
         return None
 
-    monkeypatch.setattr("app.main.enqueue_job_task", lambda job_id: "rq-job-123")
-    monkeypatch.setattr("app.main.update_job_status", _noop)
+    monkeypatch.setattr("app.services.jobs.enqueue_job_task", lambda job_id: "rq-job-123")
+    monkeypatch.setattr("app.services.jobs.update_job_status", _noop)
 
     with TestClient(create_app()) as test_client:
         yield test_client
