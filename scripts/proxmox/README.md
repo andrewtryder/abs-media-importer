@@ -213,7 +213,7 @@ SSH into the VM and run:
 ```bash
 cd /opt/abs-media-importer
 sudo git pull
-sudo uv sync --locked --no-dev --no-install-project
+sudo uv sync --locked --no-dev
 sudo systemctl restart abs-media-importer-app abs-media-importer-worker
 ```
 

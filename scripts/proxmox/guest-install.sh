@@ -68,7 +68,7 @@ fi
 cd "$APP_DIR"
 
 log "Creating Python virtual environment..."
-uv sync --locked --no-dev --no-install-project
+uv sync --locked --no-dev
 
 # 5. Create directories
 log "Creating config, data, and log directories..."
