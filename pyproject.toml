@@ -25,7 +25,7 @@ dependencies = [
     "python-multipart==0.0.32",
     "itsdangerous==2.2.0",
     "sqlalchemy>=2.0.51",
-    "aiosqlite==0.20.0",
+    "aiosqlite==0.22.1",
     "greenlet",
     "redis==8.0.1",
     "rq==2.0.0",
