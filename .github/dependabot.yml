@@ -1,8 +1,8 @@
 # Dependabot configuration
 # Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 #
-# Python deps: uv project mode (pyproject.toml + uv.lock)
-# Repo tooling: npm devDependencies for Rulesync
+# Ecosystems: github-actions, npm (root + browser-extension), uv, docker,
+# docker-compose, pre-commit
 
 version: 2
 updates:
@@ -24,7 +24,27 @@ updates:
           - "minor"
           - "patch"
 
+  - package-ecosystem: "npm"
+    directory: "/browser-extension"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "pre-commit"
     directory: "/"
     schedule:
       interval: "weekly"
