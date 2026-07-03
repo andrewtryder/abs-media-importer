@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.2](https://github.com/andrewtryder/abs-media-importer/compare/v1.5.1...v1.5.2) (2026-07-03)
+
+
+### Bug Fixes
+
+* **ci:** pin lock compilation to Python 3.12 for CI parity ([14b1096](https://github.com/andrewtryder/abs-media-importer/commit/14b109614185916bcd7a37631ffa37f8350a46e0))
+* **ci:** run lint and tests from synced uv virtualenv ([62398c1](https://github.com/andrewtryder/abs-media-importer/commit/62398c17302c7dc74347ad5a50cca9e436c77645))
+* **ci:** stabilize lock files across uv versions ([ad9a4c5](https://github.com/andrewtryder/abs-media-importer/commit/ad9a4c5fd77385a1cb3803d96c3a83c2172c307b))
+
 ## [1.5.1](https://github.com/andrewtryder/abs-media-importer/compare/v1.5.0...v1.5.1) (2026-07-02)
 
 
