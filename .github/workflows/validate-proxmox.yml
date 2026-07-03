@@ -11,6 +11,10 @@ on:
     paths:
       - 'scripts/proxmox/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -29,9 +33,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cloud-init
-      
+
       - name: Validate Cloud-Init Schema
         run: |
           cloud-init schema -c scripts/proxmox/cloud-init-user-data.yml
-
-

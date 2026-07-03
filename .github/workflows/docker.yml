@@ -119,7 +119,36 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
 
+      # On release tag pushes, the same commit was usually already published by
+      # the main-branch workflow_run as `sha-<short>`. Retag that multi-arch
+      # manifest with semver tags instead of rebuilding from scratch.
+      - name: Compute commit short SHA
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: commit_sha
+        run: echo "short=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Check for existing commit image
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: existing
+        run: |
+          if docker buildx imagetools inspect "${{ env.GHCR_IMAGE }}:sha-${{ steps.commit_sha.outputs.short }}" >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Retag existing image for release (skip rebuild)
+        if: startsWith(github.ref, 'refs/tags/v') && steps.existing.outputs.found == 'true'
+        run: |
+          source="${{ env.GHCR_IMAGE }}:sha-${{ steps.commit_sha.outputs.short }}"
+          args=()
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && args+=(--tag "$tag")
+          done <<< "${{ steps.meta_tag.outputs.tags }}"
+          docker buildx imagetools create "${args[@]}" "$source"
+
       - name: Build and push Docker image
+        if: "!(startsWith(github.ref, 'refs/tags/v') && steps.existing.outputs.found == 'true')"
         uses: docker/build-push-action@v6
         with:
           context: .
