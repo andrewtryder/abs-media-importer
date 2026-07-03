@@ -89,7 +89,13 @@
             "error": "#f87171",
             "on-tertiary-fixed-variant": "#3b4665",
             "on-error-container": "#ffdad6",
-            "on-tertiary-fixed": "#0f1a37"
+            "on-tertiary-fixed": "#0f1a37",
+            "success": "#7dd88f",
+            "success-container": "#1e4620",
+            "on-success-container": "#a8e6ae",
+            "warning": "#f5c26b",
+            "warning-container": "#4a3510",
+            "on-warning-container": "#f0d9a8"
           },
           "borderRadius": {
             "DEFAULT": "0.25rem",
@@ -165,15 +171,19 @@
       </div>
     </div>
     <nav class="flex flex-col gap-base flex-grow">
-      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md {% if request.url.path == '/' %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/">
+      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md border-l-2 {% if request.url.path == '/' %}border-primary bg-secondary-container text-on-secondary-container{% else %}border-transparent text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/">
         <span class="material-symbols-outlined">download</span>
         <span>Import</span>
       </a>
-      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md {% if request.url.path.startswith('/jobs') %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/jobs">
+      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md border-l-2 {% if request.url.path.startswith('/jobs') %}border-primary bg-secondary-container text-on-secondary-container{% else %}border-transparent text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/jobs">
         <span class="material-symbols-outlined">list_alt</span>
         <span>Jobs</span>
       </a>
-      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md {% if request.url.path.startswith('/settings') %}bg-secondary-container text-on-secondary-container{% else %}text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/settings">
+      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md border-l-2 {% if request.url.path.startswith('/diagnostics') %}border-primary bg-secondary-container text-on-secondary-container{% else %}border-transparent text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/diagnostics">
+        <span class="material-symbols-outlined">stethoscope</span>
+        <span>Diagnostics</span>
+      </a>
+      <a data-sidebar-link class="flex items-center gap-3 px-4 py-3 font-label-md text-label-md border-l-2 {% if request.url.path.startswith('/settings') %}border-primary bg-secondary-container text-on-secondary-container{% else %}border-transparent text-on-surface-variant hover:bg-surface-container-high{% endif %} rounded-lg transition-all active:scale-95" href="/settings">
         <span class="material-symbols-outlined">settings</span>
         <span>Settings</span>
       </a>
@@ -190,11 +200,11 @@
   </aside>
 
   <!-- Right Side Main Content Panel -->
-  <div class="flex-grow md:ml-64 min-h-screen overflow-y-auto flex flex-col pt-14 md:pt-0">
+  <div class="flex-grow md:ml-64 overflow-y-auto flex flex-col pt-14 md:pt-0">
     {% block content %}{% endblock %}
 
     <!-- Footer Implementation -->
-    <footer class="relative bg-surface-dim dark:bg-surface-dim w-full py-stack-md mt-auto">
+    <footer class="relative bg-surface-dim dark:bg-surface-dim w-full py-stack-md">
       <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-outline-variant/80 to-transparent"></div>
       <div class="px-container-padding">
         <div class="mx-auto w-full max-w-5xl">

@@ -1,23 +1,16 @@
 {% extends "base.html" %}
+{% from "_macros.html" import badge %}
 {% block title %}Import — abs-media-importer{% endblock %}
 
 {% block content %}
-<main class="flex-grow w-full relative overflow-hidden import-hero-shell">
-  <div class="hero-radial-glow" aria-hidden="true"></div>
-  <div class="hero-grid-mask" aria-hidden="true"></div>
-  <div class="max-w-5xl mx-auto px-container-padding py-stack-lg flex flex-col items-center relative z-10">
-    <!-- Hero Header -->
-    <section class="text-center mb-10 mt-8 section-entrance section-entrance-1">
-      <div class="inline-flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container-high px-3 py-1 mb-4">
-        <span class="h-2 w-2 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
-        <span class="font-label-md text-label-md uppercase tracking-wide text-on-surface-variant">Self-hosted · {{ app_ui_version }}</span>
-      </div>
-      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-4">YouTube → Audiobookshelf</h1>
-      <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
-        Paste a YouTube URL to convert a video to an M4B audiobook file. Seamless metadata extraction and automatic library sync for your self-hosted collection.
-      </p>
-    </section>
+<main class="flex-grow w-full">
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+    <div class="flex items-center gap-4 min-w-0">
+      <h1 class="font-headline-md text-headline-md text-on-surface font-semibold truncate">Import</h1>
+    </div>
+  </header>
 
+  <div class="max-w-5xl mx-auto px-container-padding py-stack-lg flex flex-col items-center">
     <!-- URL Submission Card -->
     <section class="w-full max-w-3xl mb-14 section-entrance section-entrance-2">
       <div class="bg-surface-container rounded-xl p-stack-md border border-outline shadow-xl glass-card">
@@ -46,7 +39,7 @@
                     autofocus
                   />
                 </div>
-                <div class="flex gap-2 sm:flex-col">
+                <div class="flex gap-2">
                   <button type="button" id="paste-btn" class="px-4 py-3 rounded-lg border border-outline text-on-surface-variant bg-surface-container-low hover:bg-surface-container-high transition-colors font-label-md text-label-md">
                     Paste
                   </button>
@@ -72,7 +65,7 @@
     <!-- Info Grid (Bento Style) -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-gutter w-full section-entrance section-entrance-3">
       <!-- M4B Output -->
-      <div class="bg-surface-container border border-outline-variant rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default feature-card-lift">
+      <div class="bg-surface-container border border-outline rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default feature-card-lift">
         <div class="bg-secondary-container w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-on-secondary-container group-hover:scale-110 transition-transform">
           <span class="material-symbols-outlined">audio_file</span>
         </div>
@@ -81,11 +74,11 @@
           Native audio remuxing ensures zero quality loss. We bundle metadata, chapters, and high-bitrate streams into standard M4B containers.
         </p>
         <div class="mt-4 inline-flex">
-          <span class="font-label-md text-label-md bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded-full border border-tertiary/20">AAC/ALAC</span>
+          {{ badge('AAC/ALAC', variant='info') }}
         </div>
       </div>
       <!-- Audiobookshelf Ready -->
-      <div class="bg-surface-container border border-outline-variant rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default feature-card-lift">
+      <div class="bg-surface-container border border-outline rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default feature-card-lift">
         <div class="bg-secondary-container w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-on-secondary-container group-hover:scale-110 transition-transform">
           <span class="material-symbols-outlined">library_books</span>
         </div>
@@ -94,11 +87,11 @@
           Files are named and structured for instant library discovery. Automatic cover art downloading and folder organization included.
         </p>
         <div class="mt-4 inline-flex">
-          <span class="font-label-md text-label-md bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded-full border border-tertiary/20">Auto-Scan</span>
+          {{ badge('Auto-Scan', variant='info') }}
         </div>
       </div>
       <!-- Background Jobs -->
-      <div class="bg-surface-container border border-outline-variant rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default feature-card-lift">
+      <div class="bg-surface-container border border-outline rounded-xl p-stack-md hover:border-primary/50 transition-colors group cursor-default feature-card-lift">
         <div class="bg-secondary-container w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-on-secondary-container group-hover:scale-110 transition-transform">
           <span class="material-symbols-outlined">settings_suggest</span>
         </div>
@@ -107,7 +100,7 @@
           Powerful multi-threaded task tracking. Monitor conversion progress in real-time with automatic retry logic for network timeouts.
         </p>
         <div class="mt-4 inline-flex">
-          <span class="font-label-md text-label-md bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded-full border border-tertiary/20">Worker Nodes</span>
+          {{ badge('Worker Nodes', variant='info') }}
         </div>
       </div>
     </section>

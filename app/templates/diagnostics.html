@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Diagnostics — abs-media-importer{% endblock %}
+
+{% block content %}
+<main class="flex-grow w-full">
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+    <div class="flex items-center gap-4 min-w-0">
+      <h1 class="font-headline-md text-headline-md text-on-surface font-semibold truncate">Diagnostics</h1>
+    </div>
+    <div class="flex items-center gap-stack-md shrink-0">
+      <button
+        type="button"
+        onclick="window.location.reload()"
+        class="inline-flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-surface-container-high px-4 py-2 font-label-md text-label-md text-on-surface hover:bg-surface-container-highest transition-colors active:scale-95"
+      >
+        <span class="material-symbols-outlined text-base">refresh</span>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="pt-8 pb-32 px-container-padding max-w-5xl mx-auto w-full">
+    <p class="font-body-md text-body-md text-on-surface-variant mb-stack-lg section-entrance section-entrance-1">
+      Verify external tools, storage, queue connectivity, and integrations before importing media.
+    </p>
+
+    <div class="flex flex-col gap-stack-md">
+      {% for group in groups %}
+      <section class="bg-surface-container border border-outline rounded-xl p-stack-md shadow-lg section-entrance section-entrance-2">
+        <div class="flex items-center gap-2 mb-stack-md">
+          <span class="material-symbols-outlined text-primary">{{ group.icon }}</span>
+          <h2 class="font-headline-sm text-headline-sm font-semibold">{{ group.label | e }}</h2>
+        </div>
+
+        <div class="divide-y divide-outline-variant/30">
+          {% for check in group.checks %}
+          <div class="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-body-md text-body-md text-on-surface font-medium">{{ check.label | e }}</h3>
+                {% if check.status == 'ok' %}
+                {{ badge('OK', variant='success', icon='check_circle') }}
+                {% elif check.status == 'warn' %}
+                {{ badge('Warn', variant='warning', icon='warning') }}
+                {% elif check.status == 'skipped' %}
+                {{ badge('Skipped', variant='warning', icon='remove_circle') }}
+                {% else %}
+                {{ badge('Error', variant='error', icon='cancel') }}
+                {% endif %}
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant mt-1">{{ check.summary | e }}</p>
+              {% if check.path %}
+              <p class="font-code text-code text-on-surface-variant opacity-80 mt-1 break-all">{{ check.path | e }}</p>
+              {% endif %}
+              {% if check.detail %}
+              <p class="font-label-md text-label-md text-on-surface-variant opacity-90 mt-1 break-words">{{ check.detail | e }}</p>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+</main>
+{% endblock %}

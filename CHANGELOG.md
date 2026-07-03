@@ -5,6 +5,8 @@
 ### Features
 
 * **db:** add Alembic migrations; replace manual startup schema changes with versioned revisions. Existing SQLite databases are bootstrapped automatically on first startup after upgrade.
+* **ui:** add Diagnostics page with health checks for yt-dlp, ffmpeg, ffprobe, Redis, database, paths, disk space, cookies, and ABS API.
+* **ui:** unify page headers, shared badge tokens, success/warning palette, and layout polish across Import, Jobs, Settings, Preview, Job Detail, and Diagnostics.
 
 ## [1.6.1](https://github.com/andrewtryder/abs-media-importer/compare/v1.6.0...v1.6.1) (2026-07-03)
 

@@ -138,3 +138,50 @@ def test_scan_with_explicit_library_id():
     args, _ = mock_post.call_args
     assert "override-lib" in args[0]
     assert "default-lib" not in args[0]
+
+
+# ── Connectivity check ───────────────────────────────────────────────────────
+
+
+def test_connectivity_skipped_when_not_configured():
+    client = make_client()
+    result = client.check_connectivity()
+    assert result.skipped is True
+    assert result.success is False
+
+
+def test_connectivity_success():
+    client = make_client(
+        base_url="http://abs:13378",
+        api_token="secret-token",
+        library_id="lib-001",
+    )
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+
+    with patch("app.services.audiobookshelf.httpx.get", return_value=mock_response) as mock_get:
+        result = client.check_connectivity()
+
+    assert result.success is True
+    assert result.skipped is False
+    args, _kwargs = mock_get.call_args
+    assert args[0].endswith("/api/libraries/lib-001")
+    assert "/scan" not in args[0]
+
+
+def test_connectivity_auth_error():
+    client = make_client(
+        base_url="http://abs:13378",
+        api_token="token",
+        library_id="lib-001",
+    )
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    http_error = httpx.HTTPStatusError("Unauthorized", request=MagicMock(), response=mock_response)
+    mock_response.raise_for_status.side_effect = http_error
+
+    with patch("app.services.audiobookshelf.httpx.get", return_value=mock_response):
+        result = client.check_connectivity()
+
+    assert result.success is False
+    assert "401" in result.error  # type: ignore[operator]

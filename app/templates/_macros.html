@@ -1,0 +1,19 @@
+{% macro badge(text='', variant='neutral', icon=None, icon_class='') -%}
+{%- set variants = {
+  'neutral': 'bg-surface-container-highest text-on-surface-variant border-outline-variant',
+  'info': 'bg-secondary-container/50 text-on-secondary-container border-secondary-container',
+  'success': 'bg-success-container/40 text-on-success-container border-success/30',
+  'warning': 'bg-warning-container/40 text-on-warning-container border-warning/30',
+  'error': 'bg-error-container/40 text-error border-error/30',
+} -%}
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-md text-label-md border w-fit {{ variants.get(variant, variants['neutral']) }}">
+  {%- if icon -%}
+  <span class="material-symbols-outlined text-[13px] {{ icon_class }}">{{ icon }}</span>
+  {%- endif -%}
+  {%- if caller is defined -%}
+  {{ caller() }}
+  {%- else -%}
+  {{ text }}
+  {%- endif -%}
+</span>
+{%- endmacro %}
