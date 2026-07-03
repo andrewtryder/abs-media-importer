@@ -80,6 +80,17 @@ def test_pipeline_dry_run(test_db, mock_settings):
     assert job.progress_label == "Complete"
 
 
+def _fake_remux_writes_staged(payload: bytes = b"x" * 1000):
+    """Return a run_remux side effect that writes *payload* to the staged path."""
+
+    def _side_effect(_input_path, staged_path, _log_fh=None, **_kwargs):
+        staged_path.parent.mkdir(parents=True, exist_ok=True)
+        staged_path.write_bytes(payload)
+        return RemuxResult(success=True, used_fallback=False)
+
+    return _side_effect
+
+
 @patch("app.services.process_runner.subprocess.Popen")
 @patch("app.services.import_pipeline.YtDlpService.find_downloaded_file")
 @patch("app.services.import_pipeline.FfmpegService.run_remux")
@@ -116,13 +127,14 @@ def test_pipeline_happy_path(
     downloaded_m4a.write_bytes(b"audio")
     mock_find.return_value = downloaded_m4a
 
-    # Mock remux execution
-    mock_remux.return_value = RemuxResult(success=True, used_fallback=False)
+    # Remux writes to the staged path (inside the work dir), not the final path.
+    mock_remux.side_effect = _fake_remux_writes_staged(b"x" * 1000)
 
-    # Mock verification output
+    # Final output must not exist before the pipeline runs; it is created only
+    # by the commit step after ffprobe verification of the staged file.
     final_output = mock_settings.output_root / "Happy" / "Happy Path Video.m4b"
-    final_output.parent.mkdir(parents=True, exist_ok=True)
-    final_output.write_bytes(b"x" * 1000)
+    assert not final_output.exists()
+
     mock_verify.return_value = FfprobeResult(
         file_size=1000,
         has_audio=True,
@@ -134,6 +146,13 @@ def test_pipeline_happy_path(
     pipeline = ImportPipeline(test_db, mock_settings, "job-happy")
     pipeline.run()
 
+    # ffmpeg was invoked against the staged path, not the final output path.
+    staged_arg = mock_remux.call_args.args[1]
+    assert staged_arg.name == "Happy Path Video.m4b.partial"
+    assert staged_arg.parent.name == "staged"
+    # ffprobe was called on the same staged path.
+    assert mock_verify.call_args.args[0] == staged_arg
+
     test_db.refresh(job)
     assert job.status == JobStatus.succeeded
     assert job.phase == "succeeded"
@@ -142,6 +161,7 @@ def test_pipeline_happy_path(
     assert job.progress_label == "Complete"
     assert job.chapter_count == 3
     assert job.final_output_path == str(final_output)
+    assert final_output.exists()
     assert job.output_file_size == final_output.stat().st_size
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "succeeded"
@@ -155,6 +175,9 @@ def test_pipeline_happy_path(
     assert meta_dict["download"]["format"] == "m4a"
     assert meta_dict["conversion"]["codec_name"] == "aac"
     assert meta_dict["conversion"]["duration_seconds"] == 120.0
+    assert meta_dict["conversion"]["staged_path"] == str(staged_arg)
+    assert meta_dict["conversion"]["final_path"] == str(final_output)
+    assert meta_dict["conversion"]["path"] == str(final_output)
 
 
 @patch("app.services.process_runner.subprocess.Popen")
@@ -195,15 +218,18 @@ def test_pipeline_happy_path_with_abs_scan(
     downloaded.write_bytes(b"audio")
     mock_find.return_value = downloaded
 
-    # Mock remux
-    mock_remux.return_value = RemuxResult(success=True, used_fallback=False)
+    # Remux writes staged file inside the work dir; commit publishes to final.
+    mock_remux.side_effect = _fake_remux_writes_staged(b"final m4b")
 
-    # Mock verify
     final_output = mock_settings.output_root / "Scan" / "Scan Video.m4b"
-    final_output.parent.mkdir(parents=True, exist_ok=True)
-    final_output.write_bytes(b"final m4b")
+    assert not final_output.exists()
+
     mock_verify.return_value = FfprobeResult(
-        file_size=1000, has_audio=True, chapter_count=0, duration_seconds=60.0, codec_name="aac"
+        file_size=len(b"final m4b"),
+        has_audio=True,
+        chapter_count=0,
+        duration_seconds=60.0,
+        codec_name="aac",
     )
 
     # Mock ABS scan success
@@ -285,10 +311,8 @@ def test_pipeline_failed_verification(
     downloaded_m4a.write_bytes(b"audio")
     mock_find.return_value = downloaded_m4a
 
-    # Mock remux execution
-    mock_remux.return_value = RemuxResult(success=True, used_fallback=False)
-
-    # Mock verification throwing RuntimeError
+    # Remux "succeeds" — writes a staged file — but verify then rejects it.
+    mock_remux.side_effect = _fake_remux_writes_staged(b"bad audio")
     mock_verify.side_effect = RuntimeError("No audio stream found")
 
     pipeline = ImportPipeline(test_db, mock_settings, "job-fail-verify")
@@ -303,6 +327,12 @@ def test_pipeline_failed_verification(
     assert job.progress_speed == ""
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "failed"
+
+    # Verification runs before the commit phase, so the final .m4b (and its
+    # temp sibling) must never appear in the output root when verify fails.
+    final_output = mock_settings.output_root / "FailVerify" / "Failed Verify Video.m4b"
+    assert not final_output.exists()
+    assert not final_output.with_name(final_output.name + ".partial").exists()
 
 
 @patch("app.services.process_runner.subprocess.Popen")
@@ -376,6 +406,122 @@ def test_pipeline_cancellation(mock_popen, test_db, mock_settings):
     assert mock_proc.terminate.called
     assert len(job.attempts_log) == 1
     assert job.attempts_log[0].status == "cancelled"
+
+
+# ── Staged Output ───────────────────────────────────────────────────────────
+
+
+@patch("app.services.process_runner.subprocess.Popen")
+@patch("app.services.import_pipeline.YtDlpService.find_downloaded_file")
+@patch("app.services.import_pipeline.FfmpegService.run_remux")
+@patch("app.services.import_pipeline.FfmpegService.verify_output")
+def test_pipeline_failure_cleans_partial_final(
+    mock_verify, mock_remux, mock_find, mock_popen, test_db, mock_settings, tmp_path
+):
+    """A failed commit must not leave a final .m4b or its .partial sibling behind."""
+    job = Job(
+        id="job-commit-fail",
+        url="https://youtube.com/watch?v=123",
+        status=JobStatus.queued,
+        output_title="Commit Fail Video",
+        destination_folder="CommitFail",
+        collision_mode="overwrite",
+    )
+    test_db.add(job)
+    test_db.commit()
+
+    mock_proc = MagicMock()
+    mock_proc.stdout = ["[download] 100% of 10.00MiB\n"]
+    mock_proc.returncode = 0
+    mock_popen.return_value = mock_proc
+
+    downloaded = tmp_path / "work" / "job-commit-fail" / "download" / "Commit Fail Video.m4a"
+    downloaded.parent.mkdir(parents=True, exist_ok=True)
+    downloaded.write_bytes(b"audio")
+    mock_find.return_value = downloaded
+
+    mock_remux.side_effect = _fake_remux_writes_staged(b"staged content")
+    mock_verify.return_value = FfprobeResult(
+        file_size=len(b"staged content"),
+        has_audio=True,
+        chapter_count=0,
+        duration_seconds=60.0,
+        codec_name="aac",
+    )
+
+    final_output = mock_settings.output_root / "CommitFail" / "Commit Fail Video.m4b"
+    final_temp = final_output.with_name(final_output.name + ".partial")
+
+    # Force the commit step to blow up mid-flight to simulate a filesystem
+    # error (e.g. permission denied) after the temp sibling has been created.
+    def broken_commit(_staged, final_path):
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        final_path.with_name(final_path.name + ".partial").write_bytes(b"leftover")
+        raise OSError("simulated commit failure")
+
+    with patch(
+        "app.services.import_pipeline.FilesystemService.commit_staged_output",
+        side_effect=broken_commit,
+    ):
+        ImportPipeline(test_db, mock_settings, "job-commit-fail").run()
+
+    test_db.refresh(job)
+    assert job.status == JobStatus.failed
+    assert "Failed to commit output" in job.error_message
+    # Final output must not exist and no .partial sibling may remain.
+    assert not final_output.exists()
+    assert not final_temp.exists()
+
+
+@patch("app.services.process_runner.subprocess.Popen")
+@patch("app.services.import_pipeline.YtDlpService.find_downloaded_file")
+@patch("app.services.import_pipeline.FfmpegService.run_remux")
+@patch("app.services.import_pipeline.FfmpegService.verify_output")
+def test_pipeline_metadata_records_staged_and_final_paths(
+    mock_verify, mock_remux, mock_find, mock_popen, test_db, mock_settings, tmp_path
+):
+    """Attempt metadata records both the staged and final artifact paths."""
+    job = Job(
+        id="job-meta",
+        url="https://youtube.com/watch?v=123",
+        status=JobStatus.queued,
+        output_title="Meta Video",
+        destination_folder="Meta",
+        collision_mode="overwrite",
+    )
+    test_db.add(job)
+    test_db.commit()
+
+    mock_proc = MagicMock()
+    mock_proc.stdout = ["[download] 100% of 10.00MiB\n"]
+    mock_proc.returncode = 0
+    mock_popen.return_value = mock_proc
+
+    downloaded = tmp_path / "work" / "job-meta" / "download" / "Meta Video.m4a"
+    downloaded.parent.mkdir(parents=True, exist_ok=True)
+    downloaded.write_bytes(b"audio")
+    mock_find.return_value = downloaded
+
+    mock_remux.side_effect = _fake_remux_writes_staged(b"staged")
+    mock_verify.return_value = FfprobeResult(
+        file_size=len(b"staged"),
+        has_audio=True,
+        chapter_count=0,
+        duration_seconds=42.0,
+        codec_name="aac",
+    )
+
+    ImportPipeline(test_db, mock_settings, "job-meta").run()
+
+    test_db.refresh(job)
+    final_output = mock_settings.output_root / "Meta" / "Meta Video.m4b"
+    expected_staged = mock_settings.work_dir / "job-meta" / "staged" / "Meta Video.m4b.partial"
+
+    assert job.status == JobStatus.succeeded
+    meta = json.loads(job.attempts_log[0].artifact_metadata)
+    assert meta["conversion"]["staged_path"] == str(expected_staged)
+    assert meta["conversion"]["final_path"] == str(final_output)
+    assert meta["conversion"]["path"] == str(final_output)
 
 
 # ── Process Runner & Schema Validation ──────────────────────────────────────

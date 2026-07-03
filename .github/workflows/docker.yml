@@ -1,10 +1,23 @@
 name: Docker Publish
 
+# Tagging behavior by trigger:
+#   • CI success on `main` / manual dispatch  → GHCR + optional Docker Hub:
+#     tags = `main`, `latest`, `sha-<short>` (no semver).
+#   • Tag push `v*.*.*` (e.g. from Release Please) → GHCR + optional Docker Hub:
+#     tags = `<version>`, `<major>.<minor>`, `sha-<short>`.
+#
+# Docker Hub publishing is optional: if either `DOCKERHUB_USERNAME` or
+# `DOCKERHUB_TOKEN` is missing the workflow still publishes to GHCR using the
+# repository `GITHUB_TOKEN`.
+
 on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
   workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
 
 permissions:
   contents: read
@@ -16,12 +29,12 @@ concurrency:
 
 env:
   GHCR_IMAGE: ghcr.io/${{ github.repository }}
-  DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/abs-media-importer
 
 jobs:
   publish:
     if: >
       github.event_name == 'workflow_dispatch' ||
+      startsWith(github.ref, 'refs/tags/v') ||
       (
         github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
@@ -34,6 +47,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          # For CI-triggered runs, check out the commit that CI validated.
+          # Tag pushes and manual dispatches use the default ref.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
 
@@ -43,6 +58,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Docker Hub publishing is opt-in. Compare secret presence without
+      # echoing values back to logs.
+      - name: Detect Docker Hub credentials
+        id: dockerhub
+        env:
+          DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "image=$DH_USER/abs-media-importer" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "image=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -51,23 +82,42 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      # Branch/dispatch metadata: main + latest + short SHA. Only emitted on
+      # workflow_run/dispatch, never on tag pushes (tag pushes get their own
+      # semver-only metadata step below).
+      - name: Extract branch metadata
+        id: meta_branch
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: docker/metadata-action@v6
         with:
           images: |
             ${{ env.GHCR_IMAGE }}
-            ${{ env.DOCKERHUB_IMAGE }}
+            ${{ steps.dockerhub.outputs.image }}
           tags: |
             type=raw,value=main
-            type=sha,format=short
             type=raw,value=latest
+            type=sha,format=short
+
+      # Tag-push metadata: semantic version tags only. Runs only for tag events
+      # so `type=semver` always has a valid semver ref to derive from.
+      - name: Extract tag metadata
+        id: meta_tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            ${{ env.GHCR_IMAGE }}
+            ${{ steps.dockerhub.outputs.image }}
+          tags: |
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -75,7 +125,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_branch.outputs.tags || steps.meta_tag.outputs.tags }}
+          labels: ${{ steps.meta_branch.outputs.labels || steps.meta_tag.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

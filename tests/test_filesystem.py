@@ -8,11 +8,14 @@ import pytest
 from app.services.filesystem import (
     FilesystemService,
     assert_within_root,
+    cleanup_output_partials,
+    commit_staged_output,
     create_destination_folder,
     list_folders,
     resolve_output_path,
     resolve_safe_path,
     safe_filename,
+    staged_output_path,
 )
 
 # ── safe_filename ──────────────────────────────────────────────────────────────
@@ -274,3 +277,82 @@ def test_filesystem_service_cleanup(default_settings, tmp_work_dir: Path):
     (job_dir / "file.m4a").write_bytes(b"audio")
     svc.cleanup_work_dir("job-abc")
     assert not job_dir.exists()
+
+
+# ── Staged output helpers ─────────────────────────────────────────────────────
+
+
+def test_staged_output_path_layout(tmp_path: Path):
+    work_dir = tmp_path / "work" / "job-1"
+    final_path = tmp_path / "podcasts" / "Show" / "Episode.m4b"
+    staged = staged_output_path(work_dir, final_path)
+    assert staged == work_dir / "staged" / "Episode.m4b.partial"
+
+
+def test_commit_staged_output_happy_path(tmp_path: Path):
+    staged = tmp_path / "work" / "staged" / "Ep.m4b.partial"
+    staged.parent.mkdir(parents=True)
+    staged.write_bytes(b"hello world")
+
+    final_path = tmp_path / "out" / "Show" / "Ep.m4b"
+    commit_staged_output(staged, final_path)
+
+    assert final_path.exists()
+    assert final_path.read_bytes() == b"hello world"
+    # Staging is not consumed by commit; caller cleans it up separately.
+    assert staged.exists()
+    # The temp sibling used during copy is renamed away.
+    assert not final_path.with_name(final_path.name + ".partial").exists()
+
+
+def test_commit_staged_output_missing_staged(tmp_path: Path):
+    staged = tmp_path / "work" / "staged" / "Ep.m4b.partial"
+    final_path = tmp_path / "out" / "Show" / "Ep.m4b"
+    with pytest.raises(FileNotFoundError):
+        commit_staged_output(staged, final_path)
+    assert not final_path.exists()
+
+
+def test_commit_staged_output_cleans_temp_on_failure(tmp_path: Path, monkeypatch):
+    staged = tmp_path / "work" / "staged" / "Ep.m4b.partial"
+    staged.parent.mkdir(parents=True)
+    staged.write_bytes(b"data")
+
+    final_path = tmp_path / "out" / "Show" / "Ep.m4b"
+
+    def broken_replace(_self, _target):
+        raise OSError("simulated rename failure")
+
+    monkeypatch.setattr(Path, "replace", broken_replace)
+
+    with pytest.raises(OSError):
+        commit_staged_output(staged, final_path)
+
+    # Neither the final file nor the temp sibling should exist after failure.
+    assert not final_path.exists()
+    assert not final_path.with_name(final_path.name + ".partial").exists()
+
+
+def test_cleanup_output_partials_removes_files(tmp_path: Path):
+    a = tmp_path / "a.partial"
+    b = tmp_path / "b.partial"
+    a.write_bytes(b"1")
+    b.write_bytes(b"2")
+    cleanup_output_partials(a, b, None, tmp_path / "does-not-exist.partial")
+    assert not a.exists()
+    assert not b.exists()
+
+
+def test_filesystem_service_staged_helpers(default_settings, tmp_work_dir: Path):
+    svc = FilesystemService(default_settings)
+    final_path = default_settings.output_root / "Show" / "Ep.m4b"
+    staged = svc.staged_output_path("job-x", final_path)
+    assert staged == tmp_work_dir / "job-x" / "staged" / "Ep.m4b.partial"
+
+    staged.parent.mkdir(parents=True)
+    staged.write_bytes(b"hi")
+    svc.commit_staged_output(staged, final_path)
+    assert final_path.exists()
+
+    svc.cleanup_output_partials(staged)
+    assert not staged.exists()

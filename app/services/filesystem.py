@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import contextlib
+import logging
 import re
+import shutil
 import unicodedata
 from pathlib import Path
 
 from app.config import Settings
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Sanitization helpers
@@ -210,6 +215,69 @@ def resolve_output_path(
 
 
 # ---------------------------------------------------------------------------
+# Staged output (write to work dir, commit atomically to final path)
+# ---------------------------------------------------------------------------
+
+
+def staged_output_path(work_dir: Path, final_path: Path) -> Path:
+    """
+    Return a per-job staged output path inside *work_dir*.
+
+    The staged file lives at ``<work_dir>/staged/<final_filename>.partial`` so
+    that Audiobookshelf (or any other scanner watching *final_path.parent*)
+    never sees a partially written .m4b during conversion.
+    """
+    return work_dir / "staged" / f"{final_path.name}.partial"
+
+
+def commit_staged_output(staged_path: Path, final_path: Path) -> None:
+    """
+    Publish *staged_path* as *final_path* using a sibling ``.partial`` temp file.
+
+    Steps:
+      1. Ensure the final output directory exists.
+      2. Copy the staged file to ``<final_path>.partial`` via ``shutil.copy2``.
+      3. Sanity-check the copied size against the staged size.
+      4. Atomically replace the temp sibling onto *final_path*.
+
+    On any failure the sibling temp is removed and the exception is re-raised.
+    The staged file is left in place for the caller to inspect / clean up.
+    """
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_final = final_path.with_name(final_path.name + ".partial")
+
+    if not staged_path.exists():
+        raise FileNotFoundError(f"Staged output not found: {staged_path}")
+    staged_size = staged_path.stat().st_size
+
+    try:
+        # copy2 is used because staged_path (work dir) and final_path (output
+        # root) may live on different filesystems, in which case Path.replace
+        # would fail with EXDEV. Copying to a sibling of final_path guarantees
+        # the subsequent replace() is same-filesystem and therefore atomic.
+        shutil.copy2(staged_path, temp_final)
+        temp_size = temp_final.stat().st_size
+        if temp_size != staged_size:
+            raise RuntimeError(f"Size mismatch after copy: staged={staged_size} temp={temp_size}")
+        temp_final.replace(final_path)
+    except Exception:
+        with contextlib.suppress(OSError):
+            if temp_final.exists():
+                temp_final.unlink()
+        raise
+
+
+def cleanup_output_partials(*paths: Path | None) -> None:
+    """Best-effort removal of staged/partial artifacts. Never raises."""
+    for path in paths:
+        if path is None:
+            continue
+        with contextlib.suppress(OSError):
+            if path.exists() and path.is_file():
+                path.unlink()
+
+
+# ---------------------------------------------------------------------------
 # Filesystem service class (wraps helpers with Settings)
 # ---------------------------------------------------------------------------
 
@@ -255,8 +323,18 @@ class FilesystemService:
 
     def cleanup_work_dir(self, job_id: str) -> None:
         """Remove the job's temporary work directory."""
-        import shutil
-
         work = self.settings.work_dir / job_id
         if work.exists():
             shutil.rmtree(work, ignore_errors=True)
+
+    def staged_output_path(self, job_id: str, final_path: Path) -> Path:
+        """Return the staged output path for *job_id* / *final_path*."""
+        return staged_output_path(self.settings.work_dir / job_id, final_path)
+
+    def commit_staged_output(self, staged_path: Path, final_path: Path) -> None:
+        """Commit *staged_path* to *final_path* via a sibling temp file."""
+        commit_staged_output(staged_path, final_path)
+
+    def cleanup_output_partials(self, *paths: Path | None) -> None:
+        """Best-effort removal of staged/partial artifacts."""
+        cleanup_output_partials(*paths)

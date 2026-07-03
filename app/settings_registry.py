@@ -318,20 +318,26 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
     SettingSpec(
         key="allow_playlists",
         env_alias="ALLOW_PLAYLISTS",
-        label="Allow Playlist Imports",
+        label="Allow Playlist URLs",
         group="runtime",
         type=SettingType.BOOL,
         default="false",
-        help_text="Enable importing playlist URLs in addition to single videos.",
+        help_text=(
+            "Permit playlist-style URLs, but import only the selected/single "
+            "video; full playlist batch imports are not yet supported."
+        ),
     ),
     SettingSpec(
         key="allow_channels",
         env_alias="ALLOW_CHANNELS",
-        label="Allow Channel Imports",
+        label="Allow Channel URLs",
         group="runtime",
         type=SettingType.BOOL,
         default="false",
-        help_text="Enable importing channel URLs.",
+        help_text=(
+            "Permit channel-style URLs where yt-dlp can resolve a single item; "
+            "full channel batch imports are not yet supported."
+        ),
     ),
     SettingSpec(
         key="abs_scan_after_success",

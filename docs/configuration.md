@@ -38,8 +38,8 @@ The Settings page is driven by a configuration registry. The following settings 
 | Cleanup temp on success | `CLEANUP_TEMP_ON_SUCCESS` | Remove temp files after success |
 | Cleanup temp on failure | `CLEANUP_TEMP_ON_FAILURE` | Remove temp files after failure |
 | Dry run | `DRY_RUN` | Simulate imports without downloading |
-| Allow playlists | `ALLOW_PLAYLISTS` | Permit playlist URLs |
-| Allow channels | `ALLOW_CHANNELS` | Permit channel URLs |
+| Allow playlist URLs | `ALLOW_PLAYLISTS` | Accept playlist-style URLs and import only the single resolved video (full playlist import is not yet supported). |
+| Allow channel URLs | `ALLOW_CHANNELS` | Accept channel-style URLs where yt-dlp can resolve a single item (full channel import is not yet supported). |
 | ABS scan after success | `ABS_SCAN_AFTER_SUCCESS` | Trigger Audiobookshelf scan after import |
 
 **Read-only in UI (for now):** `MAX_CONCURRENT_JOBS` until runtime concurrency is fully supported.
@@ -71,8 +71,8 @@ The Settings page is driven by a configuration registry. The following settings 
 | `ARCHIVE_FILE` | `/data/config/youtube-archive.txt` | `yt-dlp` archive file used as a secondary duplicate guard at download time. |
 | `COOKIES_FILE` | — | Absolute path to a Netscape cookies file passed to yt-dlp via `--cookies`. |
 | **Download & Processing** | | |
-| `ALLOW_PLAYLISTS` | `false` | Allow importing full playlists. |
-| `ALLOW_CHANNELS` | `false` | Allow importing full channels. |
+| `ALLOW_PLAYLISTS` | `false` | Accept playlist-style URLs. yt-dlp is always invoked with `--no-playlist`, so only the resolved single video is imported; batch playlist imports are not yet supported. |
+| `ALLOW_CHANNELS` | `false` | Accept channel-style URLs. Only a single resolved video is imported; batch channel imports are not yet supported. |
 | `DEFAULT_DESTINATION_FOLDER` | — | Default selected subdirectory under `OUTPUT_ROOT`. |
 | `YTDLP_BIN` | `yt-dlp` | Command path to `yt-dlp`. |
 | `FFMPEG_BIN` | `ffmpeg` | Command path to `ffmpeg`. |

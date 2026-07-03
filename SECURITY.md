@@ -31,7 +31,7 @@ Do not disclose vulnerabilities publicly until a fix is coordinated.
 
 This repository uses GitHub security workflows to catch issues early:
 
-- **CodeQL** — GitHub default code scanning for Python, JavaScript, and Actions on push, pull request, and weekly schedule; configure under [Settings → Advanced Security](https://github.com/andrewtryder/abs-media-importer/settings/security_analysis), view alerts under [Security → Code scanning](https://github.com/andrewtryder/abs-media-importer/security/code-scanning)
+- **CodeQL** — GitHub default code scanning for Python, JavaScript/TypeScript, and Actions on push, pull request, and weekly schedule (default setup is enabled; an advanced workflow would conflict). View alerts under [Security → Code scanning](https://github.com/andrewtryder/abs-media-importer/security/code-scanning)
 - **Dependency Review** — blocks pull requests that introduce dependencies with known vulnerabilities at moderate severity or higher
 - **OpenSSF Scorecard** — weekly analysis of open source security best practices, with results published to [scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/andrewtryder/abs-media-importer)
 - **Secret scanning** — TruffleHog runs on pull requests to detect verified secrets

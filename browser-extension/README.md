@@ -111,7 +111,10 @@ browser-extension/
 ## Known limitations
 
 - Only single YouTube video URLs are queued (`/watch?v=…`, `/shorts/…`, and
-  `youtu.be/<id>`). Playlists and channels are rejected by the backend.
+  `youtu.be/<id>`). Playlist and channel URLs are rejected by the backend unless
+  `ALLOW_PLAYLISTS` / `ALLOW_CHANNELS` are enabled, and even then only the
+  single resolved video is imported — full playlist/channel batch imports are
+  not yet supported.
 - Job progress is not surfaced in the extension; open the returned `job_url`
   in the web UI to track it.
 - Notifications require the `notifications` permission, which is declared in

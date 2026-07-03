@@ -59,7 +59,10 @@
               <p id="url-warning" class="hidden validation-warning text-body-md text-on-surface-variant"></p>
             </div>
             <p class="text-on-surface-variant font-label-md text-label-md">
-              Single video URLs only. Playlists and channel URLs are {{ "allowed" if settings.allow_playlists else "not allowed" }}.
+              Only single-video imports are supported.
+              Playlist URLs are {{ "accepted" if settings.allow_playlists else "not accepted" }};
+              channel URLs are {{ "accepted" if settings.allow_channels else "not accepted" }}.
+              When accepted, only the single resolved video is imported.
             </p>
           </div>
         </form>
@@ -119,6 +122,7 @@
     const pasteBtn = document.getElementById("paste-btn");
     const previewBtn = document.getElementById("preview-btn");
     const allowPlaylists = {{ 'true' if settings.allow_playlists else 'false' }};
+    const allowChannels = {{ 'true' if settings.allow_channels else 'false' }};
 
     if (!urlForm || !urlInput || !warning || !previewBtn) {
       return;
@@ -137,7 +141,7 @@
     };
 
     const getUrlWarning = (value) => {
-      if (!value || allowPlaylists) {
+      if (!value) {
         return "";
       }
 
@@ -145,12 +149,12 @@
       const isPlaylist = /[?&]list=/.test(lower);
       const isChannelUrl = /youtube\.com\/(channel\/|c\/|@)/.test(lower) && !/watch\?v=/.test(lower);
 
-      if (isPlaylist) {
-        return "Heads up: this looks like a playlist URL and playlists are currently disabled.";
+      if (isPlaylist && !allowPlaylists) {
+        return "Heads up: this looks like a playlist URL and playlist URLs are currently disabled.";
       }
 
-      if (isChannelUrl) {
-        return "Heads up: this looks like a channel URL and playlists are currently disabled.";
+      if (isChannelUrl && !allowChannels) {
+        return "Heads up: this looks like a channel URL and channel URLs are currently disabled.";
       }
 
       return "";

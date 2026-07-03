@@ -52,6 +52,38 @@ def test_download_command_contains_no_playlist():
     assert "--no-playlist" in cmd
 
 
+def test_no_playlist_remains_when_allow_playlists_enabled():
+    """ALLOW_PLAYLISTS gates URL acceptance only; yt-dlp still uses --no-playlist.
+
+    Batch playlist/channel imports are not yet supported, so both the preview
+    and download commands must always suppress playlist expansion even when the
+    corresponding "allow URL" toggles are on.
+    """
+    svc = make_svc(ALLOW_PLAYLISTS="true", ALLOW_CHANNELS="true")
+    preview_cmd = svc.build_preview_command("https://youtu.be/abc123")
+    download_cmd = svc.build_download_command(
+        "https://youtu.be/abc123",
+        "job-1",
+        "/data/work/job-1/download/%(title)s.%(ext)s",
+    )
+    assert "--no-playlist" in preview_cmd
+    assert "--no-playlist" in download_cmd
+
+
+def test_allow_playlist_channel_settings_labels_reflect_url_only_behavior():
+    """Registry labels/help text must not imply full playlist/channel batch import."""
+    from app.settings_registry import SETTINGS_BY_KEY
+
+    playlists = SETTINGS_BY_KEY["allow_playlists"]
+    channels = SETTINGS_BY_KEY["allow_channels"]
+
+    assert playlists.label == "Allow Playlist URLs"
+    assert channels.label == "Allow Channel URLs"
+    for spec in (playlists, channels):
+        assert "not yet supported" in spec.help_text
+        assert "full" in spec.help_text.lower()
+
+
 def test_download_command_audio_format():
     svc = make_svc(YTDLP_AUDIO_FORMAT="m4a")
     cmd = svc.build_download_command(

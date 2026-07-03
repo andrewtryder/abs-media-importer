@@ -49,6 +49,12 @@ class ConversionArtifact:
     duration_seconds: float | None = None
     chapter_count: int | None = None
     filesize: int | None = None
+    # Populated during staged-output pipeline. `staged_path` is where ffmpeg
+    # writes; `final_path` is the Audiobookshelf-facing destination after
+    # commit. `path` mirrors `staged_path` before commit and `final_path`
+    # afterwards, matching whichever file is currently on disk.
+    staged_path: Path | None = None
+    final_path: Path | None = None
 
 
 class PipelineCancelledError(Exception):
@@ -151,6 +157,10 @@ class ImportPipeline:
         # Initialize optional artifact variables to build metadata on completion/failure
         dl_artifact: DownloadArtifact | None = None
         conv_artifact: ConversionArtifact | None = None
+        # Staged output paths are resolved inside the try block but referenced
+        # by cancel/failure handlers for cleanup, so initialize them up front.
+        staged_path: Path | None = None
+        final_temp_path: Path | None = None
 
         # ── Setup ─────────────────────────────────────────────────────────────
         fs = FilesystemService(self.settings)
@@ -203,7 +213,14 @@ class ImportPipeline:
             except ValueError as exc:
                 raise PipelineFailedError(f"Invalid output path: {exc}") from exc
 
+            # Stage conversion inside the job work directory so scanners never
+            # see partial .m4b files in the Audiobookshelf-facing output root.
+            staged_path = fs.staged_output_path(self.job_id, output_path)
+            final_temp_path = output_path.with_name(output_path.name + ".partial")
+
             log(f"[setup] Final output path: {output_path}")
+            log(f"[setup] Staged output path: {staged_path}")
+            log(f"[setup] Final temp (commit) sibling: {final_temp_path}")
             log(f"URL: {job.url}")
             log(f"DRY_RUN: {self.settings.dry_run}")
 
@@ -224,10 +241,14 @@ class ImportPipeline:
                 log(f"[download] yt-dlp command: {' '.join(dl_cmd)}")
 
                 fake_m4a = work_dir / "fake_download.m4a"
-                cmd_p = ffmpeg_svc.build_remux_command(fake_m4a, output_path)
-                cmd_f = ffmpeg_svc.build_remux_command_fallback(fake_m4a, output_path)
-                log(f"[convert] ffmpeg primary: {' '.join(cmd_p)}")
-                log(f"[convert] ffmpeg fallback: {' '.join(cmd_f)}")
+                # In real runs ffmpeg writes to staged_path; commit later moves
+                # that file into output_path. Show both commands here so the
+                # dry-run log reflects the staged-output flow.
+                cmd_p = ffmpeg_svc.build_remux_command(fake_m4a, staged_path)
+                cmd_f = ffmpeg_svc.build_remux_command_fallback(fake_m4a, staged_path)
+                log(f"[convert] ffmpeg primary (staged): {' '.join(cmd_p)}")
+                log(f"[convert] ffmpeg fallback (staged): {' '.join(cmd_f)}")
+                log(f"[commit] Would copy {staged_path} -> {final_temp_path} -> {output_path}")
 
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 output_path.write_bytes(b"DRY RUN fake .m4b content")
@@ -397,9 +418,13 @@ class ImportPipeline:
             self.db.commit()
             log("[convert] Starting ffmpeg remux")
             log(f"[convert] Input: {dl_artifact.path}")
-            log(f"[convert] Output: {output_path}")
+            log(f"[convert] Staged output: {staged_path}")
+            log(f"[convert] Final output (deferred): {output_path}")
 
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+            # Only the staged directory needs to exist during conversion. The
+            # final output directory is created at commit time to avoid touching
+            # the Audiobookshelf-facing tree until a verified file is ready.
+            staged_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Determine media duration for conversion progress mapping
             media_duration: float | None = float(job.duration) if job.duration is not None else None
@@ -444,7 +469,7 @@ class ImportPipeline:
 
             remux_result = ffmpeg_svc.run_remux(
                 dl_artifact.path,
-                output_path,
+                staged_path,
                 log_fh,
                 check_cancelled=check_cancelled,
                 on_progress=_on_ffmpeg_progress,
@@ -464,14 +489,17 @@ class ImportPipeline:
                 force=True,
             )
 
-            # Wrap in ConversionArtifact
+            # Wrap in ConversionArtifact. `path` is set to the staged file here;
+            # it is rewritten to the final output path after successful commit.
             conv_artifact = ConversionArtifact(
-                path=output_path,
+                path=staged_path,
+                staged_path=staged_path,
+                final_path=output_path,
                 used_fallback=remux_result.used_fallback,
-                filesize=output_path.stat().st_size if output_path.exists() else None,
+                filesize=staged_path.stat().st_size if staged_path.exists() else None,
             )
 
-            log(f"[convert] Completed: {conv_artifact.path}")
+            log(f"[convert] Completed (staged): {conv_artifact.path}")
             log(f"[convert] Used fallback: {str(conv_artifact.used_fallback).lower()}")
 
             if check_cancelled():
@@ -496,10 +524,10 @@ class ImportPipeline:
                 phase="verifying",
             )
             self.db.commit()
-            log("[verify] Running ffprobe")
+            log(f"[verify] Running ffprobe on staged output: {staged_path}")
 
             try:
-                probe = ffmpeg_svc.verify_output(conv_artifact.path)
+                probe = ffmpeg_svc.verify_output(staged_path)
                 conv_artifact.verified = True
                 conv_artifact.codec_name = probe.codec_name
                 conv_artifact.duration_seconds = probe.duration_seconds
@@ -536,6 +564,36 @@ class ImportPipeline:
                     force=True,
                 )
                 raise PipelineFailedError(f"Output verification failed: {exc}") from exc
+
+            if check_cancelled():
+                raise PipelineCancelledError()
+
+            # ── Commit staged output to final destination ─────────────────────
+            sync_update_job(self.db, job, phase="committing_output")
+            self.db.commit()
+            log(f"[commit] Publishing staged output to {output_path}")
+            log(f"[commit] Via temp sibling: {final_temp_path}")
+
+            try:
+                fs.commit_staged_output(staged_path, output_path)
+            except (OSError, RuntimeError) as exc:
+                raise PipelineFailedError(f"Failed to commit output: {exc}") from exc
+
+            if not output_path.exists():
+                raise PipelineFailedError("Commit reported success but final output is missing")
+
+            committed_size = output_path.stat().st_size
+            if conv_artifact.filesize is not None and committed_size != conv_artifact.filesize:
+                raise PipelineFailedError(
+                    "Committed file size does not match verified staged size "
+                    f"(staged={conv_artifact.filesize} committed={committed_size})"
+                )
+
+            # From here on, conv_artifact.path refers to the committed file.
+            conv_artifact.path = output_path
+            log(f"[commit] Final output committed: {output_path} ({committed_size} bytes)")
+            sync_update_job(self.db, job, phase="output_committed")
+            self.db.commit()
 
             if check_cancelled():
                 raise PipelineCancelledError()
@@ -683,6 +741,9 @@ class ImportPipeline:
                 artifact_metadata=self._build_metadata_json(dl_artifact, conv_artifact),
             )
             self.db.commit()
+            # Clean up any staged/partial artifacts before removing the work
+            # dir so a cancelled job never leaves a partial final .m4b behind.
+            fs.cleanup_output_partials(staged_path, final_temp_path)
             if self.settings.cleanup_temp_on_failure:
                 fs.cleanup_work_dir(self.job_id)
 
@@ -714,6 +775,10 @@ class ImportPipeline:
                 artifact_metadata=self._build_metadata_json(dl_artifact, conv_artifact),
             )
             self.db.commit()
+            # Clean up any staged/partial artifacts on failure. This must run
+            # regardless of cleanup_temp_on_failure because the temp sibling
+            # lives next to the final .m4b, not inside the work directory.
+            fs.cleanup_output_partials(staged_path, final_temp_path)
             if self.settings.cleanup_temp_on_failure:
                 fs.cleanup_work_dir(self.job_id)
 
@@ -787,6 +852,14 @@ class ImportPipeline:
         if conv_artifact:
             data["conversion"] = {
                 "path": str(conv_artifact.path),
+                "staged_path": (
+                    str(conv_artifact.staged_path)
+                    if conv_artifact.staged_path is not None
+                    else None
+                ),
+                "final_path": (
+                    str(conv_artifact.final_path) if conv_artifact.final_path is not None else None
+                ),
                 "used_fallback": conv_artifact.used_fallback,
                 "codec_name": conv_artifact.codec_name,
                 "duration_seconds": conv_artifact.duration_seconds,
