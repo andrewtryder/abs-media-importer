@@ -1,21 +1,22 @@
 {% extends "base.html" %}
+{% from "_macros.html" import badge %}
 {% block title %}Settings — abs-media-importer{% endblock %}
 
 {% block content %}
 <main class="flex-grow w-full">
-  <header class="flex justify-end items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
-    <div class="flex items-center gap-stack-md">
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+    <div class="flex items-center gap-4 min-w-0">
+      <h1 class="font-headline-md text-headline-md text-on-surface font-semibold truncate">Settings</h1>
+    </div>
+    <div class="flex items-center gap-stack-md shrink-0">
       <span class="font-code text-code text-on-surface-variant opacity-75">Configuration Registry</span>
     </div>
   </header>
 
   <div class="pt-8 pb-32 px-container-padding max-w-5xl mx-auto w-full">
-    <header class="mb-stack-lg section-entrance section-entrance-1">
-      <h1 class="font-headline-md text-headline-md text-on-background">Settings</h1>
-      <p class="font-body-md text-body-md text-on-surface-variant mt-1">
-        Configure global application behavior. Environment and YAML values take precedence and lock their fields.
-      </p>
-    </header>
+    <p class="font-body-md text-body-md text-on-surface-variant mb-stack-lg section-entrance section-entrance-1">
+      Configure global application behavior. Environment and YAML values take precedence and lock their fields.
+    </p>
 
     {% if error %}
     <div class="bg-error-container/20 border border-error/30 text-error rounded-xl p-4 flex items-start gap-3 mb-6 shadow-md">
@@ -25,16 +26,16 @@
     {% endif %}
 
     {% if success %}
-    <div class="bg-green-500/10 border border-green-500/25 text-green-400 rounded-xl p-4 flex items-start gap-3 mb-6 shadow-md">
-      <span class="material-symbols-outlined shrink-0 text-green-400">check_circle</span>
+    <div class="bg-success-container/20 border border-success/25 text-on-success-container rounded-xl p-4 flex items-start gap-3 mb-6 shadow-md">
+      <span class="material-symbols-outlined shrink-0 text-on-success-container">check_circle</span>
       <span class="text-body-md font-body-md">{{ success | e }}</span>
     </div>
     {% endif %}
 
     {% if warnings %}
-    <div class="bg-yellow-500/10 border border-yellow-500/25 text-yellow-300 rounded-xl p-4 mb-6 shadow-md">
+    <div class="bg-warning-container/20 border border-warning/25 text-on-warning-container rounded-xl p-4 mb-6 shadow-md">
       <div class="flex items-start gap-3">
-        <span class="material-symbols-outlined shrink-0 text-yellow-400">warning</span>
+        <span class="material-symbols-outlined shrink-0 text-on-warning-container">warning</span>
         <ul class="list-disc pl-5 space-y-1 text-body-md">
           {% for warning in warnings %}
           <li>{{ warning | e }}</li>
@@ -62,12 +63,10 @@
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-body-md text-body-md text-on-surface">{{ spec.label | e }}</span>
                     {% if field.locked %}
-                    <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md uppercase tracking-wide">
-                      {{ field.source | e }}
-                    </span>
+                    {{ badge(field.source | e, variant='neutral') }}
                     {% endif %}
                     {% if field.restart_required %}
-                    <span class="inline-flex px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 font-label-md text-label-md">Restart</span>
+                    {{ badge('Restart', variant='warning') }}
                     {% endif %}
                   </div>
                   <span class="font-label-md text-label-md text-on-surface-variant">{{ spec.help_text | e }}</span>
@@ -75,7 +74,7 @@
                   <span class="font-label-md text-label-md text-error">{{ field.error | e }}</span>
                   {% endif %}
                   {% if field.warning %}
-                  <span class="font-label-md text-label-md text-yellow-400">{{ field.warning | e }}</span>
+                  <span class="font-label-md text-label-md text-warning">{{ field.warning | e }}</span>
                   {% endif %}
                 </div>
                 <span class="relative inline-flex h-6 w-11 items-center shrink-0">
@@ -95,14 +94,12 @@
                 <div class="flex items-center gap-2 flex-wrap">
                   <label for="{{ spec.key | e }}" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">{{ spec.label | e }}</label>
                   {% if field.locked %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md uppercase tracking-wide">
-                    {{ field.source | e }}
-                  </span>
+                  {{ badge(field.source | e, variant='neutral') }}
                   {% elif field.source == 'db' %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/25 font-label-md text-label-md">UI override</span>
+                  {{ badge('UI override', variant='info') }}
                   {% endif %}
                   {% if field.restart_required %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 font-label-md text-label-md">Restart</span>
+                  {{ badge('Restart', variant='warning') }}
                   {% endif %}
                 </div>
 
@@ -150,7 +147,7 @@
                 <p class="font-label-md text-label-md text-error">{{ field.error | e }}</p>
                 {% endif %}
                 {% if field.warning %}
-                <p class="font-label-md text-label-md text-yellow-400">{{ field.warning | e }}</p>
+                <p class="font-label-md text-label-md text-warning">{{ field.warning | e }}</p>
                 {% endif %}
               </div>
               {% endif %}
@@ -188,7 +185,7 @@
       </div>
 
       <div class="md:col-span-4 space-y-stack-md">
-        <div class="settings-card section-entrance section-entrance-2 bg-surface-container border border-outline rounded-xl overflow-hidden shadow-lg">
+        <div class="settings-card section-entrance section-entrance-2 bg-surface-container border border-outline-variant rounded-xl overflow-hidden shadow-lg">
           <div class="p-stack-md">
             <h3 class="font-headline-sm text-headline-sm font-semibold mb-3">System Status</h3>
             <div class="space-y-3">
@@ -196,9 +193,9 @@
                 <span class="font-body-md text-on-surface-variant">Dry run</span>
                 <span>
                   {% if settings.dry_run %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/25 font-label-md text-label-md">ENABLED</span>
+                  {{ badge('ENABLED', variant='warning') }}
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">DISABLED</span>
+                  {{ badge('DISABLED', variant='neutral') }}
                   {% endif %}
                 </span>
               </div>
@@ -206,9 +203,9 @@
                 <span class="font-body-md text-on-surface-variant">Playlist URLs</span>
                 <span>
                   {% if settings.allow_playlists %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-label-md">ALLOWED</span>
+                  {{ badge('ALLOWED', variant='success') }}
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">DISABLED</span>
+                  {{ badge('DISABLED', variant='neutral') }}
                   {% endif %}
                 </span>
               </div>
@@ -216,9 +213,9 @@
                 <span class="font-body-md text-on-surface-variant">Channel URLs</span>
                 <span>
                   {% if settings.allow_channels %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-label-md">ALLOWED</span>
+                  {{ badge('ALLOWED', variant='success') }}
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">DISABLED</span>
+                  {{ badge('DISABLED', variant='neutral') }}
                   {% endif %}
                 </span>
               </div>
@@ -230,9 +227,9 @@
                 <span class="font-body-md text-on-surface-variant">ABS scan</span>
                 <span>
                   {% if settings.abs_configured and settings.abs_scan_after_success %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/25 font-label-md text-label-md">ACTIVE</span>
+                  {{ badge('ACTIVE', variant='success') }}
                   {% else %}
-                  <span class="inline-flex px-2 py-0.5 rounded bg-surface-variant text-on-surface-variant font-label-md text-label-md">INACTIVE</span>
+                  {{ badge('INACTIVE', variant='neutral') }}
                   {% endif %}
                 </span>
               </div>

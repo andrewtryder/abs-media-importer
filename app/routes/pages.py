@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import html
 import logging
-import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, Form, HTTPException, Request
@@ -12,6 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.config import Settings, get_setting_sources, reload_settings, save_settings
+from app.diagnostics import format_free_space
 from app.routes import DbDep, SettingsDep
 from app.services.filesystem import FilesystemService
 from app.services.jobs import (
@@ -55,31 +55,10 @@ def _escape_html(text: str | None) -> str:
     return html.escape(text or "")
 
 
-def _format_free_space(path: str | Path | None) -> str:
-    """Return free space label in MB/GB for the given path."""
-    if path is None:
-        return "N/A"
-
-    probe = Path(path)
-    candidates = [probe, probe.parent, Path("/")]
-    for candidate in candidates:
-        try:
-            usage = shutil.disk_usage(candidate)
-            free_bytes = usage.free
-            gib = 1024**3
-            mib = 1024**2
-            if free_bytes >= gib:
-                return f"{free_bytes / gib:.1f} GB free"
-            return f"{free_bytes / mib:.0f} MB free"
-        except OSError:
-            logger.debug("Could not determine free disk space for %s", candidate, exc_info=True)
-    return "N/A"
-
-
 templates.env.filters["duration"] = _format_duration
 templates.env.filters["format_date"] = _format_date
 templates.env.filters["escape_html"] = _escape_html
-templates.env.globals["format_free_space"] = _format_free_space
+templates.env.globals["format_free_space"] = format_free_space
 
 
 def configure_templates(ui_version: str) -> None:

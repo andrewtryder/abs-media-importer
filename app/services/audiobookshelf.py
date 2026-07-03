@@ -75,3 +75,45 @@ class AudiobookshelfClient:
             msg = f"ABS connection error: {type(exc).__name__}"
             logger.error("ABS scan failed: %s", msg)
             return ScanResult(success=False, error=msg)
+
+    def check_connectivity(self, library_id: str | None = None) -> ScanResult:
+        """
+        Verify ABS URL and API token with a read-only library GET.
+
+        Does not trigger a library scan.
+        """
+        if not self._configured:
+            return ScanResult(success=False, skipped=True)
+
+        lid = library_id or self.settings.abs_library_id
+        if not lid:
+            return ScanResult(
+                success=False,
+                skipped=True,
+                error="No library ID configured",
+            )
+
+        base_url = (self.settings.abs_base_url or "").rstrip("/")
+        url = f"{base_url}/api/libraries/{lid}"
+        headers = {
+            "Authorization": f"Bearer {self.settings.abs_api_token}",
+            "Content-Type": "application/json",
+        }
+        logger.debug("Checking ABS connectivity for library %s at %s", lid, base_url)
+
+        try:
+            response = httpx.get(url, headers=headers, timeout=5)
+            response.raise_for_status()
+            return ScanResult(success=True)
+        except httpx.HTTPStatusError as exc:
+            status_code = exc.response.status_code
+            if status_code in {401, 403}:
+                msg = f"Authentication failed (HTTP {status_code})"
+            else:
+                msg = f"ABS API returned HTTP {status_code}"
+            logger.error("ABS connectivity check failed: %s", msg)
+            return ScanResult(success=False, error=msg)
+        except httpx.RequestError as exc:
+            msg = f"ABS connection error: {type(exc).__name__}"
+            logger.error("ABS connectivity check failed: %s", msg)
+            return ScanResult(success=False, error=msg)

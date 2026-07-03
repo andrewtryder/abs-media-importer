@@ -3,20 +3,18 @@
 
 {% block content %}
 <main class="flex-grow w-full">
-  <div class="max-w-5xl mx-auto px-container-padding py-stack-lg">
-    <!-- Breadcrumb -->
-    <div class="mb-stack-md">
-      <a href="/" class="inline-flex items-center gap-2 text-primary hover:underline transition-all group">
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+    <div class="flex items-center gap-4 min-w-0">
+      <a href="/" class="inline-flex items-center gap-1.5 text-primary hover:underline transition-all group shrink-0">
         <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
         <span class="font-label-md text-label-md">Back</span>
       </a>
+      <h1 class="font-headline-md text-headline-md text-on-surface font-semibold truncate">Preview &amp; Configure</h1>
     </div>
+  </header>
 
-    <!-- Page Header -->
-    <header class="mb-stack-lg section-entrance section-entrance-1">
-      <h1 class="font-headline-md text-headline-md text-on-background">Preview &amp; Configure</h1>
-      <p class="font-body-md text-body-md text-on-surface-variant mt-1">Review fetched metadata and customize audiobook options.</p>
-    </header>
+  <div class="max-w-5xl mx-auto px-container-padding py-stack-lg">
+    <p class="font-body-md text-body-md text-on-surface-variant mb-stack-lg section-entrance section-entrance-1">Review fetched metadata and customize audiobook options.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
       <!-- Left Column: Video Metadata Card -->
