@@ -2,12 +2,12 @@
 // Used for store submission preparation.
 
 import { execSync } from 'child_process';
-import { writeFileSync, mkdirSync, existsSync, rmSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync, mkdirSync, existsSync, rmSync } from 'fs';
+import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import process from 'process';
 
-const __dirname = fileURLToPath(import.meta.url);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const DIST = resolve(ROOT, 'dist', 'chrome');
 const ARTIFACTS = resolve(ROOT, 'artifacts');
@@ -70,11 +70,6 @@ async function main() {
   }
 
   console.log('\nPackaging complete!');
-}
-
-function readFileSync(path) {
-  const { readFileSync } from 'fs';
-  return readFileSync(path, 'utf8');
 }
 
 main().catch(error => {

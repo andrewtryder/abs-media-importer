@@ -44,7 +44,18 @@ intentional duplicate imports.
 
 ## CI
 
-`browser-extension/scripts/lint.mjs` validates that every manifest entry point
-exists in `src/` and that the JavaScript parses. `scripts/build.mjs` produces
-`dist/chrome/` and `dist/firefox/`. Neither step is currently wired into the
-GitHub Actions workflow; run them manually from `browser-extension/`.
+The `browser-extension` job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+runs on every push and pull request to `main`:
+
+```bash
+npm ci --prefix browser-extension
+npm --prefix browser-extension run lint
+npm --prefix browser-extension run check:version
+npm --prefix browser-extension run build
+npm --prefix browser-extension run package
+```
+
+`lint` validates manifest entry points and JavaScript syntax. `check:version`
+ensures `package.json`, `manifests/base.json`, and `.release-please-manifest.json`
+agree on the extension version. `build` and `package` produce `dist/` and ZIP
+artifacts under `browser-extension/artifacts/`.

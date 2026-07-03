@@ -51,3 +51,32 @@ jobs:
 
       - name: Docker build smoke test
         run: docker build .
+
+  browser-extension:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: browser-extension/package-lock.json
+
+      - name: Install extension dependencies
+        run: npm ci --prefix browser-extension
+
+      - name: Lint extension
+        run: npm --prefix browser-extension run lint
+
+      - name: Check extension version consistency
+        run: npm --prefix browser-extension run check:version
+
+      - name: Build extension
+        run: npm --prefix browser-extension run build
+
+      - name: Package extension
+        run: npm --prefix browser-extension run package
