@@ -1,11 +1,8 @@
 # Dependabot configuration
 # Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 #
-# This is the baseline template. Repos should copy this file to .github/dependabot.yml
-# and customize it for their project.
-#
-# For monorepos or repos with nested projects (e.g., packages/*, apps/*),
-# add additional directory entries for each sub-project.
+# Python deps: uv project mode (pyproject.toml + uv.lock)
+# Repo tooling: npm devDependencies for Rulesync
 
 version: 2
 updates:
@@ -27,9 +24,7 @@ updates:
           - "minor"
           - "patch"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
-    # Python dependency update strategy is adopted repo-by-repo.
-    # Pin groups and open-pull-requests-limit as needed.
