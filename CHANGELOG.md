@@ -8,6 +8,14 @@
 * **ui:** add Diagnostics page with health checks for yt-dlp, ffmpeg, ffprobe, Redis, database, paths, disk space, cookies, and ABS API.
 * **ui:** unify page headers, shared badge tokens, success/warning palette, and layout polish across Import, Jobs, Settings, Preview, Job Detail, and Diagnostics.
 
+## [1.7.1](https://github.com/andrewtryder/abs-media-importer/compare/v1.7.0...v1.7.1) (2026-07-03)
+
+
+### Performance Improvements
+
+* **ci:** cache Docker builds, cancel stale runs, and retag releases ([f68914e](https://github.com/andrewtryder/abs-media-importer/commit/f68914e1e3ca6eab7d4ad73159824fc6df01c4d6))
+* **ci:** cache Docker builds, cancel stale runs, and retag releases ([b57601c](https://github.com/andrewtryder/abs-media-importer/commit/b57601c8d7a2909dc20b49c556184c977ccbb107))
+
 ## [1.7.0](https://github.com/andrewtryder/abs-media-importer/compare/v1.6.1...v1.7.0) (2026-07-03)
 
 
