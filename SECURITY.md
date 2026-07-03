@@ -27,6 +27,15 @@ Do not disclose vulnerabilities publicly until a fix is coordinated.
 - Use `config.yml` and environment variables for deployment-specific settings
 - Keep dependencies updated (Dependabot is enabled on this repository)
 
+## Automated Scanning
+
+This repository uses GitHub security workflows to catch issues early:
+
+- **CodeQL** — static analysis for Python and JavaScript on every push and pull request to `main`
+- **Dependency Review** — blocks pull requests that introduce dependencies with known vulnerabilities at moderate severity or higher
+- **OpenSSF Scorecard** — weekly analysis of open source security best practices, with results published to [scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/andrewtryder/abs-media-importer)
+- **Secret scanning** — TruffleHog runs on pull requests to detect verified secrets
+
 ## Deployment Hardening
 
 For security, the application defaults to binding to `127.0.0.1` (localhost) inside `docker-compose.yml` to prevent unintended public exposure.

@@ -4,6 +4,10 @@
   <img src="assets/abs-badge.png" alt="abs-media-importer" />
 </p>
 
+<p align="center">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/andrewtryder/abs-media-importer"><img src="https://api.scorecard.dev/projects/github.com/andrewtryder/abs-media-importer/badge" alt="OpenSSF Scorecard" /></a>
+</p>
+
 A self-hosted sidecar application that converts individual YouTube videos into `.m4b` audiobook files and writes them directly to the directory that [Audiobookshelf](https://www.audiobookshelf.org/) scans.
 
 > [!NOTE]

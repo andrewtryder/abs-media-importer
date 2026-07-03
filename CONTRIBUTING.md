@@ -27,6 +27,7 @@ When changing dependencies or the project version in `pyproject.toml`, run `uv l
 - Keep PRs focused on a single concern. If you have multiple unrelated changes, split them into separate PRs.
 - Update documentation (README, ADRs) if your change introduces new behavior or deprecates existing functionality.
 - If your change affects repository governance or CI/CD, add a note in the PR description.
+- Dependency changes in `uv.lock`, `package-lock.json`, or Docker manifests are checked by Dependency Review on pull requests; PRs that introduce moderate-or-higher CVEs will fail that check.
 
 ## Code of Conduct
 
