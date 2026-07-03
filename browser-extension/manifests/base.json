@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ABS Media Importer",
   "description": "Queue YouTube videos into a local ABS Media Importer instance.",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -19,8 +19,17 @@
       "128": "icons/icon-128.png"
     }
   },
-  "options_ui": { "page": "options.html", "open_in_tab": false },
-  "permissions": ["activeTab", "storage", "contextMenus", "tabs", "notifications"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "tabs",
+    "notifications"
+  ],
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://youtube.com/*",

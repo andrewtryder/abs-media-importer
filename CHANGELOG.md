@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.1](https://github.com/andrewtryder/abs-media-importer/compare/v1.6.0...v1.6.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **release:** correct Release Please manifest path and sync extension version ([342a03e](https://github.com/andrewtryder/abs-media-importer/commit/342a03eba06d018444b8c95c4611a552dbd225f5))
+* **release:** correct Release Please manifest path and sync extension version ([bc692a0](https://github.com/andrewtryder/abs-media-importer/commit/bc692a0ecfcd5426ee64a21be42abf182320a042))
+
 ## [1.6.0](https://github.com/andrewtryder/abs-media-importer/compare/v1.5.2...v1.6.0) (2026-07-03)
 
 
