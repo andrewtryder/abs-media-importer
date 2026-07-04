@@ -4,20 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import inspect as sa_inspect
-
 from app.models import Job
 
 
 def job_dict(job: Job) -> dict[str, Any]:
-    # Never trigger lazy loads: async request/WebSocket handlers hang or raise
-    # MissingGreenlet when relationships are accessed without selectinload.
-    batch_title = None
-    state = sa_inspect(job)
-    if "batch" not in state.unloaded:
-        batch = job.batch
-        if batch is not None:
-            batch_title = batch.title
+    # Read batch only from the instance dict so we never trigger a lazy load.
+    # Async handlers (especially WebSockets under Starlette's TestClient) hang
+    # when SQLAlchemy tries to lazy-load relationships.
+    batch = job.__dict__.get("batch")
+    batch_title = batch.title if batch is not None else None
 
     return {
         "id": job.id,

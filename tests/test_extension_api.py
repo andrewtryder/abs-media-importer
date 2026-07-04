@@ -451,8 +451,8 @@ def test_extension_websocket_accepts_query_token(
     )
     assert queue_response.status_code == 201
     job_id = queue_response.json()["job_id"]
-    # End the poll loop immediately so TestClient teardown cannot hang on a
-    # non-terminal job (the handler only exits on terminal status or cancel).
+    # Terminal before connect so the handler sends one update and returns
+    # without entering the poll loop (avoids Starlette TestClient hangs on CI).
     _mark_job_succeeded(job_id)
 
     with extension_enabled_client.websocket_connect(
@@ -462,6 +462,9 @@ def test_extension_websocket_accepts_query_token(
         assert payload["type"] == "job_update"
         assert payload["job"]["id"] == job_id
         assert payload["job"]["status"] == "succeeded"
+        # Drain close frame so the context manager does not wait on the portal.
+        with pytest.raises(WebSocketDisconnect):
+            websocket.receive_json()
 
 
 def test_extension_websocket_rejects_wrong_query_token(
