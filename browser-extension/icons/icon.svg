@@ -1,48 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <!-- Headband -->
-  <path d="M 85 240 A 171 171 0 0 1 427 240" fill="none" stroke="#1B2028" stroke-width="28" stroke-linecap="round"/>
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4" y="4" width="112" height="112" rx="26" fill="#0C0B09" stroke="#2E2618" stroke-width="2"/>
 
-  <!-- Right Earcup -->
-  <rect x="410" y="200" width="32" height="120" rx="16" fill="#1B2028"/>
-  <rect x="432" y="215" width="35" height="90" rx="10" fill="#1B2028"/>
-  <rect x="457" y="235" width="30" height="50" rx="8" fill="#1B2028"/>
+  <path d="M40,60 Q60,72 80,60" fill="none" stroke="#E8A33D" stroke-width="4" stroke-linecap="round"/>
 
-  <!-- Left Earcup -->
-  <rect x="70" y="200" width="32" height="120" rx="16" fill="#1B2028"/>
-  <rect x="45" y="215" width="35" height="90" rx="10" fill="#1B2028"/>
-  <rect x="25" y="235" width="30" height="50" rx="8" fill="#1B2028"/>
+  <g transform="translate(40,46)">
+    <line x1="-10" y1="-10" x2="10" y2="10" stroke="#E8A33D" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="-10" y1="10" x2="10" y2="-10" stroke="#E8A33D" stroke-width="2.5" stroke-linecap="round"/>
+    <circle r="14" fill="none" stroke="#E8A33D" stroke-width="5"/>
+    <circle r="4" fill="#E8A33D"/>
+  </g>
 
-  <!-- Book Cover (Dark Base) -->
-  <path d="M 125 150 L 256 190 L 387 150 L 387 375 C 340 385 290 410 256 435 C 222 410 172 385 125 375 Z" fill="#1B2028"/>
+  <g transform="translate(80,46)">
+    <line x1="-10" y1="-10" x2="10" y2="10" stroke="#E8A33D" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="-10" y1="10" x2="10" y2="-10" stroke="#E8A33D" stroke-width="2.5" stroke-linecap="round"/>
+    <circle r="14" fill="none" stroke="#E8A33D" stroke-width="5"/>
+    <circle r="4" fill="#E8A33D"/>
+  </g>
 
-  <!-- Gold Page (Left) -->
-  <polygon points="138,162 256,198 256,415 138,360" fill="#D79F39"/>
-
-  <!-- White Books Graphic -->
-  <rect x="146" y="352" width="94" height="8" rx="4" fill="#FFFFFF"/>
-
-  <!-- Left Book -->
-  <path d="M 154 200 A 12 12 0 0 1 178 200 L 178 352 L 154 352 Z" fill="#FFFFFF"/>
-  <rect x="154" y="215" width="24" height="6" fill="#D79F39"/>
-
-  <!-- Middle Book -->
-  <path d="M 184 175 A 12 12 0 0 1 208 175 L 208 352 L 184 352 Z" fill="#FFFFFF"/>
-  <rect x="184" y="190" width="24" height="6" fill="#D79F39"/>
-
-  <!-- Right Book -->
-  <path d="M 214 200 A 12 12 0 0 1 238 200 L 238 352 L 214 352 Z" fill="#FFFFFF"/>
-  <rect x="214" y="215" width="24" height="6" fill="#D79F39"/>
-
-  <!-- Terminal Graphic (Right Page) -->
-  <path d="M 285 245 L 320 270 L 285 295" fill="none" stroke="#07080A" stroke-width="12" stroke-linecap="butt" stroke-linejoin="miter"/>
-  <rect x="300" y="300" width="20" height="10" fill="#07080A"/>
-  <rect x="330" y="300" width="20" height="10" fill="#E0111A"/>
-
-  <!-- Download Icon -->
-  <!-- Arrow Shaft -->
-  <rect x="244" y="340" width="24" height="42" fill="#07080A"/>
-  <!-- Arrow Head -->
-  <path d="M 224 380 L 288 380 L 256 415 Z" fill="#E0111A" stroke="#07080A" stroke-width="8" stroke-linejoin="round"/>
-  <!-- Bottom Tray / Bracket -->
-  <path d="M 216 425 L 216 440 A 6 6 0 0 0 222 446 L 290 446 A 6 6 0 0 0 296 440 L 296 425" fill="none" stroke="#07080A" stroke-width="12" stroke-linecap="butt"/>
+  <rect x="34" y="90" width="12" height="10" rx="3" fill="#E8A33D"/>
+  <rect x="54" y="84" width="12" height="16" rx="3" fill="#F2C878"/>
+  <rect x="74" y="78" width="12" height="22" rx="3" fill="#6FA25E"/>
 </svg>

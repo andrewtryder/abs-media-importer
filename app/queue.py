@@ -7,7 +7,7 @@ from rq import Queue
 
 from app.config import get_settings
 
-QUEUE_NAME = "abs_media_importer"
+QUEUE_NAME = "reeldock"
 
 _redis_conn: Redis | None = None
 _queue: Queue | None = None

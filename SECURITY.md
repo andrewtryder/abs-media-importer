@@ -2,9 +2,9 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in abs-media-importer, please report it responsibly:
+If you discover a security vulnerability in reeldock, please report it responsibly:
 
-1. Open a [private GitHub security advisory](https://github.com/andrewtryder/abs-media-importer/security/advisories/new) on this repository, or
+1. Open a [private GitHub security advisory](https://github.com/andrewtryder/reeldock/security/advisories/new) on this repository, or
 2. Contact the repository owner through GitHub.
 
 Do not disclose vulnerabilities publicly until a fix is coordinated.
@@ -31,9 +31,9 @@ Do not disclose vulnerabilities publicly until a fix is coordinated.
 
 This repository uses GitHub security workflows to catch issues early:
 
-- **CodeQL** — GitHub default code scanning for Python, JavaScript/TypeScript, and Actions on push, pull request, and weekly schedule (default setup is enabled; an advanced workflow would conflict). View alerts under [Security → Code scanning](https://github.com/andrewtryder/abs-media-importer/security/code-scanning)
+- **CodeQL** — GitHub default code scanning for Python, JavaScript/TypeScript, and Actions on push, pull request, and weekly schedule (default setup is enabled; an advanced workflow would conflict). View alerts under [Security → Code scanning](https://github.com/andrewtryder/reeldock/security/code-scanning)
 - **Dependency Review** — blocks pull requests that introduce dependencies with known vulnerabilities at moderate severity or higher
-- **OpenSSF Scorecard** — weekly analysis of open source security best practices, with results published to [scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/andrewtryder/abs-media-importer)
+- **OpenSSF Scorecard** — weekly analysis of open source security best practices, with results published to [scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/andrewtryder/reeldock)
 - **Secret scanning** — TruffleHog runs on pull requests to detect verified secrets
 
 ## Deployment Hardening

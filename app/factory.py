@@ -31,7 +31,7 @@ _GITHUB_RELEASE_TIMEOUT_SECONDS = 2.5
 def _package_version() -> str:
     """Return the installed package version from pyproject.toml metadata."""
     try:
-        return version("abs-media-importer")
+        return version("reeldock")
     except PackageNotFoundError:
         data = tomllib.loads((Path(__file__).resolve().parents[1] / "pyproject.toml").read_text())
         return str(data["project"]["version"])
@@ -43,8 +43,8 @@ def _fallback_ui_version(default_version: str) -> str:
 
 
 def _ui_version_env_override() -> str | None:
-    """Return ABS_MEDIA_IMPORTER_UI_VERSION when set, else None."""
-    env_version = os.getenv("ABS_MEDIA_IMPORTER_UI_VERSION", "").strip()
+    """Return REELDOCK_UI_VERSION when set, else None."""
+    env_version = os.getenv("REELDOCK_UI_VERSION", "").strip()
     return env_version or None
 
 
@@ -53,7 +53,7 @@ def _background_ui_version_fetch_enabled() -> bool:
     if _ui_version_env_override() is not None:
         return False
     # Tests set this to 0 so TestClient lifespan never schedules network work.
-    flag = os.getenv("ABS_MEDIA_IMPORTER_FETCH_UI_VERSION", "1").strip().lower()
+    flag = os.getenv("REELDOCK_FETCH_UI_VERSION", "1").strip().lower()
     return flag not in {"0", "false", "no"}
 
 
@@ -67,7 +67,7 @@ def _resolve_ui_version(default_version: str) -> str:
 
 async def _fetch_latest_ui_version_async(fallback: str) -> str:
     """Fetch the latest GitHub release tag, returning *fallback* on any failure."""
-    repo = os.getenv("ABS_MEDIA_IMPORTER_GITHUB_REPO", "andrewtryder/abs-media-importer").strip()
+    repo = os.getenv("REELDOCK_GITHUB_REPO", "andrewtryder/reeldock").strip()
     if "/" not in repo:
         return fallback
 
@@ -78,7 +78,7 @@ async def _fetch_latest_ui_version_async(fallback: str) -> str:
                 api_url,
                 headers={
                     "Accept": "application/vnd.github+json",
-                    "User-Agent": "abs-media-importer",
+                    "User-Agent": "reeldock",
                 },
             )
             response.raise_for_status()
@@ -125,7 +125,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="abs-media-importer",
+        title="reeldock",
         description="Selective YouTube → Audiobookshelf importer",
         version=_package_version(),
         lifespan=lifespan,

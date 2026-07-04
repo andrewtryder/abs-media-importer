@@ -22,7 +22,7 @@ async function main() {
     mkdirSync(ARTIFACTS, { recursive: true });
   }
 
-  const zipName = `abs-media-importer-chrome-v${version}.zip`;
+  const zipName = `reeldock-chrome-v${version}.zip`;
   const zipPath = resolve(ARTIFACTS, zipName);
 
   // Remove existing artifact

@@ -1,10 +1,10 @@
-// Background service worker for the abs-media-importer extension.
+// Background service worker for the reeldock extension.
 // Owns the in-memory settings cache, the context menu, the API call to queue videos,
 // and WebSocket connections for real-time job status updates.
 
 import { DEFAULT_SETTINGS, STORAGE_KEYS, isYouTubeWatchUrl, loadSettings } from './settings.js';
 
-const CONTEXT_MENU_ID = 'abs-media-importer-queue-video';
+const CONTEXT_MENU_ID = 'reeldock-queue-video';
 
 // In-memory cache of settings, refreshed from storage on startup and on changes.
 let settings = { ...DEFAULT_SETTINGS };
@@ -60,7 +60,7 @@ async function queueVideo(url, options = {}) {
   return response.json();
 }
 
-function notify(message, title = 'ABS Media Importer') {
+function notify(message, title = 'ReelDock') {
   try {
     chrome.notifications?.create({
       type: 'basic',
@@ -150,7 +150,7 @@ function createContextMenus() {
 
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID,
-      title: 'Send to ABS Media Importer',
+      title: 'Send to ReelDock',
       contexts: ['page', 'link'],
       documentUrlPatterns: [
         'https://www.youtube.com/*',

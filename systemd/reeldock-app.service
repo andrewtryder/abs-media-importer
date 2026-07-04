@@ -1,0 +1,21 @@
+[Unit]
+Description=reeldock FastAPI Web Server
+After=network.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=reeldock
+Group=reeldock
+WorkingDirectory=/opt/reeldock
+EnvironmentFile=/etc/reeldock/.env
+
+# Fail gracefully with a clear error message if config is missing or incomplete
+ExecStartPre=/bin/sh -c 'if [ ! -f /etc/reeldock/.env ]; then echo "ERROR: /etc/reeldock/.env is missing. Please copy /opt/reeldock/.env.example and populate it."; exit 1; fi'
+
+ExecStart=/opt/reeldock/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --no-access-log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

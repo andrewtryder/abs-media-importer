@@ -1,6 +1,6 @@
-# Proxmox VE VM Installer for abs-media-importer
+# Proxmox VE VM Installer for reeldock
 
-This installer allows you to provision a dedicated Virtual Machine (VM) running Debian 12 (stable) on your Proxmox VE host and install `abs-media-importer` into it automatically.
+This installer allows you to provision a dedicated Virtual Machine (VM) running Debian 12 (stable) on your Proxmox VE host and install `reeldock` into it automatically.
 
 You can choose between two deployment modes:
 1. **Docker VM (Recommended):** The VM installs Docker Engine and starts the application stack via Docker Compose.
@@ -31,7 +31,7 @@ You can choose between two deployment modes:
 SSH to your Proxmox VE host as `root` and run the following command:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/andrewtryder/abs-media-importer/main/scripts/proxmox/proxmox-install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/andrewtryder/reeldock/main/scripts/proxmox/proxmox-install.sh)"
 ```
 
 ### 2. Interactive Installation
@@ -88,7 +88,7 @@ If you prefer to configure the VM manually on your Proxmox host:
    ```
 2. **Create the VM:**
    ```bash
-   qm create 999 --name abs-media-importer --cores 2 --memory 2048 --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-pci --ostype l26
+   qm create 999 --name reeldock --cores 2 --memory 2048 --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-pci --ostype l26
    ```
 3. **Import and attach disk:**
    ```bash
@@ -135,8 +135,8 @@ After deployment, you must configure the application directory mounts and creden
    ssh debian@<GUEST_IP>
    ```
 3. Configure settings:
-   - **Docker VM:** Edit `/opt/abs-media-importer/.env`.
-   - **Native VM:** Edit `/etc/abs-media-importer/.env`.
+   - **Docker VM:** Edit `/opt/reeldock/.env`.
+   - **Native VM:** Edit `/etc/reeldock/.env`.
 
 ### Connecting Audiobookshelf Directories
 To mount your Audiobookshelf podcasts directory (e.g. NFS share) inside the VM:
@@ -150,7 +150,7 @@ To mount your Audiobookshelf podcasts directory (e.g. NFS share) inside the VM:
    sudo mount -a
    ```
 3. Map the directory using environment variables (avoid editing `docker-compose.yml` directly):
-   - **Docker VM:** In `/opt/abs-media-importer/.env`, configure the paths. This maps the host share into the container using environment variables:
+   - **Docker VM:** In `/opt/reeldock/.env`, configure the paths. This maps the host share into the container using environment variables:
      ```env
      # Path on the VM host (where the NFS/SMB share is mounted)
      HOST_PODCASTS_DIR=/mnt/podcasts
@@ -167,13 +167,13 @@ To mount your Audiobookshelf podcasts directory (e.g. NFS share) inside the VM:
      ```bash
      docker compose up -d
      ```
-   - **Native VM:** In `/etc/abs-media-importer/.env`, configure the output directory to point directly to the host mount:
+   - **Native VM:** In `/etc/reeldock/.env`, configure the output directory to point directly to the host mount:
      ```env
      OUTPUT_ROOT=/mnt/podcasts
      ```
      Then restart the systemd services:
      ```bash
-     sudo systemctl restart abs-media-importer-app abs-media-importer-worker
+     sudo systemctl restart reeldock-app reeldock-worker
      ```
 
 ---
@@ -183,7 +183,7 @@ To mount your Audiobookshelf podcasts directory (e.g. NFS share) inside the VM:
 ### Docker VM
 SSH into the VM and run:
 ```bash
-cd /opt/abs-media-importer
+cd /opt/reeldock
 docker compose logs -f app     # Web server logs
 docker compose logs -f worker  # RQ worker logs
 ```
@@ -191,8 +191,8 @@ docker compose logs -f worker  # RQ worker logs
 ### Native VM
 SSH into the VM and run:
 ```bash
-journalctl -u abs-media-importer-app -f     # Web server logs
-journalctl -u abs-media-importer-worker -f  # RQ worker logs
+journalctl -u reeldock-app -f     # Web server logs
+journalctl -u reeldock-worker -f  # RQ worker logs
 ```
 
 ---
@@ -202,7 +202,7 @@ journalctl -u abs-media-importer-worker -f  # RQ worker logs
 ### Docker VM
 SSH into the VM and run:
 ```bash
-cd /opt/abs-media-importer
+cd /opt/reeldock
 git pull
 docker compose down
 docker compose up --build -d
@@ -211,10 +211,10 @@ docker compose up --build -d
 ### Native VM
 SSH into the VM and run:
 ```bash
-cd /opt/abs-media-importer
+cd /opt/reeldock
 sudo git pull
 sudo uv sync --locked --no-dev
-sudo systemctl restart abs-media-importer-app abs-media-importer-worker
+sudo systemctl restart reeldock-app reeldock-worker
 ```
 
 ---

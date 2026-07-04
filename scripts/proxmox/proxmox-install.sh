@@ -106,7 +106,7 @@ done
 
 # Interactive mode if arguments are missing
 echo "============================================================"
-echo "          abs-media-importer Proxmox VM Installer              "
+echo "          reeldock Proxmox VM Installer              "
 echo "============================================================"
 
 if [ -z "$MODE" ]; then
@@ -131,8 +131,8 @@ if [ -z "$VMID" ]; then
 fi
 
 if [ -z "$HOSTNAME" ]; then
-    read -rp "Enter Hostname [default: abs-media-importer]: " input_hostname
-    HOSTNAME="${input_hostname:-abs-media-importer}"
+    read -rp "Enter Hostname [default: reeldock]: " input_hostname
+    HOSTNAME="${input_hostname:-reeldock}"
 fi
 
 if [ -z "$STORAGE" ]; then
@@ -221,7 +221,7 @@ SNIPPET_FILE="/var/lib/vz/snippets/user-data-${VMID}.yml"
 # Generate VM-specific cloud-init configuration
 cat <<EOF > "$SNIPPET_FILE"
 #cloud-config
-# Generated for abs-media-importer VM ${VMID}
+# Generated for reeldock VM ${VMID}
 package_update: true
 package_upgrade: false
 packages:
@@ -253,7 +253,7 @@ cat <<EOF >> "$SNIPPET_FILE"
 
 runcmd:
   - mkdir -p /opt
-  - git clone https://github.com/andrewtryder/abs-media-importer.git /opt/abs-media-importer
+  - git clone https://github.com/andrewtryder/reeldock.git /opt/reeldock
   - systemctl enable qemu-guest-agent --now
 EOF
 
@@ -263,7 +263,7 @@ if [ "$MODE" = "docker-vm" ]; then
   - curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
   - sh /tmp/get-docker.sh
   - systemctl enable docker --now
-  - cd /opt/abs-media-importer
+  - cd /opt/reeldock
   - cp .env.example .env
   - SECRET_KEY=\$(openssl rand -hex 32)
   - sed -i "s|^APP_SECRET_KEY=.*|APP_SECRET_KEY=\${SECRET_KEY}|" .env
@@ -275,7 +275,7 @@ EOF
 elif [ "$MODE" = "native-vm" ]; then
     cat <<EOF >> "$SNIPPET_FILE"
   - echo "Running guest-install.sh..."
-  - bash /opt/abs-media-importer/scripts/proxmox/guest-install.sh
+  - bash /opt/reeldock/scripts/proxmox/guest-install.sh
 EOF
 fi
 
@@ -341,9 +341,9 @@ echo "    Or check the Proxmox GUI or your router's DHCP leases."
 echo ""
 if [ "$MODE" = "docker-vm" ]; then
     echo "App Paths inside VM:"
-    echo "  - App Repository:  /opt/abs-media-importer"
-    echo "  - Config File:     /opt/abs-media-importer/.env"
-    echo "  - SQLite DB / Work: /opt/abs-media-importer/data"
+    echo "  - App Repository:  /opt/reeldock"
+    echo "  - Config File:     /opt/reeldock/.env"
+    echo "  - SQLite DB / Work: /opt/reeldock/data"
     echo ""
     echo "Useful commands inside VM (SSH as 'debian'):"
     echo "  - Check Docker containers:   docker compose ps"
@@ -351,15 +351,15 @@ if [ "$MODE" = "docker-vm" ]; then
     echo "  - View Worker Logs:          docker compose logs -f worker"
 else
     echo "App Paths inside VM:"
-    echo "  - App Repository:  /opt/abs-media-importer"
-    echo "  - Config File:     /etc/abs-media-importer/.env"
-    echo "  - SQLite DB / Work: /var/lib/abs-media-importer"
-    echo "  - Logs Directory:  /var/log/abs-media-importer"
+    echo "  - App Repository:  /opt/reeldock"
+    echo "  - Config File:     /etc/reeldock/.env"
+    echo "  - SQLite DB / Work: /var/lib/reeldock"
+    echo "  - Logs Directory:  /var/log/reeldock"
     echo ""
     echo "Useful commands inside VM (SSH as 'debian'):"
-    echo "  - View Web Server Logs:      journalctl -u abs-media-importer-app -f"
-    echo "  - View Worker Logs:          journalctl -u abs-media-importer-worker -f"
-    echo "  - Restart Service:           sudo systemctl restart abs-media-importer-app"
+    echo "  - View Web Server Logs:      journalctl -u reeldock-app -f"
+    echo "  - View Worker Logs:          journalctl -u reeldock-worker -f"
+    echo "  - Restart Service:           sudo systemctl restart reeldock-app"
 fi
 echo "============================================================"
 EOF

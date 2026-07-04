@@ -1,0 +1,21 @@
+[Unit]
+Description=reeldock Background Worker
+After=network.target redis-server.service reeldock-app.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=reeldock
+Group=reeldock
+WorkingDirectory=/opt/reeldock
+EnvironmentFile=/etc/reeldock/.env
+
+# Fail gracefully with a clear error message if config is missing
+ExecStartPre=/bin/sh -c 'if [ ! -f /etc/reeldock/.env ]; then echo "ERROR: /etc/reeldock/.env is missing. Please copy /opt/reeldock/.env.example and populate it."; exit 1; fi'
+
+ExecStart=/opt/reeldock/.venv/bin/python -m rq.cli worker reeldock --url ${REDIS_URL}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

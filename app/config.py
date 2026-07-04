@@ -163,7 +163,7 @@ class Settings(BaseSettings):
         None,
         alias="EXTENSION_API_TOKEN",
         description="Optional bearer token for extension API. "
-        "If set, requires Authorization: Bearer <token> or X-ABS-MEDIA-IMPORTER-Token headers.",
+        "If set, requires Authorization: Bearer <token> or X-REELDOCK-Token headers.",
     )
 
     # ── Infrastructure ───────────────────────────────────────────────────────

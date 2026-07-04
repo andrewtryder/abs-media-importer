@@ -1,1 +1,1 @@
-"""abs-media-importer application package."""
+"""reeldock application package."""

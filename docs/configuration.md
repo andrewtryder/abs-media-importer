@@ -1,6 +1,6 @@
 # Configuration Reference
 
-`abs-media-importer` supports flexible configuration using environment variables, a YAML configuration file, and the Web UI.
+`reeldock` supports flexible configuration using environment variables, a YAML configuration file, and the Web UI.
 
 ## Configuration Precedence
 

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/extension", tags=["extension"])
 async def api_extension_status(cfg: ExtensionAuthDep) -> dict[str, Any]:
     return {
         "ok": True,
-        "app": "abs-media-importer",
+        "app": "reeldock",
         "extension_api_enabled": cfg.extension_api_enabled,
         "auth_required": bool(cfg.extension_api_token),
         "dry_run": cfg.dry_run,

@@ -1,7 +1,7 @@
 {
-  "name": "abs-media-importer-extension",
+  "name": "reeldock-extension",
   "version": "1.8.0",
-  "description": "Browser extension for queuing YouTube videos into a local abs-media-importer instance.",
+  "description": "Browser extension for queuing YouTube videos into a local reeldock instance.",
   "private": true,
   "type": "module",
   "scripts": {

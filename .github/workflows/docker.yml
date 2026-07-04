@@ -68,7 +68,7 @@ jobs:
         run: |
           if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "image=$DH_USER/abs-media-importer" >> "$GITHUB_OUTPUT"
+            echo "image=$DH_USER/reeldock" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "image=" >> "$GITHUB_OUTPUT"

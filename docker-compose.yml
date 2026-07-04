@@ -1,5 +1,5 @@
 # ============================================================
-# docker-compose.yml — abs-media-importer
+# docker-compose.yml — reeldock
 # ============================================================
 #
 # Three services:
@@ -30,8 +30,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: abs-media-importer:latest
-    container_name: abs-media-importer-app
+    image: reeldock:latest
+    container_name: reeldock-app
     command: app
     restart: unless-stopped
     # By default, bind only to localhost for safety.
@@ -80,8 +80,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: abs-media-importer:latest
-    container_name: abs-media-importer-worker
+    image: reeldock:latest
+    container_name: reeldock-worker
     command: worker
     restart: unless-stopped
     volumes:
@@ -109,7 +109,7 @@ services:
 
   redis:
     image: redis:8-alpine
-    container_name: abs-media-importer-redis
+    container_name: reeldock-redis
     restart: unless-stopped
     volumes:
       - redis-data:/data

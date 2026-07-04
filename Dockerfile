@@ -1,5 +1,5 @@
 # ============================================================
-# abs-media-importer — Dockerfile
+# reeldock — Dockerfile
 # ============================================================
 # Python 3.12-slim base with yt-dlp, ffmpeg, and app deps.
 # Supports PUID/PGID for volume permissions via entrypoint.sh
@@ -7,7 +7,7 @@
 
 FROM python:3.12-slim AS base
 
-LABEL org.opencontainers.image.title="abs-media-importer"
+LABEL org.opencontainers.image.title="reeldock"
 LABEL org.opencontainers.image.description="YouTube to Audiobookshelf importer"
 
 # Install system dependencies

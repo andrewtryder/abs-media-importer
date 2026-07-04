@@ -72,7 +72,7 @@ main() {
         exit 1
     fi
 
-    test_file="$HOST_PODCASTS_DIR/.abs-media-importer-write-test"
+    test_file="$HOST_PODCASTS_DIR/.reeldock-write-test"
     if ! touch "$test_file" 2>/dev/null; then
         echo "ERROR: Directory is not writable: $HOST_PODCASTS_DIR" >&2
         print_puid_hint >&2
