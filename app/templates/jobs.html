@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import badge %}
+{% from "_macros.html" import badge, vu_meter %}
 {% block title %}Jobs — reeldock{% endblock %}
 
 {% block content %}
@@ -18,21 +18,21 @@
 
 <main class="flex-grow w-full">
   <!-- Top Header / App Bar -->
-  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-panel-line bg-panel shrink-0">
     <div class="flex items-center gap-4 min-w-0">
-      <h1 class="font-headline-md text-headline-md text-on-surface font-semibold truncate">Background Jobs</h1>
+      <h1 class="font-headline-md text-headline-md text-paper font-semibold truncate uppercase tracking-wide">Jobs</h1>
       {% call badge(variant='neutral') %}
-        <span class="font-label-md text-primary">{{ ns.active }} Active</span>
-        <span class="mx-2 text-outline-variant">/</span>
-        <span class="font-label-md text-on-surface-variant">{{ jobs | length }} Total</span>
+        <span class="font-label-md text-amber">{{ ns.active }} Active</span>
+        <span class="mx-2 text-panel-line">/</span>
+        <span class="font-label-md text-paper-muted">{{ jobs | length }} Total</span>
       {% endcall %}
     </div>
     <div class="flex items-center gap-stack-md shrink-0">
       <div class="relative">
-        <span class="absolute inset-y-0 left-3 flex items-center text-on-surface-variant">
+        <span class="absolute inset-y-0 left-3 flex items-center text-paper-muted">
           <span class="material-symbols-outlined text-[20px]">search</span>
         </span>
-        <input class="bg-surface-container-low border border-outline rounded-lg pl-10 pr-4 py-1.5 font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-64 transition-all" id="jobs-search-input" placeholder="Filter jobs..." type="text"/>
+        <input class="bg-panel-raised border border-panel-line rounded-lg pl-10 pr-4 py-1.5 font-body-md text-body-md focus:ring-2 focus:ring-amber/20 focus:border-amber outline-none w-64 transition-all" id="jobs-search-input" placeholder="Filter jobs..." type="text"/>
       </div>
     </div>
   </header>
@@ -40,28 +40,28 @@
   <div class="p-container-padding max-w-5xl mx-auto w-full">
     <!-- Stats Bento Cards -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-lg">
-      <div class="jobs-stat-card section-entrance section-entrance-1 bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
-        <span class="font-label-md text-label-md text-on-surface-variant">Active Jobs</span>
+      <div class="jobs-stat-card section-entrance section-entrance-1 bg-panel border border-panel-line p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-paper-muted uppercase">Active Jobs</span>
         <div class="flex items-baseline gap-2">
-          <span class="font-headline-sm text-headline-sm text-primary">{{ ns.active }}</span>
+          <span class="font-headline-md text-headline-md text-amber font-bold">{{ ns.active }}</span>
         </div>
       </div>
-      <div class="jobs-stat-card section-entrance section-entrance-2 bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
-        <span class="font-label-md text-label-md text-on-surface-variant">Queued Jobs</span>
+      <div class="jobs-stat-card section-entrance section-entrance-2 bg-panel border border-panel-line p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-paper-muted uppercase">Queued Jobs</span>
         <div class="flex items-baseline gap-2">
-          <span class="font-headline-sm text-headline-sm text-on-surface-variant">{{ ns.queued }}</span>
+          <span class="font-headline-md text-headline-md text-paper-muted font-bold">{{ ns.queued }}</span>
         </div>
       </div>
-      <div class="jobs-stat-card section-entrance section-entrance-3 bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
-        <span class="font-label-md text-label-md text-on-surface-variant">Succeeded</span>
+      <div class="jobs-stat-card section-entrance section-entrance-3 bg-panel border border-panel-line p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-paper-muted uppercase">Succeeded</span>
         <div class="flex items-baseline gap-2">
-          <span class="font-headline-sm text-headline-sm text-success">{{ ns.succeeded }}</span>
+          <span class="font-headline-md text-headline-md text-moss font-bold">{{ ns.succeeded }}</span>
         </div>
       </div>
-      <div class="jobs-stat-card section-entrance section-entrance-3 bg-surface-container border border-outline-variant p-4 rounded-xl flex flex-col gap-1">
-        <span class="font-label-md text-label-md text-on-surface-variant">Failed / Cancelled</span>
+      <div class="jobs-stat-card section-entrance section-entrance-3 bg-panel border border-panel-line p-4 rounded-xl flex flex-col gap-1">
+        <span class="font-label-md text-label-md text-paper-muted uppercase">Failed / Cancelled</span>
         <div class="flex items-baseline gap-2">
-          <span class="font-headline-sm text-headline-sm text-error">{{ ns.failed }}</span>
+          <span class="font-headline-md text-headline-md text-rust font-bold">{{ ns.failed }}</span>
         </div>
       </div>
     </section>
@@ -69,10 +69,10 @@
     <!-- Filters Section -->
     <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 section-entrance section-entrance-2">
       <div class="flex flex-wrap gap-2">
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer active-tab bg-secondary-container text-on-secondary-container" data-filter="all">All</button>
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="running">Active</button>
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="queued">Queued</button>
-        <button class="filter-tab px-4 py-1.5 rounded-lg border border-outline-variant font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer" data-filter="completed">Completed</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-all cursor-pointer active-tab bg-amber-container/40 text-on-amber-container" data-filter="all">All</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-all cursor-pointer" data-filter="running">Active</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-all cursor-pointer" data-filter="queued">Queued</button>
+        <button class="filter-tab px-4 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-all cursor-pointer" data-filter="completed">Completed</button>
       </div>
       <div class="flex items-center gap-2">
         <button
@@ -144,9 +144,11 @@
                 {{ job.destination_folder | default('—') | e }}
               </td>
               <td data-label="Status" class="px-6 py-4">
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1.5">
                   {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-                  {{ badge(job.status.value, variant='info', icon='sync', icon_class='animate-spin-slow') }}
+                  {{ badge(job.status.value, variant='info', reel=true) }}
+                  {% set row_pct = job.progress_percent or job.progress or 0 %}
+                  {{ vu_meter(percent=row_pct, segments=10, compact=true) }}
                   {% elif job.status.value == 'succeeded' %}
                   {{ badge('completed', variant='success', icon='check_circle') }}
                   {% elif job.status.value in ['failed', 'cancelled'] %}
@@ -248,9 +250,9 @@
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       filterTabs.forEach(t => {
-        t.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'active-tab');
+        t.classList.remove('bg-amber-container/40', 'text-on-amber-container', 'active-tab');
       });
-      tab.classList.add('bg-secondary-container', 'text-on-secondary-container', 'active-tab');
+      tab.classList.add('bg-amber-container/40', 'text-on-amber-container', 'active-tab');
       activeFilter = tab.getAttribute('data-filter') || 'all';
       applyFilters();
     });

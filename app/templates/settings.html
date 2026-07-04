@@ -4,12 +4,12 @@
 
 {% block content %}
 <main class="flex-grow w-full">
-  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+  <header class="flex justify-between items-center px-container-padding h-16 w-full border-b border-panel-line bg-panel shrink-0">
     <div class="flex items-center gap-4 min-w-0">
-      <h1 class="font-headline-md text-headline-md text-on-surface font-semibold truncate">Settings</h1>
+      <h1 class="font-headline-md text-headline-md text-paper font-semibold truncate uppercase tracking-wide">Settings</h1>
     </div>
     <div class="flex items-center gap-stack-md shrink-0">
-      <span class="font-code text-code text-on-surface-variant opacity-75">Configuration Registry</span>
+      <span class="font-code text-code text-paper-muted opacity-75 uppercase tracking-wider">Configuration Registry</span>
     </div>
   </header>
 
@@ -48,10 +48,10 @@
     <form method="POST" action="/settings" class="settings-form settings-layout grid grid-cols-1 md:grid-cols-12 gap-gutter">
       <div class="md:col-span-8 flex flex-col gap-stack-md">
         {% for group in setting_groups %}
-        <section class="settings-card section-entrance section-entrance-2 bg-surface-container border border-outline rounded-xl p-stack-md shadow-lg">
-          <div class="flex items-center gap-2 mb-stack-md">
-            <span class="material-symbols-outlined text-primary">tune</span>
-            <h2 class="font-headline-sm text-headline-sm font-semibold">{{ group.label | e }}</h2>
+        <section class="settings-card section-entrance section-entrance-2 bg-panel border border-panel-line rounded-xl p-stack-md panel-edge">
+          <div class="flex items-center gap-2 mb-stack-md pb-3 border-b border-panel-line">
+            <span class="material-symbols-outlined text-amber">tune</span>
+            <h2 class="font-headline-sm text-headline-sm font-semibold uppercase tracking-wide text-paper">{{ group.label | e }}</h2>
           </div>
           <div class="space-y-stack-md">
             {% for field in group.fields %}
@@ -85,8 +85,8 @@
                     {% if field.value in ['true', 'True', '1', 'on', 'yes'] %}checked{% endif %}
                     {% if field.locked %}disabled{% endif %}
                   />
-                  <span class="absolute inset-0 rounded-full bg-surface-variant peer-checked:bg-primary transition-colors"></span>
-                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                  <span class="absolute inset-0 rounded-full bg-panel-raised peer-checked:bg-amber transition-colors border border-panel-line peer-checked:border-amber"></span>
+                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-paper transition-transform peer-checked:translate-x-5"></span>
                 </span>
               </label>
               {% else %}
@@ -248,12 +248,12 @@
         </div>
       </div>
 
-      <footer class="settings-save-footer fixed bottom-0 left-0 md:left-64 w-full md:w-[calc(100%-16rem)] bg-surface-container-low/95 backdrop-blur border-t border-outline py-4 px-container-padding z-30">
+      <footer class="settings-save-footer fixed bottom-0 left-0 md:left-64 w-full md:w-[calc(100%-16rem)] bg-panel/95 backdrop-blur border-t border-panel-line py-4 px-container-padding z-30">
         <div class="max-w-5xl mx-auto flex justify-end items-center gap-4">
-          <a href="/settings" class="px-6 py-2.5 rounded-lg border border-outline font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors">DISCARD</a>
-          <button type="submit" class="flex items-center justify-center gap-2 px-8 py-2.5 bg-primary-container text-on-primary-container rounded-lg font-headline-sm text-headline-sm font-bold shadow-lg hover:shadow-primary/20 transition-all active:scale-95 cursor-pointer">
+          <a href="/settings" class="px-6 py-2.5 rounded-lg border border-panel-line font-label-md text-label-md text-paper-muted hover:bg-panel-raised transition-colors uppercase">Discard</a>
+          <button type="submit" class="flex items-center justify-center gap-2 px-8 py-2.5 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md font-bold uppercase tracking-wide hover:brightness-110 transition-all active:scale-95 cursor-pointer">
             <span class="material-symbols-outlined">check_circle</span>
-            SAVE SETTINGS
+            Save
           </button>
         </div>
       </footer>

@@ -1,13 +1,15 @@
-{% macro badge(text='', variant='neutral', icon=None, icon_class='') -%}
+{% macro badge(text='', variant='neutral', icon=None, icon_class='', reel=false) -%}
 {%- set variants = {
   'neutral': 'bg-surface-container-highest text-on-surface-variant border-outline-variant',
-  'info': 'bg-secondary-container/50 text-on-secondary-container border-secondary-container',
+  'info': 'bg-amber-container/50 text-on-amber-container border-amber/30',
   'success': 'bg-success-container/40 text-on-success-container border-success/30',
   'warning': 'bg-warning-container/40 text-on-warning-container border-warning/30',
   'error': 'bg-error-container/40 text-error border-error/30',
 } -%}
-<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-md text-label-md border w-fit {{ variants.get(variant, variants['neutral']) }}">
-  {%- if icon -%}
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-label-md text-label-md border w-fit {{ variants.get(variant, variants['neutral']) }}">
+  {%- if reel -%}
+  {{ reel_spinner(spinning=true, size=14) }}
+  {%- elif icon -%}
   <span class="material-symbols-outlined text-[13px] {{ icon_class }}">{{ icon }}</span>
   {%- endif -%}
   {%- if caller is defined -%}
@@ -16,4 +18,51 @@
   {{ text }}
   {%- endif -%}
 </span>
+{%- endmacro %}
+
+{% macro reel_spinner(spinning=true, size=16) -%}
+<svg
+  class="reel-spinner inline-block shrink-0 {{ 'animate-spin-slow' if spinning else '' }}"
+  width="{{ size }}"
+  height="{{ (size * 0.67) | int }}"
+  viewBox="0 0 36 24"
+  aria-hidden="true"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linecap="round"
+>
+  <circle cx="8" cy="12" r="6"/>
+  <circle cx="28" cy="12" r="6"/>
+  <line x1="14" y1="12" x2="22" y2="12"/>
+  <line x1="8" y1="7" x2="8" y2="10"/><line x1="8" y1="14" x2="8" y2="17"/>
+  <line x1="4" y1="12" x2="7" y2="12"/><line x1="9" y1="12" x2="12" y2="12"/>
+  <line x1="28" y1="7" x2="28" y2="10"/><line x1="28" y1="14" x2="28" y2="17"/>
+  <line x1="24" y1="12" x2="27" y2="12"/><line x1="29" y1="12" x2="32" y2="12"/>
+</svg>
+{%- endmacro %}
+
+{% macro vu_meter(percent=0, segments=20, failed=false, compact=false) -%}
+{%- set raw = percent if percent is not none else 0 -%}
+{%- set pct = [0, [100, raw] | min] | max -%}
+{%- set floor_lit = ((pct / 100) * segments) | round(0, 'floor') | int -%}
+{%- set lit = segments if pct >= 100 else (1 if pct > 0 and floor_lit < 1 else floor_lit) -%}
+{%- set moss_start = (segments * 0.9) | int -%}
+{%- set gold_start = (segments * 0.7) | int -%}
+<div
+  class="vu-meter {{ 'vu-meter-compact' if compact else 'vu-meter-full' }} {{ 'vu-meter-failed' if failed else '' }}"
+  role="progressbar"
+  aria-valuenow="{{ pct | int }}"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  data-segments="{{ segments }}"
+>
+  {%- for i in range(segments) -%}
+  <span class="vu-seg vu-seg-{{ 'moss' if i >= moss_start else ('gold' if i >= gold_start else 'amber') }} {{ 'is-lit' if i < lit else '' }}"></span>
+  {%- endfor -%}
+</div>
+{%- endmacro %}
+
+{% macro spec_tag(text) -%}
+<span class="inline-flex items-center px-2 py-0.5 font-code text-code text-paper-muted border border-panel-line rounded tracking-wider uppercase">{{ text }}</span>
 {%- endmacro %}
