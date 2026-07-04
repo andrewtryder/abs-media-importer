@@ -237,6 +237,15 @@ class ImportPipeline:
             eff_cookies = Path(job.cookies_file) if job.cookies_file else None
             eff_audio_format = job.audio_format
             eff_audio_quality = job.audio_quality
+            eff_loudness_normalize = (
+                job.loudness_normalize
+                if job.loudness_normalize is not None
+                else self.settings.loudness_normalize
+            )
+            eff_loudness_target = job.loudness_target_lufs or self.settings.loudness_target_lufs
+            eff_loudness_bitrate = (
+                job.loudness_audio_bitrate or self.settings.loudness_audio_bitrate
+            )
 
             # Stage conversion inside the job work directory so scanners never
             # see partial .m4b files in the Audiobookshelf-facing output root.
@@ -248,6 +257,7 @@ class ImportPipeline:
             log(f"[setup] Final temp (commit) sibling: {final_temp_path}")
             log(f"URL: {job.url}")
             log(f"DRY_RUN: {eff_dry_run}")
+            log(f"LOUDNESS_NORMALIZE: {eff_loudness_normalize}")
 
             self._set_progress(job, percent=2.0, label="Setup complete", eta="", speed="")
 
@@ -274,10 +284,20 @@ class ImportPipeline:
                 # that file into output_path. Show both commands here so the
                 # dry-run log reflects the staged-output flow.
                 cmd_p = ffmpeg_svc.build_remux_command(
-                    fake_m4a, staged_path, extra_args=eff_ffmpeg_extra
+                    fake_m4a,
+                    staged_path,
+                    extra_args=eff_ffmpeg_extra,
+                    loudness_normalize=eff_loudness_normalize,
+                    loudness_target_lufs=eff_loudness_target,
+                    audio_bitrate=eff_loudness_bitrate,
                 )
                 cmd_f = ffmpeg_svc.build_remux_command_fallback(
-                    fake_m4a, staged_path, extra_args=eff_ffmpeg_extra
+                    fake_m4a,
+                    staged_path,
+                    extra_args=eff_ffmpeg_extra,
+                    loudness_normalize=eff_loudness_normalize,
+                    loudness_target_lufs=eff_loudness_target,
+                    audio_bitrate=eff_loudness_bitrate,
                 )
                 log(f"[convert] ffmpeg primary (staged): {' '.join(cmd_p)}")
                 log(f"[convert] ffmpeg fallback (staged): {' '.join(cmd_f)}")
@@ -511,6 +531,9 @@ class ImportPipeline:
                 check_cancelled=check_cancelled,
                 on_progress=_on_ffmpeg_progress,
                 extra_args=eff_ffmpeg_extra,
+                loudness_normalize=eff_loudness_normalize,
+                loudness_target_lufs=eff_loudness_target,
+                audio_bitrate=eff_loudness_bitrate,
             )
 
             if not remux_result.success:

@@ -151,6 +151,9 @@ class Job(Base):
     ffmpeg_extra_args: Mapped[str | None] = mapped_column(Text, nullable=True)
     cookies_file: Mapped[str | None] = mapped_column(Text, nullable=True)
     dry_run: Mapped[bool] = mapped_column(Boolean, default=False)
+    loudness_normalize: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    loudness_target_lufs: Mapped[str | None] = mapped_column(Text, nullable=True)
+    loudness_audio_bitrate: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Job options (stored as booleans)
     embed_metadata: Mapped[bool] = mapped_column(Boolean, default=True)

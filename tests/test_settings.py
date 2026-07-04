@@ -10,6 +10,12 @@ from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+_LOUDNESS_FORM_FIELDS = {
+    "loudness_normalize": "",
+    "loudness_target_lufs": "-16",
+    "loudness_audio_bitrate": "192k",
+}
+
 
 def _reset_runtime_state() -> None:
     config_module._settings = None
@@ -122,6 +128,7 @@ def test_post_settings_valid(settings_env: Path, tmp_path: Path):
             "ffmpeg_extra_args": "",
             "cookies_file": "",
             "default_destination_folder": "",
+            **_LOUDNESS_FORM_FIELDS,
         },
     )
     assert response.status_code == 200
@@ -152,6 +159,7 @@ def test_post_settings_relative(settings_env: Path):
             "folder_name_field": "uploader_id",
             "folder_name_fallbacks": "uploader_id,channel_id,channel,uploader",
             "allowed_domains": "youtube.com",
+            **_LOUDNESS_FORM_FIELDS,
         },
     )
     assert response.status_code == 400
@@ -176,6 +184,7 @@ def test_post_settings_non_writable(settings_env: Path):
             "folder_name_field": "uploader_id",
             "folder_name_fallbacks": "uploader_id,channel_id,channel,uploader",
             "allowed_domains": "youtube.com",
+            **_LOUDNESS_FORM_FIELDS,
         },
     )
     assert response.status_code == 400
@@ -209,6 +218,7 @@ def test_extra_args_reject_shell_injection(settings_env: Path):
             "folder_name_field": "uploader_id",
             "folder_name_fallbacks": "uploader_id,channel_id,channel,uploader",
             "allowed_domains": "youtube.com",
+            **_LOUDNESS_FORM_FIELDS,
         },
     )
     assert response.status_code == 400

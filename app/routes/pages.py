@@ -32,8 +32,10 @@ from app.settings_registry import (
     registry_groups,
 )
 from app.validators import (
+    validate_audio_bitrate,
     validate_extra_args,
     validate_filename_template,
+    validate_lufs_target,
     validate_optional_path,
 )
 
@@ -83,6 +85,17 @@ def _optional_form_str(value: str | None) -> str | None:
     return stripped or None
 
 
+def _optional_form_bool(value: str | None) -> bool | None:
+    stripped = (value or "").strip().lower()
+    if not stripped:
+        return None
+    if stripped in {"true", "1", "yes", "on"}:
+        return True
+    if stripped in {"false", "0", "no", "off"}:
+        return False
+    return None
+
+
 def _validate_advanced_import_fields(
     *,
     collision_mode: str | None,
@@ -90,6 +103,8 @@ def _validate_advanced_import_fields(
     ytdlp_extra_args: str | None,
     ffmpeg_extra_args: str | None,
     cookies_file: str | None,
+    loudness_target_lufs: str | None = None,
+    loudness_audio_bitrate: str | None = None,
 ) -> str | None:
     if collision_mode and collision_mode not in COLLISION_CHOICES:
         return f"Invalid collision mode: {collision_mode}"
@@ -109,6 +124,14 @@ def _validate_advanced_import_fields(
         error, _warning = validate_optional_path(cookies_file)
         if error:
             return f"Cookies file: {error}"
+    if loudness_target_lufs:
+        error, _warning = validate_lufs_target(loudness_target_lufs)
+        if error:
+            return f"Loudness target: {error}"
+    if loudness_audio_bitrate:
+        error, _warning = validate_audio_bitrate(loudness_audio_bitrate)
+        if error:
+            return f"Loudness bitrate: {error}"
     return None
 
 
@@ -123,6 +146,9 @@ def _advanced_fields_from_form(
     ffmpeg_extra_args: str | None = None,
     cookies_file: str | None = None,
     dry_run: bool = False,
+    loudness_normalize: str | None = None,
+    loudness_target_lufs: str | None = None,
+    loudness_audio_bitrate: str | None = None,
 ) -> dict[str, object]:
     return {
         "collision_mode": _optional_form_str(collision_mode),
@@ -134,6 +160,9 @@ def _advanced_fields_from_form(
         "ffmpeg_extra_args": _optional_form_str(ffmpeg_extra_args),
         "cookies_file": _optional_form_str(cookies_file),
         "dry_run": dry_run,
+        "loudness_normalize": _optional_form_bool(loudness_normalize),
+        "loudness_target_lufs": _optional_form_str(loudness_target_lufs),
+        "loudness_audio_bitrate": _optional_form_str(loudness_audio_bitrate),
     }
 
 
@@ -257,6 +286,9 @@ async def page_create_job(
     ffmpeg_extra_args: str = Form(""),
     cookies_file: str = Form(""),
     dry_run: bool = Form(False),
+    loudness_normalize: str = Form(""),
+    loudness_target_lufs: str = Form(""),
+    loudness_audio_bitrate: str = Form(""),
 ) -> HTMLResponse | RedirectResponse:
     advanced = _advanced_fields_from_form(
         collision_mode=collision_mode,
@@ -268,6 +300,9 @@ async def page_create_job(
         ffmpeg_extra_args=ffmpeg_extra_args,
         cookies_file=cookies_file,
         dry_run=dry_run,
+        loudness_normalize=loudness_normalize,
+        loudness_target_lufs=loudness_target_lufs,
+        loudness_audio_bitrate=loudness_audio_bitrate,
     )
     validation_error = _validate_advanced_import_fields(
         collision_mode=advanced["collision_mode"],  # type: ignore[arg-type]
@@ -275,6 +310,8 @@ async def page_create_job(
         ytdlp_extra_args=advanced["ytdlp_extra_args"],  # type: ignore[arg-type]
         ffmpeg_extra_args=advanced["ffmpeg_extra_args"],  # type: ignore[arg-type]
         cookies_file=advanced["cookies_file"],  # type: ignore[arg-type]
+        loudness_target_lufs=advanced["loudness_target_lufs"],  # type: ignore[arg-type]
+        loudness_audio_bitrate=advanced["loudness_audio_bitrate"],  # type: ignore[arg-type]
     )
     if validation_error:
         return templates.TemplateResponse(
@@ -380,6 +417,9 @@ async def page_create_batch(
         ffmpeg_extra_args=str(form.get("ffmpeg_extra_args") or ""),
         cookies_file=str(form.get("cookies_file") or ""),
         dry_run=_bool_field("dry_run", False),
+        loudness_normalize=str(form.get("loudness_normalize") or ""),
+        loudness_target_lufs=str(form.get("loudness_target_lufs") or ""),
+        loudness_audio_bitrate=str(form.get("loudness_audio_bitrate") or ""),
     )
     validation_error = _validate_advanced_import_fields(
         collision_mode=advanced["collision_mode"],  # type: ignore[arg-type]
@@ -387,6 +427,8 @@ async def page_create_batch(
         ytdlp_extra_args=advanced["ytdlp_extra_args"],  # type: ignore[arg-type]
         ffmpeg_extra_args=advanced["ffmpeg_extra_args"],  # type: ignore[arg-type]
         cookies_file=advanced["cookies_file"],  # type: ignore[arg-type]
+        loudness_target_lufs=advanced["loudness_target_lufs"],  # type: ignore[arg-type]
+        loudness_audio_bitrate=advanced["loudness_audio_bitrate"],  # type: ignore[arg-type]
     )
     if validation_error:
         return templates.TemplateResponse(

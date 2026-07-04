@@ -79,6 +79,9 @@ def _load_yaml() -> dict[str, Any]:
             "COLLISION_MODE": dl.get("collision_mode", None),
             "COOKIES_FILE": dl.get("cookies_file", None),
             "ALLOWED_DOMAINS": dl.get("allowed_domains", None),
+            "LOUDNESS_NORMALIZE": dl.get("loudness_normalize", None),
+            "LOUDNESS_TARGET_LUFS": dl.get("loudness_target_lufs", None),
+            "LOUDNESS_AUDIO_BITRATE": dl.get("loudness_audio_bitrate", None),
         }
     )
 
@@ -207,6 +210,10 @@ class Settings(BaseSettings):
         alias="FOLDER_NAME_FALLBACKS",
     )
     collision_mode: str = Field("append_id", alias="COLLISION_MODE")
+
+    loudness_normalize: bool = Field(False, alias="LOUDNESS_NORMALIZE")
+    loudness_target_lufs: str = Field("-16", alias="LOUDNESS_TARGET_LUFS")
+    loudness_audio_bitrate: str = Field("192k", alias="LOUDNESS_AUDIO_BITRATE")
 
     allowed_domains: Any = Field(
         default_factory=lambda: list(ALLOWED_DOMAINS_DEFAULT),

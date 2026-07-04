@@ -165,7 +165,7 @@
       </div>
     </div>
 
-    {% set has_import_overrides = job.audio_format or job.audio_quality or job.output_extension or job.filename_template or job.ytdlp_extra_args or job.ffmpeg_extra_args or job.cookies_file or job.dry_run %}
+    {% set has_import_overrides = job.audio_format or job.audio_quality or job.output_extension or job.filename_template or job.ytdlp_extra_args or job.ffmpeg_extra_args or job.cookies_file or job.dry_run or job.loudness_normalize is not none or job.loudness_target_lufs or job.loudness_audio_bitrate %}
     {% if has_import_overrides %}
     <details class="bg-panel border border-panel-line rounded-xl p-stack-md mb-stack-lg panel-edge section-entrance section-entrance-2">
       <summary class="font-headline-sm text-headline-sm text-paper uppercase tracking-wide cursor-pointer select-none">
@@ -182,6 +182,24 @@
         <div class="flex flex-col gap-0.5">
           <dt class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Audio quality</dt>
           <dd class="font-code text-code text-paper">{{ job.audio_quality | e }}</dd>
+        </div>
+        {% endif %}
+        {% if job.loudness_normalize is not none %}
+        <div class="flex flex-col gap-0.5">
+          <dt class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Loudness normalization</dt>
+          <dd class="text-paper">{{ 'Enabled' if job.loudness_normalize else 'Disabled' }}</dd>
+        </div>
+        {% endif %}
+        {% if job.loudness_target_lufs %}
+        <div class="flex flex-col gap-0.5">
+          <dt class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Loudness target (LUFS)</dt>
+          <dd class="font-code text-code text-paper">{{ job.loudness_target_lufs | e }}</dd>
+        </div>
+        {% endif %}
+        {% if job.loudness_audio_bitrate %}
+        <div class="flex flex-col gap-0.5">
+          <dt class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Loudness re-encode bitrate</dt>
+          <dd class="font-code text-code text-paper">{{ job.loudness_audio_bitrate | e }}</dd>
         </div>
         {% endif %}
         {% if job.output_extension %}

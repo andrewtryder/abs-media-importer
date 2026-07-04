@@ -133,6 +133,39 @@
     </div>
 
     <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_loudness_normalize" class="{{ label_class }}">Loudness Normalization</label>
+      <select id="{{ id_prefix }}_loudness_normalize" name="loudness_normalize" class="{{ input_class }}">
+        <option value="">— Use global default ({{ 'enabled' if settings.loudness_normalize else 'disabled' }}) —</option>
+        <option value="true">Enabled</option>
+        <option value="false">Disabled</option>
+      </select>
+      <p class="font-label-md text-label-md text-paper-muted opacity-75">Re-encodes audio with ffmpeg loudnorm (EBU R128).</p>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_loudness_target_lufs" class="{{ label_class }}">Loudness Target (LUFS)</label>
+      <input
+        id="{{ id_prefix }}_loudness_target_lufs"
+        name="loudness_target_lufs"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.loudness_target_lufs | e }}"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_loudness_audio_bitrate" class="{{ label_class }}">Loudness Re-encode Bitrate</label>
+      <input
+        id="{{ id_prefix }}_loudness_audio_bitrate"
+        name="loudness_audio_bitrate"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.loudness_audio_bitrate | e }}"
+      />
+      <p class="font-label-md text-label-md text-paper-muted opacity-75">AAC bitrate when normalization is enabled.</p>
+    </div>
+
+    <div class="flex flex-col gap-2">
       <label for="{{ id_prefix }}_collision_mode" class="{{ label_class }}">Collision Mode</label>
       <select id="{{ id_prefix }}_collision_mode" name="collision_mode" class="{{ input_class }}">
         <option value="">— Use global default ({{ settings.collision_mode | e }}) —</option>

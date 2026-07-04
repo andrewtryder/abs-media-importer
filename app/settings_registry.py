@@ -11,8 +11,10 @@ from typing import Any
 from app.path_checks import check_writable_directory
 from app.validators import (
     ValidationResult,
+    validate_audio_bitrate,
     validate_extra_args,
     validate_filename_template,
+    validate_lufs_target,
     validate_optional_path,
 )
 
@@ -188,6 +190,38 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         default="",
         help_text="Space-separated extra arguments passed to ffmpeg.",
         validate=_validate_extra_args,
+    ),
+    SettingSpec(
+        key="loudness_normalize",
+        env_alias="LOUDNESS_NORMALIZE",
+        label="Normalize Loudness (EBU R128)",
+        group="download",
+        type=SettingType.BOOL,
+        default="false",
+        help_text=(
+            "Apply ffmpeg loudnorm during conversion. Re-encodes audio (AAC); "
+            "stream copy is not used when enabled."
+        ),
+    ),
+    SettingSpec(
+        key="loudness_target_lufs",
+        env_alias="LOUDNESS_TARGET_LUFS",
+        label="Loudness Target (LUFS)",
+        group="download",
+        type=SettingType.STR,
+        default="-16",
+        help_text="Integrated loudness target for loudnorm (typically -16 for podcasts).",
+        validate=validate_lufs_target,
+    ),
+    SettingSpec(
+        key="loudness_audio_bitrate",
+        env_alias="LOUDNESS_AUDIO_BITRATE",
+        label="Loudness Re-encode Bitrate",
+        group="download",
+        type=SettingType.STR,
+        default="192k",
+        help_text="AAC bitrate used when loudness normalization re-encodes audio.",
+        validate=validate_audio_bitrate,
     ),
     # ── Naming ───────────────────────────────────────────────────────────────
     SettingSpec(

@@ -10,6 +10,7 @@ from pathlib import Path
 ValidationResult = tuple[str | None, str | None]  # (error, warning)
 
 _SHELL_INJECTION_RE = re.compile(r"[;|&`><]|&&|\|\||\$\(")
+_AUDIO_BITRATE_RE = re.compile(r"^\d+k$", re.IGNORECASE)
 
 
 def validate_optional_path(value: str) -> ValidationResult:
@@ -53,3 +54,29 @@ def validate_filename_template(value: str) -> ValidationResult:
     if ".." in stripped or "/" in stripped or "\\" in stripped:
         return "Template must not contain path separators.", None
     return None, None
+
+
+def validate_lufs_target(value: str) -> ValidationResult:
+    stripped = value.strip()
+    if not stripped:
+        return "Loudness target cannot be empty.", None
+    try:
+        parsed = float(stripped)
+    except ValueError:
+        return "Must be a number (LUFS, typically negative).", None
+    if parsed > 0:
+        return "LUFS target must be zero or negative.", None
+    if parsed < -70:
+        return "LUFS target must be -70 or higher.", None
+    return None, None
+
+
+def validate_audio_bitrate(value: str) -> ValidationResult:
+    stripped = value.strip()
+    if not stripped:
+        return "Audio bitrate cannot be empty.", None
+    if _AUDIO_BITRATE_RE.match(stripped):
+        return None, None
+    if stripped.isdigit():
+        return None, None
+    return 'Must be digits followed by "k" (e.g. 192k) or a plain integer bitrate.', None

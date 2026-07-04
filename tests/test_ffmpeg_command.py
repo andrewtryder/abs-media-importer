@@ -347,3 +347,40 @@ def test_progress_command_insertion_order(tmp_path: Path):
     prog_idx = cmd.index("-progress")
     input_idx = cmd.index("-i")
     assert prog_idx < input_idx
+
+
+def test_primary_command_uses_copy_when_loudness_disabled(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command(tmp_path / "a.m4a", tmp_path / "b.m4b")
+    assert "-c" in cmd and "copy" in cmd
+    assert "loudnorm" not in " ".join(cmd)
+
+
+def test_primary_command_applies_loudnorm_when_enabled(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command(
+        tmp_path / "a.m4a",
+        tmp_path / "b.m4b",
+        loudness_normalize=True,
+        loudness_target_lufs="-18",
+        audio_bitrate="160k",
+    )
+    joined = " ".join(cmd)
+    assert "loudnorm=I=-18:TP=-1.5:LRA=11" in joined
+    assert "-c:a" in cmd and "aac" in cmd
+    assert "-b:a" in cmd and "160k" in cmd
+    assert "-c:v" in cmd and "copy" in cmd
+    assert "-c copy" not in " ".join(cmd)
+
+
+def test_fallback_command_applies_loudnorm_without_video_copy(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command_fallback(
+        tmp_path / "a.m4a",
+        tmp_path / "b.m4b",
+        loudness_normalize=True,
+    )
+    joined = " ".join(cmd)
+    assert "loudnorm" in joined
+    assert "-c:v" not in cmd
+    assert "-c:a" in cmd and "aac" in cmd

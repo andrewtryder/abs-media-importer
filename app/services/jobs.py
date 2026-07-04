@@ -66,6 +66,9 @@ class JobSubmitParams:
     ffmpeg_extra_args: str | None = None
     cookies_file: str | None = None
     dry_run: bool = False
+    loudness_normalize: bool | None = None
+    loudness_target_lufs: str | None = None
+    loudness_audio_bitrate: str | None = None
 
 
 @dataclass
@@ -90,6 +93,9 @@ class BatchJobSubmitParams:
     ffmpeg_extra_args: str | None = None
     cookies_file: str | None = None
     dry_run: bool = False
+    loudness_normalize: bool | None = None
+    loudness_target_lufs: str | None = None
+    loudness_audio_bitrate: str | None = None
 
 
 @dataclass
@@ -215,6 +221,9 @@ async def submit_job(
         ffmpeg_extra_args=params.ffmpeg_extra_args,
         cookies_file=params.cookies_file,
         dry_run=params.dry_run,
+        loudness_normalize=params.loudness_normalize,
+        loudness_target_lufs=params.loudness_target_lufs,
+        loudness_audio_bitrate=params.loudness_audio_bitrate,
     )
 
     rq_id = enqueue_job_task(job.id)
@@ -293,6 +302,9 @@ async def submit_batch(
                 ffmpeg_extra_args=params.ffmpeg_extra_args,
                 cookies_file=params.cookies_file,
                 dry_run=params.dry_run,
+                loudness_normalize=params.loudness_normalize,
+                loudness_target_lufs=params.loudness_target_lufs,
+                loudness_audio_bitrate=params.loudness_audio_bitrate,
             )
         except DuplicateVideoError:
             result.skipped_duplicate += 1
@@ -353,6 +365,9 @@ async def create_job(
     ffmpeg_extra_args: str | None = None,
     cookies_file: str | None = None,
     dry_run: bool = False,
+    loudness_normalize: bool | None = None,
+    loudness_target_lufs: str | None = None,
+    loudness_audio_bitrate: str | None = None,
 ) -> Job:
     """Persist a new Job record and return it."""
     normalized_video_id = (video_id or "").strip() or None
@@ -394,6 +409,9 @@ async def create_job(
         ffmpeg_extra_args=ffmpeg_extra_args,
         cookies_file=cookies_file,
         dry_run=dry_run,
+        loudness_normalize=loudness_normalize,
+        loudness_target_lufs=loudness_target_lufs,
+        loudness_audio_bitrate=loudness_audio_bitrate,
         status=JobStatus.queued,
         attempts=0,
         created_at=_utcnow(),
