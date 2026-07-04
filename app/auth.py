@@ -27,12 +27,12 @@ def extension_api_auth(
         raise HTTPException(status_code=404, detail="Extension API not enabled")
 
     if cfg.extension_api_token:
-        # Authorization: Bearer <token> or X-ABS-MEDIA-IMPORTER-Token header
+        # Authorization: Bearer <token> or X-REELDOCK-Token header
         token = None
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
-        x_token = request.headers.get("X-ABS-MEDIA-IMPORTER-Token")
+        x_token = request.headers.get("X-REELDOCK-Token")
         if x_token:
             token = x_token
 
@@ -53,7 +53,7 @@ async def validate_websocket_token(
     """Validate extension API token for WebSocket authentication.
 
     Browser extension WebSocket clients cannot reliably set custom Authorization
-    headers, so we support `?token=` in addition to Bearer and X-ABS-MEDIA-IMPORTER-Token.
+    headers, so we support `?token=` in addition to Bearer and X-REELDOCK-Token.
     """
     if not settings.extension_api_enabled:
         raise HTTPException(status_code=404, detail="Extension API not enabled")
@@ -63,7 +63,7 @@ async def validate_websocket_token(
         auth_header = websocket.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
-        x_token = websocket.headers.get("X-ABS-MEDIA-IMPORTER-Token")
+        x_token = websocket.headers.get("X-REELDOCK-Token")
         if x_token:
             token = x_token
         query_token = websocket.query_params.get("token")
@@ -102,7 +102,7 @@ def attach_basic_auth(app: FastAPI, settings: Settings) -> None:
             return Response(
                 "Unauthorized",
                 status_code=401,
-                headers={"WWW-Authenticate": 'Basic realm="abs-media-importer"'},
+                headers={"WWW-Authenticate": 'Basic realm="reeldock"'},
             )
 
     app.add_middleware(BasicAuthMiddleware)

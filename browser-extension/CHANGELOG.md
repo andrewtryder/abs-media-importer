@@ -1,28 +1,28 @@
 # Changelog
 
-## [1.8.0](https://github.com/andrewtryder/abs-media-importer/compare/browser-extension-v1.7.1...browser-extension-v1.8.0) (2026-07-03)
+## [1.8.0](https://github.com/andrewtryder/reeldock/compare/browser-extension-v1.7.1...browser-extension-v1.8.0) (2026-07-03)
 
 
 ### Features
 
-* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([1ffc0f3](https://github.com/andrewtryder/abs-media-importer/commit/1ffc0f34e63df2f7363e53fd0e8a5072eed8a3fb))
-* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([a0f5eab](https://github.com/andrewtryder/abs-media-importer/commit/a0f5eab4ca6cf7a071b8dc844d6cc96d9ddf2f88))
+* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([1ffc0f3](https://github.com/andrewtryder/reeldock/commit/1ffc0f34e63df2f7363e53fd0e8a5072eed8a3fb))
+* **pipeline:** stage m4b output and harden Docker/CodeQL workflows ([a0f5eab](https://github.com/andrewtryder/reeldock/commit/a0f5eab4ca6cf7a071b8dc844d6cc96d9ddf2f88))
 
-## [1.7.1](https://github.com/andrewtryder/abs-media-importer/compare/browser-extension-v1.7.0...browser-extension-v1.7.1) (2026-07-03)
+## [1.7.1](https://github.com/andrewtryder/reeldock/compare/browser-extension-v1.7.0...browser-extension-v1.7.1) (2026-07-03)
 
 
 ### Bug Fixes
 
-* **release:** correct Release Please manifest path and sync extension version ([342a03e](https://github.com/andrewtryder/abs-media-importer/commit/342a03eba06d018444b8c95c4611a552dbd225f5))
-* **release:** correct Release Please manifest path and sync extension version ([bc692a0](https://github.com/andrewtryder/abs-media-importer/commit/bc692a0ecfcd5426ee64a21be42abf182320a042))
+* **release:** correct Release Please manifest path and sync extension version ([342a03e](https://github.com/andrewtryder/reeldock/commit/342a03eba06d018444b8c95c4611a552dbd225f5))
+* **release:** correct Release Please manifest path and sync extension version ([bc692a0](https://github.com/andrewtryder/reeldock/commit/bc692a0ecfcd5426ee64a21be42abf182320a042))
 
-## [1.7.0](https://github.com/andrewtryder/abs-media-importer/compare/browser-extension-v1.6.0...browser-extension-v1.7.0) (2026-07-03)
+## [1.7.0](https://github.com/andrewtryder/reeldock/compare/browser-extension-v1.6.0...browser-extension-v1.7.0) (2026-07-03)
 
 
 ### Features
 
-* **branding:** replace logo, favicon, and extension icons ([36eec2a](https://github.com/andrewtryder/abs-media-importer/commit/36eec2a774576b2f5a6bbc64203cbb97b144e762))
-* **branding:** replace logo, favicon, and extension icons ([69c5d19](https://github.com/andrewtryder/abs-media-importer/commit/69c5d19b2901d46b3b76bcd7dff4c5f9b6b17867))
+* **branding:** replace logo, favicon, and extension icons ([36eec2a](https://github.com/andrewtryder/reeldock/commit/36eec2a774576b2f5a6bbc64203cbb97b144e762))
+* **branding:** replace logo, favicon, and extension icons ([69c5d19](https://github.com/andrewtryder/reeldock/commit/69c5d19b2901d46b3b76bcd7dff4c5f9b6b17867))
 
 ## [1.6.0](https://github.com/andrewtryder/yt-abs-importer/compare/browser-extension-v1.5.0...browser-extension-v1.6.0) (2026-07-02)
 

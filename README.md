@@ -1,11 +1,11 @@
-# abs-media-importer
+# reeldock
 
 <p align="center">
-  <img src="assets/abs-badge.png" alt="abs-media-importer" />
+  <img src="assets/reeldock-badge.png" alt="reeldock" />
 </p>
 
 <p align="center">
-  <a href="https://scorecard.dev/viewer/?uri=github.com/andrewtryder/abs-media-importer"><img src="https://api.scorecard.dev/projects/github.com/andrewtryder/abs-media-importer/badge" alt="OpenSSF Scorecard" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/andrewtryder/reeldock"><img src="https://api.scorecard.dev/projects/github.com/andrewtryder/reeldock/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
 A self-hosted sidecar application that converts individual YouTube videos into `.m4b` audiobook files and writes them directly to the directory that [Audiobookshelf](https://www.audiobookshelf.org/) scans.
@@ -46,8 +46,8 @@ Deploy the application stack in minutes:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/andrewtryder/abs-media-importer.git
-cd abs-media-importer
+git clone https://github.com/andrewtryder/reeldock.git
+cd reeldock
 
 # 2. Configure paths in .env
 cp .env.example .env
@@ -68,13 +68,13 @@ For a complete walkthrough, see the [Quickstart Guide](docs/quickstart.md).
 
 ## Rename Migration Notice
 
-Recent releases finalized the project rename to `abs-media-importer`.
+Recent releases finalized the project rename to `reeldock`.
 
-- Update clone/remotes to `github.com/andrewtryder/abs-media-importer`.
-- Rename any leftover local paths/service names/images to `abs-media-importer`.
+- Update clone/remotes to `github.com/andrewtryder/reeldock`.
+- Rename any leftover local paths/service names/images to `reeldock`.
 - Reinstall the Firefox extension if you were using the previous extension ID.
-- If you automate extension API auth, use `ABS_MEDIA_IMPORTER_*` and `X-ABS-MEDIA-IMPORTER-Token`.
-- If you use native/systemd deployments, migrate queue/service identifiers to `abs_media_importer` and `abs-media-importer-*`.
+- If you automate extension API auth, use `REELDOCK_*` and `X-REELDOCK-Token`.
+- If you use native/systemd deployments, migrate queue/service identifiers to `reeldock` and `reeldock-*`.
 
 ---
 

@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide is for developers looking to modify or contribute to `abs-media-importer`.
+This guide is for developers looking to modify or contribute to `reeldock`.
 
 ## 1. Local Environment Setup
 
@@ -61,7 +61,7 @@ Configure the local environment variables and start the server using `uvicorn`:
 export REDIS_URL=redis://localhost:6379/0
 export DATABASE_URL=sqlite+aiosqlite:///./app.db
 export OUTPUT_ROOT=/tmp/test-podcasts
-export WORK_DIR=/tmp/abs_media_importer-work
+export WORK_DIR=/tmp/reeldock-work
 export DRY_RUN=true  # Set to true to avoid running actual yt-dlp/ffmpeg processes
 
 # Start uvicorn server
@@ -74,7 +74,7 @@ The web interface will be accessible at `http://localhost:8080`.
 In a new terminal window, start the worker:
 
 ```bash
-uv run rq worker abs_media_importer --url redis://localhost:6379/0
+uv run rq worker reeldock --url redis://localhost:6379/0
 ```
 
 ---

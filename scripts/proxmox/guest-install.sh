@@ -44,21 +44,21 @@ curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /us
 chmod a+rx /usr/local/bin/yt-dlp
 
 # 3. Create dedicated system user
-if ! getent group abs-media-importer &>/dev/null; then
-    log "Creating abs-media-importer group..."
-    groupadd -r abs-media-importer
+if ! getent group reeldock &>/dev/null; then
+    log "Creating reeldock group..."
+    groupadd -r reeldock
 fi
 
-if ! getent passwd abs-media-importer &>/dev/null; then
-    log "Creating abs-media-importer user..."
-    useradd -r -g abs-media-importer -d /var/lib/abs-media-importer -s /sbin/nologin -c "abs-media-importer service user" abs-media-importer
+if ! getent passwd reeldock &>/dev/null; then
+    log "Creating reeldock user..."
+    useradd -r -g reeldock -d /var/lib/reeldock -s /sbin/nologin -c "reeldock service user" reeldock
 fi
 
 # 4. Copy app files and set up virtual environment
-APP_DIR="/opt/abs-media-importer"
+APP_DIR="/opt/reeldock"
 if [ ! -d "$APP_DIR" ]; then
     log "Cloning repository..."
-    git clone https://github.com/andrewtryder/abs-media-importer.git "$APP_DIR"
+    git clone https://github.com/andrewtryder/reeldock.git "$APP_DIR"
 else
     log "App directory already exists, checking for latest changes..."
     cd "$APP_DIR"
@@ -72,16 +72,16 @@ uv sync --locked --no-dev
 
 # 5. Create directories
 log "Creating config, data, and log directories..."
-mkdir -p /etc/abs-media-importer
-mkdir -p /var/lib/abs-media-importer/work
-mkdir -p /var/lib/abs-media-importer/podcasts
-mkdir -p /var/log/abs-media-importer
+mkdir -p /etc/reeldock
+mkdir -p /var/lib/reeldock/work
+mkdir -p /var/lib/reeldock/podcasts
+mkdir -p /var/log/reeldock
 
 # Initialize archive file
-touch /etc/abs-media-importer/youtube-archive.txt
+touch /etc/reeldock/youtube-archive.txt
 
 # 6. Configure environment defaults
-ENV_FILE="/etc/abs-media-importer/.env"
+ENV_FILE="/etc/reeldock/.env"
 if [ ! -f "$ENV_FILE" ]; then
     log "Creating default configuration at $ENV_FILE..."
     cp .env.example "$ENV_FILE"
@@ -92,10 +92,10 @@ if [ ! -f "$ENV_FILE" ]; then
     # Update config paths and keys
     sed -i "s|^APP_SECRET_KEY=.*|APP_SECRET_KEY=${SECRET_KEY}|" "$ENV_FILE"
     sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://localhost:6379/0|" "$ENV_FILE"
-    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=sqlite+aiosqlite:////var/lib/abs-media-importer/app.db|" "$ENV_FILE"
-    sed -i "s|^WORK_DIR=.*|WORK_DIR=/var/lib/abs-media-importer/work|" "$ENV_FILE"
-    sed -i "s|^ARCHIVE_FILE=.*|ARCHIVE_FILE=/etc/abs-media-importer/youtube-archive.txt|" "$ENV_FILE"
-    sed -i "s|^OUTPUT_ROOT=.*|OUTPUT_ROOT=/var/lib/abs-media-importer/podcasts|" "$ENV_FILE"
+    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=sqlite+aiosqlite:////var/lib/reeldock/app.db|" "$ENV_FILE"
+    sed -i "s|^WORK_DIR=.*|WORK_DIR=/var/lib/reeldock/work|" "$ENV_FILE"
+    sed -i "s|^ARCHIVE_FILE=.*|ARCHIVE_FILE=/etc/reeldock/youtube-archive.txt|" "$ENV_FILE"
+    sed -i "s|^OUTPUT_ROOT=.*|OUTPUT_ROOT=/var/lib/reeldock/podcasts|" "$ENV_FILE"
     sed -i "s|^YTDLP_BIN=.*|YTDLP_BIN=/usr/local/bin/yt-dlp|" "$ENV_FILE"
     sed -i "s|^FFMPEG_BIN=.*|FFMPEG_BIN=/usr/bin/ffmpeg|" "$ENV_FILE"
     sed -i "s|^FFPROBE_BIN=.*|FFPROBE_BIN=/usr/bin/ffprobe|" "$ENV_FILE"
@@ -103,32 +103,32 @@ fi
 
 # 7. Apply permission ownerships
 log "Setting file ownership permissions..."
-chown -R abs-media-importer:abs-media-importer /var/lib/abs-media-importer
-chown -R abs-media-importer:abs-media-importer /etc/abs-media-importer
-chown -R abs-media-importer:abs-media-importer /var/log/abs-media-importer
-# Virtualenv and app dir owned by root but readable by abs-media-importer for security
+chown -R reeldock:reeldock /var/lib/reeldock
+chown -R reeldock:reeldock /etc/reeldock
+chown -R reeldock:reeldock /var/log/reeldock
+# Virtualenv and app dir owned by root but readable by reeldock for security
 chown -R root:root "$APP_DIR"
-chown -R abs-media-importer:abs-media-importer "$APP_DIR"
+chown -R reeldock:reeldock "$APP_DIR"
 
 # 8. Deploy systemd services
 log "Deploying systemd services..."
-cp "$APP_DIR/systemd/abs-media-importer-app.service" /etc/systemd/system/
-cp "$APP_DIR/systemd/abs-media-importer-worker.service" /etc/systemd/system/
+cp "$APP_DIR/systemd/reeldock-app.service" /etc/systemd/system/
+cp "$APP_DIR/systemd/reeldock-worker.service" /etc/systemd/system/
 
 systemctl daemon-reload
 
 log "Enabling services..."
 systemctl enable redis-server
-systemctl enable abs-media-importer-app
-systemctl enable abs-media-importer-worker
+systemctl enable reeldock-app
+systemctl enable reeldock-worker
 systemctl enable qemu-guest-agent --now
 
 # Start redis-server if not running
 systemctl start redis-server
 
 # Start the application services since safe defaults are written
-log "Starting abs-media-importer services..."
-systemctl start abs-media-importer-app
-systemctl start abs-media-importer-worker
+log "Starting reeldock services..."
+systemctl start reeldock-app
+systemctl start reeldock-worker
 
 log "Native guest installation completed successfully!"

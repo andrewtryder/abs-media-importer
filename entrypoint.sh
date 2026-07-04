@@ -7,7 +7,7 @@ set -e
 PUID=${PUID:-1000}
 PGID=${PGID:-1000}
 
-echo "Starting abs-media-importer"
+echo "Starting reeldock"
 echo "  PUID=$PUID  PGID=$PGID"
 
 # Create group/user if they don't match existing
@@ -44,7 +44,7 @@ case "$MODE" in
   worker)
     echo "Starting RQ worker..."
     export RQ_REDIS_URL="${REDIS_URL:-redis://redis:6379/0}"
-    exec gosu "$PUID:$PGID" python -m rq.cli worker abs_media_importer
+    exec gosu "$PUID:$PGID" python -m rq.cli worker reeldock
     ;;
   *)
     exec gosu "$PUID:$PGID" "$@"

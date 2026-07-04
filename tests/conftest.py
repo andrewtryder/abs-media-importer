@@ -14,7 +14,7 @@ def clear_settings_cache(monkeypatch: pytest.MonkeyPatch):
     import app.config as cfg_module
 
     # Avoid background GitHub release lookups during app lifespan in tests.
-    monkeypatch.setenv("ABS_MEDIA_IMPORTER_FETCH_UI_VERSION", "0")
+    monkeypatch.setenv("REELDOCK_FETCH_UI_VERSION", "0")
 
     cfg_module._settings = None
     yield
