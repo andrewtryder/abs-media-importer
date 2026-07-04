@@ -66,6 +66,7 @@ def _load_yaml() -> dict[str, Any]:
         {
             "ALLOW_PLAYLISTS": dl.get("allow_playlists", None),
             "ALLOW_CHANNELS": dl.get("allow_channels", None),
+            "MAX_PLAYLIST_ENTRIES": dl.get("max_playlist_entries", None),
             "DEFAULT_DESTINATION_FOLDER": dl.get("default_destination_folder", None),
             "YTDLP_AUDIO_FORMAT": dl.get("audio_format", None),
             "YTDLP_AUDIO_QUALITY": dl.get("audio_quality", None),
@@ -187,6 +188,7 @@ class Settings(BaseSettings):
     # ── Download ─────────────────────────────────────────────────────────────
     allow_playlists: bool = Field(False, alias="ALLOW_PLAYLISTS")
     allow_channels: bool = Field(False, alias="ALLOW_CHANNELS")
+    max_playlist_entries: int = Field(100, alias="MAX_PLAYLIST_ENTRIES")
     default_destination_folder: str | None = Field(None, alias="DEFAULT_DESTINATION_FOLDER")
 
     ytdlp_bin: str = Field("yt-dlp", alias="YTDLP_BIN")

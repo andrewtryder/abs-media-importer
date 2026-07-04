@@ -98,20 +98,6 @@ The Compose file sets `create_host_path: false` on the podcast bind mount so Doc
 
 If the mount succeeds but the container user cannot write to `/media/podcasts`, the entrypoint preflight check fails fast with a message about `OUTPUT_ROOT`. Check `PUID`/`PGID` in `.env` match the directory owner on the share. See [Paths and Volumes](paths-and-volumes.md).
 
-### App crashes with `No 'script_location' key found in configuration`
-
-The Docker image is missing Alembic migration files. Rebuild the image so `alembic.ini` and `alembic/` are included:
-
-```bash
-docker compose up --build -d
-```
-
-Verify after rebuild:
-
-```bash
-docker compose exec app ls /app/alembic.ini /app/alembic/versions/
-```
-
 ### Preflight fails on first start, then succeeds on restart
 
 Bind mounts (especially macOS `/Volumes/...` NAS paths) may not be ready the instant containers start. Before running Compose:

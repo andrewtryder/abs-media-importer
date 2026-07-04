@@ -36,6 +36,7 @@ paths:
 download:
   allow_playlists: false
   allow_channels: false
+  max_playlist_entries: 100
   default_destination_folder: ~
   audio_format: "m4a"
   audio_quality: ~

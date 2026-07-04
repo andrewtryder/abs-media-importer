@@ -196,6 +196,19 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         help_text="Comma-separated hostnames permitted for import URLs.",
     ),
     SettingSpec(
+        key="max_playlist_entries",
+        env_alias="MAX_PLAYLIST_ENTRIES",
+        label="Max Playlist / Channel Entries",
+        group="download",
+        type=SettingType.INT,
+        default="100",
+        help_text=(
+            "Maximum number of videos that can be enumerated or queued from a "
+            "single playlist or channel submission."
+        ),
+        validate=_validate_positive_int,
+    ),
+    SettingSpec(
         key="ytdlp_extra_args",
         env_alias="YTDLP_EXTRA_ARGS",
         label="yt-dlp Extra Arguments",
@@ -323,8 +336,8 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         type=SettingType.BOOL,
         default="false",
         help_text=(
-            "Permit playlist-style URLs, but import only the selected/single "
-            "video; full playlist batch imports are not yet supported."
+            "Permit playlist URLs. When enabled, the import flow enumerates "
+            "videos so you can select which ones to queue as a batch."
         ),
     ),
     SettingSpec(
@@ -335,8 +348,8 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         type=SettingType.BOOL,
         default="false",
         help_text=(
-            "Permit channel-style URLs where yt-dlp can resolve a single item; "
-            "full channel batch imports are not yet supported."
+            "Permit channel URLs. When enabled, the import flow enumerates "
+            "videos so you can select which ones to queue as a batch."
         ),
     ),
     SettingSpec(

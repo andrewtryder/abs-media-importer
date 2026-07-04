@@ -56,10 +56,11 @@
               <p id="url-warning" class="hidden validation-warning text-body-md text-paper-muted"></p>
             </div>
             <p class="text-paper-muted font-body-md text-body-md">
-              Only single-video imports are supported.
+              Paste a single video URL, or a playlist/channel URL when enabled.
               Playlist URLs are {{ "accepted" if settings.allow_playlists else "not accepted" }};
               channel URLs are {{ "accepted" if settings.allow_channels else "not accepted" }}.
-              When accepted, only the single resolved video is imported.
+              Playlist and channel imports let you select videos to queue as a batch
+              (up to {{ settings.max_playlist_entries }} entries).
             </p>
           </div>
         </form>

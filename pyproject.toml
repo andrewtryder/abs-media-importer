@@ -25,7 +25,6 @@ dependencies = [
     "python-multipart==0.0.32",
     "itsdangerous==2.2.0",
     "sqlalchemy>=2.0.51",
-    "alembic>=1.14.0",
     "aiosqlite==0.22.1",
     "greenlet",
     "redis==8.0.1",
@@ -61,7 +60,7 @@ include = ["app*", "worker*"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["app", "worker", "tests", "alembic"]
+src = ["app", "worker", "tests"]
 
 [tool.ruff.lint]
 select = [

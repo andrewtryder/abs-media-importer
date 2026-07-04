@@ -3,16 +3,25 @@
 {% block title %}Jobs — reeldock{% endblock %}
 
 {% block content %}
-{% set ns = namespace(active=0, succeeded=0, failed=0, queued=0) %}
-{% for job in jobs %}
-  {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-    {% set ns.active = ns.active + 1 %}
-  {% elif job.status.value == 'queued' %}
-    {% set ns.queued = ns.queued + 1 %}
-  {% elif job.status.value == 'succeeded' %}
-    {% set ns.succeeded = ns.succeeded + 1 %}
-  {% elif job.status.value in ['failed', 'cancelled'] %}
-    {% set ns.failed = ns.failed + 1 %}
+{% set ns = namespace(active=0, succeeded=0, failed=0, queued=0, total=0) %}
+{% for item in items %}
+  {% if item.kind == 'batch' %}
+    {% set ns.total = ns.total + item.total_count %}
+    {% set ns.active = ns.active + item.active_count %}
+    {% set ns.queued = ns.queued + item.queued_count %}
+    {% set ns.succeeded = ns.succeeded + item.succeeded_count %}
+    {% set ns.failed = ns.failed + item.failed_count %}
+  {% elif item.job %}
+    {% set ns.total = ns.total + 1 %}
+    {% if item.job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+      {% set ns.active = ns.active + 1 %}
+    {% elif item.job.status.value == 'queued' %}
+      {% set ns.queued = ns.queued + 1 %}
+    {% elif item.job.status.value == 'succeeded' %}
+      {% set ns.succeeded = ns.succeeded + 1 %}
+    {% elif item.job.status.value in ['failed', 'cancelled'] %}
+      {% set ns.failed = ns.failed + 1 %}
+    {% endif %}
   {% endif %}
 {% endfor %}
 
@@ -24,7 +33,7 @@
       {% call badge(variant='neutral') %}
         <span class="font-label-md text-amber">{{ ns.active }} Active</span>
         <span class="mx-2 text-panel-line">/</span>
-        <span class="font-label-md text-paper-muted">{{ jobs | length }} Total</span>
+        <span class="font-label-md text-paper-muted">{{ ns.total }} Total</span>
       {% endcall %}
     </div>
     <div class="flex items-center gap-stack-md shrink-0">
@@ -93,7 +102,7 @@
     </div>
 
     <!-- Table Card -->
-    {% if not jobs %}
+    {% if not items %}
     <div class="jobs-empty-state section-entrance section-entrance-3 bg-surface-container border border-outline rounded-xl p-12 text-center flex flex-col items-center gap-4">
       <span class="material-symbols-outlined text-[48px] text-primary/80 opacity-90">hourglass_empty</span>
       <h3 class="font-headline-sm text-headline-sm text-on-surface">No import jobs found</h3>
@@ -122,53 +131,167 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant">
-            {% for job in jobs %}
-            <tr class="job-row job-row-lift hover:bg-surface-container-high/40 transition-colors" data-status="{{ job.status.value }}" data-job-id="{{ job.id }}">
-              <td class="px-4 py-4">
-                <input
-                  type="checkbox"
-                  class="job-select h-4 w-4 accent-primary cursor-pointer"
-                  value="{{ job.id }}"
-                  aria-label="Select job {{ job.id }}"
-                />
-              </td>
-              <td data-label="Video Title" class="px-6 py-4 max-w-xs sm:max-w-sm truncate">
-                <a href="/jobs/{{ job.id }}" class="font-body-md text-on-surface font-semibold hover:text-primary transition-colors block truncate">
-                  {{ (job.output_title or job.source_title or job.url) | e }}
-                </a>
-                {% if job.uploader %}
-                <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
-                {% endif %}
-              </td>
-              <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
-                {{ job.destination_folder | default('—') | e }}
-              </td>
-              <td data-label="Status" class="px-6 py-4">
-                <div class="flex flex-col gap-1.5">
-                  {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-                  {{ badge(job.status.value, variant='info', reel=true) }}
-                  {% set row_pct = job.progress_percent or job.progress or 0 %}
-                  {{ vu_meter(percent=row_pct, segments=10, compact=true) }}
-                  {% elif job.status.value == 'succeeded' %}
-                  {{ badge('completed', variant='success', icon='check_circle') }}
-                  {% elif job.status.value in ['failed', 'cancelled'] %}
-                  {{ badge(job.status.value, variant='error', icon='error') }}
+            {% for item in items %}
+              {% if item.kind == 'batch' and item.batch %}
+              {% set batch = item.batch %}
+              {% set batch_open = highlight_batch == batch.id %}
+              <tr
+                class="batch-header-row job-row-lift hover:bg-surface-container-high/40 transition-colors cursor-pointer {% if batch_open %}bg-amber-container/10{% endif %}"
+                data-batch-id="{{ batch.id }}"
+                data-kind="batch"
+                data-status="{% if item.active_count %}running{% elif item.queued_count %}queued{% else %}completed{% endif %}"
+                aria-expanded="{{ 'true' if batch_open else 'false' }}"
+              >
+                <td class="px-4 py-4">
+                  <span class="material-symbols-outlined text-amber text-[20px] batch-chevron {% if batch_open %}rotate-90{% endif %} transition-transform inline-block">chevron_right</span>
+                </td>
+                <td data-label="Batch" class="px-6 py-4 max-w-xs sm:max-w-sm">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="material-symbols-outlined text-amber text-[18px] shrink-0">
+                      {% if batch.source_type == 'channel' %}podcasts{% else %}playlist_play{% endif %}
+                    </span>
+                    <div class="min-w-0">
+                      <span class="font-body-md text-on-surface font-semibold block truncate">
+                        {{ (batch.title or batch.source_type | title) | e }}
+                      </span>
+                      <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">
+                        {{ batch.source_type | title }} · {{ item.succeeded_count }}/{{ item.total_count }} succeeded
+                        {% if item.failed_count %} · {{ item.failed_count }} failed{% endif %}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
+                  {% if item.jobs and item.jobs[0].destination_folder %}
+                    {{ item.jobs[0].destination_folder | e }}
                   {% else %}
-                  {{ badge(job.status.value, variant='neutral', icon='schedule') }}
+                    —
                   {% endif %}
-                </div>
-              </td>
-              <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
-                {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
-              </td>
-              <td data-label="Actions" class="px-6 py-4 text-right">
-                <div class="flex justify-end gap-2">
-                  <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-all hover:text-on-surface flex items-center justify-center" title="View details">
-                    <span class="material-symbols-outlined text-[18px]">description</span>
+                </td>
+                <td data-label="Status" class="px-6 py-4">
+                  <div class="flex flex-col gap-1.5">
+                    {% if item.active_count or item.queued_count %}
+                    {{ badge('batch', variant='info', reel=true) }}
+                    {% elif item.failed_count and item.succeeded_count == 0 %}
+                    {{ badge('failed', variant='error', icon='error') }}
+                    {% elif item.failed_count %}
+                    {{ badge('partial', variant='neutral', icon='warning') }}
+                    {% else %}
+                    {{ badge('completed', variant='success', icon='check_circle') }}
+                    {% endif %}
+                    {{ vu_meter(percent=item.progress_percent, segments=10, compact=true) }}
+                  </div>
+                </td>
+                <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
+                  {{ batch.created_at.strftime('%m-%d %H:%M') if batch.created_at else '—' }}
+                </td>
+                <td data-label="Actions" class="px-6 py-4 text-right">
+                  <span class="font-label-md text-label-md text-on-surface-variant uppercase">{{ item.total_count }} jobs</span>
+                </td>
+              </tr>
+              {% for job in item.jobs %}
+              <tr
+                class="job-row batch-child-row job-row-lift hover:bg-surface-container-high/40 transition-colors {% if not batch_open %}hidden{% endif %}"
+                data-status="{{ job.status.value }}"
+                data-job-id="{{ job.id }}"
+                data-batch-id="{{ batch.id }}"
+                data-kind="job"
+              >
+                <td class="px-4 py-4 pl-8">
+                  <input
+                    type="checkbox"
+                    class="job-select h-4 w-4 accent-primary cursor-pointer"
+                    value="{{ job.id }}"
+                    aria-label="Select job {{ job.id }}"
+                  />
+                </td>
+                <td data-label="Video Title" class="px-6 py-4 max-w-xs sm:max-w-sm truncate pl-8">
+                  <a href="/jobs/{{ job.id }}" class="font-body-md text-on-surface font-semibold hover:text-primary transition-colors block truncate">
+                    {{ (job.output_title or job.source_title or job.url) | e }}
                   </a>
-                </div>
-              </td>
-            </tr>
+                  {% if job.uploader %}
+                  <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
+                  {% endif %}
+                </td>
+                <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
+                  {{ job.destination_folder | default('—') | e }}
+                </td>
+                <td data-label="Status" class="px-6 py-4">
+                  <div class="flex flex-col gap-1.5">
+                    {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+                    {{ badge(job.status.value, variant='info', reel=true) }}
+                    {% set row_pct = job.progress_percent or job.progress or 0 %}
+                    {{ vu_meter(percent=row_pct, segments=10, compact=true) }}
+                    {% elif job.status.value == 'succeeded' %}
+                    {{ badge('completed', variant='success', icon='check_circle') }}
+                    {% elif job.status.value in ['failed', 'cancelled'] %}
+                    {{ badge(job.status.value, variant='error', icon='error') }}
+                    {% else %}
+                    {{ badge(job.status.value, variant='neutral', icon='schedule') }}
+                    {% endif %}
+                  </div>
+                </td>
+                <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
+                  {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
+                </td>
+                <td data-label="Actions" class="px-6 py-4 text-right">
+                  <div class="flex justify-end gap-2">
+                    <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-all hover:text-on-surface flex items-center justify-center" title="View details">
+                      <span class="material-symbols-outlined text-[18px]">description</span>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+              {% elif item.job %}
+              {% set job = item.job %}
+              <tr class="job-row job-row-lift hover:bg-surface-container-high/40 transition-colors" data-status="{{ job.status.value }}" data-job-id="{{ job.id }}" data-kind="job">
+                <td class="px-4 py-4">
+                  <input
+                    type="checkbox"
+                    class="job-select h-4 w-4 accent-primary cursor-pointer"
+                    value="{{ job.id }}"
+                    aria-label="Select job {{ job.id }}"
+                  />
+                </td>
+                <td data-label="Video Title" class="px-6 py-4 max-w-xs sm:max-w-sm truncate">
+                  <a href="/jobs/{{ job.id }}" class="font-body-md text-on-surface font-semibold hover:text-primary transition-colors block truncate">
+                    {{ (job.output_title or job.source_title or job.url) | e }}
+                  </a>
+                  {% if job.uploader %}
+                  <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
+                  {% endif %}
+                </td>
+                <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
+                  {{ job.destination_folder | default('—') | e }}
+                </td>
+                <td data-label="Status" class="px-6 py-4">
+                  <div class="flex flex-col gap-1.5">
+                    {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
+                    {{ badge(job.status.value, variant='info', reel=true) }}
+                    {% set row_pct = job.progress_percent or job.progress or 0 %}
+                    {{ vu_meter(percent=row_pct, segments=10, compact=true) }}
+                    {% elif job.status.value == 'succeeded' %}
+                    {{ badge('completed', variant='success', icon='check_circle') }}
+                    {% elif job.status.value in ['failed', 'cancelled'] %}
+                    {{ badge(job.status.value, variant='error', icon='error') }}
+                    {% else %}
+                    {{ badge(job.status.value, variant='neutral', icon='schedule') }}
+                    {% endif %}
+                  </div>
+                </td>
+                <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
+                  {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
+                </td>
+                <td data-label="Actions" class="px-6 py-4 text-right">
+                  <div class="flex justify-end gap-2">
+                    <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-all hover:text-on-surface flex items-center justify-center" title="View details">
+                      <span class="material-symbols-outlined text-[18px]">description</span>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endif %}
             {% endfor %}
           </tbody>
         </table>
@@ -181,6 +304,7 @@
 <script>
   const filterTabs = document.querySelectorAll('.filter-tab');
   const rows = Array.from(document.querySelectorAll('.job-row'));
+  const batchHeaders = Array.from(document.querySelectorAll('.batch-header-row'));
   const searchInput = document.getElementById('jobs-search-input');
   const selectAll = document.getElementById('jobs-select-all');
   const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
@@ -194,13 +318,13 @@
     if (activeFilter === 'all') return true;
     if (activeFilter === 'running') return activeStatuses.includes(status);
     if (activeFilter === 'queued') return status === 'queued';
-    if (activeFilter === 'completed') return ['succeeded', 'failed', 'cancelled'].includes(status);
+    if (activeFilter === 'completed') return ['succeeded', 'failed', 'cancelled', 'completed'].includes(status);
     return true;
   }
 
   function getVisibleRowCheckboxes() {
     return rows
-      .filter(row => row.style.display !== 'none')
+      .filter(row => row.style.display !== 'none' && !row.classList.contains('hidden'))
       .map(row => row.querySelector('.job-select'))
       .filter(Boolean);
   }
@@ -235,8 +359,45 @@
     selectAll.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < visibleCheckboxes.length;
   }
 
+  function isBatchExpanded(batchId) {
+    const header = batchHeaders.find(row => row.getAttribute('data-batch-id') === batchId);
+    return header && header.getAttribute('aria-expanded') === 'true';
+  }
+
   function applyFilters() {
+    batchHeaders.forEach(header => {
+      const status = header.getAttribute('data-status') || '';
+      const text = header.innerText.toLowerCase();
+      const matchesFilter = rowMatchesFilter(status);
+      const matchesSearch = !searchTerm || text.includes(searchTerm);
+      const batchId = header.getAttribute('data-batch-id');
+      const childRows = rows.filter(row => row.getAttribute('data-batch-id') === batchId);
+      const childMatch = childRows.some(row => {
+        const childStatus = row.getAttribute('data-status') || '';
+        const childText = row.innerText.toLowerCase();
+        return rowMatchesFilter(childStatus) && (!searchTerm || childText.includes(searchTerm));
+      });
+      const showHeader = (matchesFilter && matchesSearch) || childMatch;
+      header.style.display = showHeader ? '' : 'none';
+
+      const expanded = isBatchExpanded(batchId);
+      childRows.forEach(row => {
+        const childStatus = row.getAttribute('data-status') || '';
+        const childText = row.innerText.toLowerCase();
+        const matchesChild =
+          showHeader &&
+          expanded &&
+          rowMatchesFilter(childStatus) &&
+          (!searchTerm || childText.includes(searchTerm) || matchesSearch);
+        row.style.display = matchesChild ? '' : 'none';
+        row.classList.toggle('hidden', !matchesChild);
+      });
+    });
+
     rows.forEach(row => {
+      if (row.getAttribute('data-batch-id')) {
+        return;
+      }
       const status = row.getAttribute('data-status') || '';
       const text = row.innerText.toLowerCase();
       const matchesFilter = rowMatchesFilter(status);
@@ -246,6 +407,19 @@
 
     updateSelectionUi();
   }
+
+  batchHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+      const batchId = header.getAttribute('data-batch-id');
+      const expanded = header.getAttribute('aria-expanded') === 'true';
+      header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      const chevron = header.querySelector('.batch-chevron');
+      if (chevron) {
+        chevron.classList.toggle('rotate-90', !expanded);
+      }
+      applyFilters();
+    });
+  });
 
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {

@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from sqlalchemy import desc, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.config import Settings
-from app.models import ImportedVideo, Job, JobAttempt, JobStatus
+from app.models import ImportBatch, ImportedVideo, Job, JobAttempt, JobStatus
 from app.queue import enqueue_job_task
 from app.services.filesystem import FilesystemService
-from app.services.ytdlp import YtDlpService
+from app.services.ytdlp import PlaylistEntry, YtDlpService
 
 
 def _utcnow() -> datetime:
@@ -56,6 +56,86 @@ class JobSubmitParams:
     trigger_abs_scan: bool = False
     allow_reimport: bool = False
     validate_url: bool = True
+    batch_id: str | None = None
+
+
+@dataclass
+class BatchJobSubmitParams:
+    source_url: str
+    source_type: str
+    batch_title: str | None
+    entries: list[PlaylistEntry]
+    destination_folder: str | None = None
+    new_folder: str = ""
+    embed_metadata: bool = True
+    embed_thumbnail: bool = True
+    embed_chapters: bool = True
+    trigger_abs_scan: bool = False
+    allow_reimport: bool = False
+
+
+@dataclass
+class BatchSubmitResult:
+    batch_id: str
+    created: int = 0
+    skipped_duplicate: int = 0
+    failed: int = 0
+    job_ids: list[str] = field(default_factory=list)
+    failures: list[str] = field(default_factory=list)
+
+
+@dataclass
+class JobsListItem:
+    """A standalone job or a batch group for the Jobs page."""
+
+    kind: str  # "job" | "batch"
+    job: Job | None = None
+    batch: ImportBatch | None = None
+    jobs: list[Job] = field(default_factory=list)
+    sort_at: datetime | None = None
+
+    @property
+    def succeeded_count(self) -> int:
+        return sum(1 for j in self.jobs if j.status == JobStatus.succeeded)
+
+    @property
+    def failed_count(self) -> int:
+        return sum(1 for j in self.jobs if j.status in {JobStatus.failed, JobStatus.cancelled})
+
+    @property
+    def active_count(self) -> int:
+        active = {
+            JobStatus.running,
+            JobStatus.downloading,
+            JobStatus.postprocessing,
+            JobStatus.converting,
+            JobStatus.verifying,
+            JobStatus.scanning,
+        }
+        return sum(1 for j in self.jobs if j.status in active)
+
+    @property
+    def queued_count(self) -> int:
+        return sum(1 for j in self.jobs if j.status == JobStatus.queued)
+
+    @property
+    def total_count(self) -> int:
+        return len(self.jobs)
+
+    @property
+    def progress_percent(self) -> float:
+        if not self.jobs:
+            return 0.0
+        total = 0.0
+        terminal = {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}
+        for job in self.jobs:
+            if job.status in terminal:
+                total += 100.0
+            elif job.progress_percent is not None:
+                total += float(job.progress_percent)
+            elif job.progress is not None:
+                total += float(job.progress)
+        return total / len(self.jobs)
 
 
 def _or_none(value: str | None) -> str | None:
@@ -107,11 +187,97 @@ async def submit_job(
         embed_chapters=params.embed_chapters,
         trigger_abs_scan=params.trigger_abs_scan,
         allow_reimport=params.allow_reimport,
+        batch_id=_or_none(params.batch_id),
     )
 
     rq_id = enqueue_job_task(job.id)
     await update_job_status(session, job.id, JobStatus.queued, rq_job_id=rq_id)
     return job, rq_id
+
+
+async def submit_batch(
+    session: AsyncSession,
+    settings: Settings,
+    params: BatchJobSubmitParams,
+) -> BatchSubmitResult:
+    """Create an ImportBatch and fan out one Job per selected entry."""
+    entries = list(params.entries)
+    if not entries:
+        raise ValueError("Select at least one video to import")
+
+    max_entries = settings.max_playlist_entries
+    if len(entries) > max_entries:
+        raise ValueError(
+            f"Too many videos selected ({len(entries)}). "
+            f"Maximum is {max_entries} (MAX_PLAYLIST_ENTRIES)."
+        )
+
+    if params.source_type not in {"playlist", "channel"}:
+        raise ValueError("source_type must be 'playlist' or 'channel'")
+
+    destination_folder = params.destination_folder or ""
+    if params.new_folder.strip():
+        fs = FilesystemService(settings)
+        fs.create_folder(params.new_folder.strip())
+        destination_folder = params.new_folder.strip()
+    resolved_destination = _or_none(destination_folder)
+
+    batch = ImportBatch(
+        id=str(uuid.uuid4()),
+        source_url=params.source_url,
+        source_type=params.source_type,
+        title=_or_none(params.batch_title),
+        requested_count=len(entries),
+        created_at=_utcnow(),
+    )
+    session.add(batch)
+    await session.commit()
+    await session.refresh(batch)
+
+    result = BatchSubmitResult(batch_id=batch.id)
+    for entry in entries:
+        try:
+            job = await create_job(
+                session,
+                entry.url,
+                settings,
+                video_id=entry.id,
+                source_title=entry.title,
+                uploader=entry.uploader,
+                uploader_id=entry.uploader_id,
+                channel=entry.channel,
+                channel_id=entry.channel_id,
+                duration=entry.duration,
+                thumbnail_url=entry.thumbnail,
+                output_title=entry.title,
+                destination_folder=resolved_destination,
+                embed_metadata=params.embed_metadata,
+                embed_thumbnail=params.embed_thumbnail,
+                embed_chapters=params.embed_chapters,
+                trigger_abs_scan=params.trigger_abs_scan,
+                allow_reimport=params.allow_reimport,
+                batch_id=batch.id,
+            )
+        except DuplicateVideoError:
+            result.skipped_duplicate += 1
+            continue
+        except Exception as exc:
+            result.failed += 1
+            result.failures.append(f"{entry.id}: {exc}")
+            continue
+
+        try:
+            rq_id = enqueue_job_task(job.id)
+            await update_job_status(session, job.id, JobStatus.queued, rq_job_id=rq_id)
+        except Exception as exc:
+            result.failed += 1
+            result.failures.append(f"{entry.id}: enqueue failed: {exc}")
+            continue
+
+        result.created += 1
+        result.job_ids.append(job.id)
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +307,7 @@ async def create_job(
     embed_chapters: bool = True,
     trigger_abs_scan: bool = False,
     allow_reimport: bool = False,
+    batch_id: str | None = None,
 ) -> Job:
     """Persist a new Job record and return it."""
     normalized_video_id = (video_id or "").strip() or None
@@ -172,6 +339,7 @@ async def create_job(
         embed_chapters=embed_chapters,
         trigger_abs_scan=trigger_abs_scan,
         allow_reimport=allow_reimport,
+        batch_id=batch_id,
         collision_mode=settings.collision_mode,
         status=JobStatus.queued,
         attempts=0,
@@ -196,13 +364,57 @@ async def get_imported_video(session: AsyncSession, video_id: str) -> ImportedVi
 
 
 async def get_job(session: AsyncSession, job_id: str) -> Job | None:
-    result = await session.execute(select(Job).where(Job.id == job_id))
+    result = await session.execute(
+        select(Job).options(selectinload(Job.batch)).where(Job.id == job_id)
+    )
     return result.scalar_one_or_none()
 
 
 async def get_recent_jobs(session: AsyncSession, limit: int = 50) -> list[Job]:
-    result = await session.execute(select(Job).order_by(desc(Job.created_at)).limit(limit))
+    result = await session.execute(
+        select(Job).options(selectinload(Job.batch)).order_by(desc(Job.created_at)).limit(limit)
+    )
     return list(result.scalars().all())
+
+
+async def get_jobs_list(session: AsyncSession, limit: int = 50) -> list[JobsListItem]:
+    """Return recent jobs grouped by batch for the Jobs page."""
+    jobs = await get_recent_jobs(session, limit=limit)
+    items: list[JobsListItem] = []
+    batches_seen: dict[str, JobsListItem] = {}
+
+    for job in jobs:
+        if job.batch_id and job.batch is not None:
+            group = batches_seen.get(job.batch_id)
+            if group is None:
+                group = JobsListItem(
+                    kind="batch",
+                    batch=job.batch,
+                    jobs=[],
+                    sort_at=job.batch.created_at,
+                )
+                batches_seen[job.batch_id] = group
+                items.append(group)
+            group.jobs.append(job)
+            if job.created_at and (group.sort_at is None or job.created_at > group.sort_at):
+                group.sort_at = job.created_at
+        else:
+            items.append(JobsListItem(kind="job", job=job, sort_at=job.created_at))
+
+    items.sort(
+        key=lambda item: item.sort_at or datetime(1970, 1, 1, tzinfo=UTC),
+        reverse=True,
+    )
+    return items
+
+
+async def get_import_batch(session: AsyncSession, batch_id: str) -> ImportBatch | None:
+    result = await session.execute(
+        select(ImportBatch)
+        .options(selectinload(ImportBatch.jobs))
+        .where(ImportBatch.id == batch_id)
+    )
+    return result.scalar_one_or_none()
 
 
 async def delete_jobs(session: AsyncSession, job_ids: list[str]) -> dict[str, list[str]]:

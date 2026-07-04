@@ -46,10 +46,18 @@ async def _websocket_endpoint(
         await websocket.close(code=1008, reason="Job not found")
         return
 
-    await websocket.send_json({"type": "job_update", "job": job_dict(job)})
+    terminal = {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}
+    initial = job_dict(job)
+    await websocket.send_json({"type": "job_update", "job": initial})
+
+    # Already finished: send once and exit so TestClient teardown cannot hang
+    # in the poll loop (seen on Linux CI with Starlette's portal).
+    if job.status in terminal:
+        await websocket.close(code=1000)
+        return
 
     try:
-        last_data = job_dict(job)
+        last_data = initial
         while True:
             current_job = await get_job(db, job_id)
             if not current_job:
@@ -80,7 +88,7 @@ async def _websocket_endpoint(
                 await websocket.send_json({"type": "job_update", "job": current_data})
                 last_data = current_data
 
-            if current_job.status in {JobStatus.succeeded, JobStatus.failed, JobStatus.cancelled}:
+            if current_job.status in terminal:
                 await websocket.send_json({"type": "job_update", "job": current_data})
                 break
 

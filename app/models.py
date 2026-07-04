@@ -71,6 +71,38 @@ class CollisionMode(enum.StrEnum):
     append_counter = "append_counter"
 
 
+class BatchSourceType(enum.StrEnum):
+    playlist = "playlist"
+    channel = "channel"
+
+
+# ---------------------------------------------------------------------------
+# ImportBatch — groups jobs created from one playlist/channel submission
+# ---------------------------------------------------------------------------
+
+
+class ImportBatch(Base):
+    __tablename__ = "import_batches"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    source_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requested_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    jobs: Mapped[list[Job]] = relationship("Job", back_populates="batch")
+
+    def __repr__(self) -> str:
+        return f"<ImportBatch id={self.id!r} source_type={self.source_type!r}>"
+
+
 # ---------------------------------------------------------------------------
 # Job
 # ---------------------------------------------------------------------------
@@ -83,6 +115,11 @@ class Job(Base):
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
+    )
+
+    # Optional link to a playlist/channel batch
+    batch_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("import_batches.id"), nullable=True
     )
 
     # Source
@@ -148,6 +185,7 @@ class Job(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
+    batch: Mapped[ImportBatch | None] = relationship("ImportBatch", back_populates="jobs")
     attempts_log: Mapped[list[JobAttempt]] = relationship(
         "JobAttempt", back_populates="job", cascade="all, delete-orphan"
     )

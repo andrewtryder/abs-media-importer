@@ -8,6 +8,12 @@ from app.models import Job
 
 
 def job_dict(job: Job) -> dict[str, Any]:
+    # Read batch only from the instance dict so we never trigger a lazy load.
+    # Async handlers (especially WebSockets under Starlette's TestClient) hang
+    # when SQLAlchemy tries to lazy-load relationships.
+    batch = job.__dict__.get("batch")
+    batch_title = batch.title if batch is not None else None
+
     return {
         "id": job.id,
         "url": job.url,
@@ -34,6 +40,8 @@ def job_dict(job: Job) -> dict[str, Any]:
         "channel": job.channel,
         "channel_id": job.channel_id,
         "thumbnail_url": job.thumbnail_url,
+        "batch_id": job.batch_id,
+        "batch_title": batch_title,
         "rq_job_id": job.rq_job_id,
         "log_file_path": job.log_file_path,
         "created_at": job.created_at.isoformat() if job.created_at else None,

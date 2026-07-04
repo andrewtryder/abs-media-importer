@@ -15,14 +15,16 @@ from app.diagnostics import format_free_space
 from app.routes import DbDep, SettingsDep
 from app.services.filesystem import FilesystemService
 from app.services.jobs import (
+    BatchJobSubmitParams,
     DuplicateVideoError,
     InvalidJobUrlError,
     JobSubmitParams,
     get_job,
-    get_recent_jobs,
+    get_jobs_list,
+    submit_batch,
     submit_job,
 )
-from app.services.ytdlp import YtDlpService
+from app.services.ytdlp import PlaylistEntry, YtDlpService, is_channel_url, is_playlist_url
 from app.settings_registry import (
     parse_form_value,
     registry_groups,
@@ -95,8 +97,40 @@ async def page_preview(
             },
             status_code=400,
         )
+
+    fs = FilesystemService(cfg)
+    folders = fs.list_folders()
+    is_batch_url = is_playlist_url(url) or is_channel_url(url)
+
+    if is_batch_url:
+        try:
+            playlist_meta = svc.run_playlist_preview(url, cfg.max_playlist_entries)
+        except Exception as exc:
+            return templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "settings": cfg,
+                    "error": str(exc),
+                    "url": url,
+                },
+                status_code=422,
+            )
+        return templates.TemplateResponse(
+            "playlist_preview.html",
+            {
+                "request": request,
+                "settings": cfg,
+                "meta": playlist_meta,
+                "folders": folders,
+                "url": url,
+                "default_folder": cfg.default_destination_folder or "",
+                "max_entries": cfg.max_playlist_entries,
+            },
+        )
+
     try:
-        meta = svc.run_preview(url)
+        video_meta = svc.run_preview(url)
     except Exception as exc:
         return templates.TemplateResponse(
             "index.html",
@@ -109,15 +143,12 @@ async def page_preview(
             status_code=422,
         )
 
-    fs = FilesystemService(cfg)
-    folders = fs.list_folders()
-
     return templates.TemplateResponse(
         "preview.html",
         {
             "request": request,
             "settings": cfg,
-            "meta": meta,
+            "meta": video_meta,
             "folders": folders,
             "url": url,
             "default_folder": cfg.default_destination_folder or "",
@@ -195,12 +226,112 @@ async def page_create_job(
     return RedirectResponse(f"/jobs/{job.id}", status_code=303)
 
 
+@router.post("/jobs/create-batch", response_class=HTMLResponse, response_model=None)
+async def page_create_batch(
+    request: Request,
+    db: DbDep,
+    cfg: SettingsDep,
+) -> HTMLResponse | RedirectResponse:
+    form = await request.form()
+    source_url = str(form.get("source_url") or "").strip()
+    source_type = str(form.get("source_type") or "").strip()
+    batch_title = str(form.get("batch_title") or "").strip()
+    destination_folder = str(form.get("destination_folder") or "")
+    new_folder = str(form.get("new_folder") or "")
+
+    def _bool_field(name: str, default: bool = False) -> bool:
+        raw = form.get(name)
+        if raw is None:
+            return default
+        return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+    selected_ids = [
+        str(value).strip() for key, value in form.multi_items() if key == "selected" and value
+    ]
+    entries: list[PlaylistEntry] = []
+    for video_id in selected_ids:
+        if not video_id:
+            continue
+        entries.append(
+            PlaylistEntry(
+                id=video_id,
+                title=str(form.get(f"title_{video_id}") or video_id).strip() or video_id,
+                url=str(form.get(f"url_{video_id}") or "").strip()
+                or f"https://www.youtube.com/watch?v={video_id}",
+                duration=_parse_optional_int(form.get(f"duration_{video_id}")),
+                uploader=_or_empty(form.get(f"uploader_{video_id}")),
+                uploader_id=_or_empty(form.get(f"uploader_id_{video_id}")),
+                channel=_or_empty(form.get(f"channel_{video_id}")),
+                channel_id=_or_empty(form.get(f"channel_id_{video_id}")),
+                thumbnail=_or_empty(form.get(f"thumbnail_{video_id}")),
+            )
+        )
+
+    params = BatchJobSubmitParams(
+        source_url=source_url,
+        source_type=source_type,
+        batch_title=batch_title or None,
+        entries=entries,
+        destination_folder=destination_folder,
+        new_folder=new_folder,
+        embed_metadata=_bool_field("embed_metadata", True),
+        embed_thumbnail=_bool_field("embed_thumbnail", True),
+        embed_chapters=_bool_field("embed_chapters", True),
+        trigger_abs_scan=_bool_field("trigger_abs_scan", False),
+        allow_reimport=_bool_field("allow_reimport", False),
+    )
+
+    try:
+        result = await submit_batch(db, cfg, params)
+    except ValueError as exc:
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "settings": cfg, "error": str(exc), "url": source_url},
+            status_code=400,
+        )
+
+    if result.created == 0 and result.skipped_duplicate == 0:
+        return templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "settings": cfg,
+                "error": "No jobs were created from the selected videos.",
+                "url": source_url,
+            },
+            status_code=400,
+        )
+
+    return RedirectResponse(f"/jobs?batch={result.batch_id}", status_code=303)
+
+
+def _or_empty(value: object) -> str | None:
+    text = str(value or "").strip()
+    return text or None
+
+
+def _parse_optional_int(value: object) -> int | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 @router.get("/jobs", response_class=HTMLResponse)
 async def page_jobs(request: Request, db: DbDep, cfg: SettingsDep) -> HTMLResponse:
-    jobs = await get_recent_jobs(db)
+    items = await get_jobs_list(db)
+    highlight_batch = request.query_params.get("batch") or ""
     return templates.TemplateResponse(
         "jobs.html",
-        {"request": request, "settings": cfg, "jobs": jobs},
+        {
+            "request": request,
+            "settings": cfg,
+            "items": items,
+            "highlight_batch": highlight_batch,
+        },
     )
 
 
