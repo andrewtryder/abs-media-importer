@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from app.services.ytdlp import (
     PlaylistEntry,
     PlaylistMetadata,
@@ -131,3 +132,22 @@ def test_is_playlist_and_channel_url_helpers():
     assert is_channel_url("https://www.youtube.com/@someone")
     assert is_channel_url("https://www.youtube.com/channel/UCxxxx")
     assert not is_channel_url("https://www.youtube.com/watch?v=abc")
+
+
+def test_sanitize_command_url_allows_playlist_shapes_when_policy_disabled():
+    """Command sanitization must not re-apply playlist/channel policy flags."""
+    svc = make_svc(ALLOW_PLAYLISTS="false", ALLOW_CHANNELS="false")
+    playlist = "https://www.youtube.com/playlist?list=PL123"
+    channel = "https://www.youtube.com/@someone"
+    assert svc._sanitize_command_url(playlist) == playlist
+    assert svc._sanitize_command_url(channel) == channel
+
+
+def test_sanitize_command_url_rejects_unsafe_inputs():
+    svc = make_svc()
+    with pytest.raises(ValueError, match="control characters"):
+        svc._sanitize_command_url("https://www.youtube.com/watch?v=abc\n--evil")
+    with pytest.raises(ValueError, match="allowlist"):
+        svc._sanitize_command_url("https://evil.example/watch?v=abc")
+    with pytest.raises(ValueError, match="http"):
+        svc._sanitize_command_url("ftp://www.youtube.com/watch?v=abc")

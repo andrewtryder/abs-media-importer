@@ -225,20 +225,32 @@ class YtDlpService:
     # ── Preview ───────────────────────────────────────────────────────────────
 
     def _sanitize_command_url(self, url: str) -> str:
-        """Validate and normalize a user-provided URL before command execution."""
+        """Normalize a URL before placing it on a subprocess argv list.
+
+        Enforces structural safety only (scheme, allowlisted host, no control
+        characters). Playlist/channel policy checks belong at the request
+        boundary via ``validate_url``, not here — playlist command builders
+        intentionally accept those URL shapes after policy has already passed.
+        """
         safe_url = (url or "").strip()
         if not safe_url:
             raise ValueError("URL is required")
         if any(ch in safe_url for ch in ("\n", "\r", "\x00")):
             raise ValueError("URL contains invalid control characters")
 
-        parsed = urlparse(safe_url)
+        try:
+            parsed = urlparse(safe_url)
+        except Exception as exc:
+            raise ValueError("Malformed URL") from exc
+
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("Only absolute http(s) URLs are allowed")
 
-        validation = self.validate_url(safe_url)
-        if not validation.valid:
-            raise ValueError(validation.error or "Invalid URL")
+        host = parsed.netloc.lower().removeprefix("www.")
+        host = host.split(":")[0]
+        allowed = {d.lower().removeprefix("www.") for d in self.settings.allowed_domains}
+        if host not in allowed and f"www.{host}" not in allowed:
+            raise ValueError(f"Domain '{host}' is not in the allowlist")
 
         return safe_url
 
@@ -398,7 +410,8 @@ class YtDlpService:
         if extra_args:
             cmd.extend(extra_args)
 
-        cmd += ["-o", output_template, "--", url]
+        safe_url = self._sanitize_command_url(url)
+        cmd += ["-o", output_template, "--", safe_url]
 
         return cmd
 
