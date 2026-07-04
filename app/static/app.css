@@ -9,14 +9,14 @@
   height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1a1b22;
+  background: #18140F;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #33343b;
-  border-radius: 10px;
+  background: #2E2618;
+  border-radius: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #444653;
+  background: #3A2C10;
 }
 
 /* ── Terminal/Log Container Scrollbars ───────────────────────── */
@@ -24,10 +24,10 @@
   width: 8px;
 }
 .terminal-scroll::-webkit-scrollbar-track {
-  background: #08090c;
+  background: #0C0B09;
 }
 .terminal-scroll::-webkit-scrollbar-thumb {
-  background: #2e3452;
+  background: #2E2618;
   border-radius: 4px;
 }
 
@@ -38,6 +38,60 @@
 }
 .animate-spin-slow {
   animation: spin-slow 2.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-slow {
+    animation: none !important;
+  }
+}
+
+/* ── Signature: Segmented VU Meter ──────────────────────────── */
+.vu-meter {
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  width: 100%;
+}
+.vu-meter-full {
+  height: 14px;
+}
+.vu-meter-compact {
+  height: 8px;
+  max-width: 120px;
+  gap: 2px;
+}
+.vu-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 4px;
+  background: #221C14;
+  opacity: 0.35;
+  transition: background-color 200ms ease, opacity 200ms ease;
+}
+.vu-meter-compact .vu-seg {
+  border-radius: 2px;
+}
+.vu-seg.is-lit {
+  opacity: 1;
+}
+.vu-seg-amber.is-lit {
+  background: #E8A33D;
+}
+.vu-seg-gold.is-lit {
+  background: #F2C878;
+}
+.vu-seg-moss.is-lit {
+  background: #6FA25E;
+}
+.vu-meter-failed .vu-seg.is-lit {
+  background: #C1502E;
+}
+
+/* ── Signature: Reel Spinner ────────────────────────────────── */
+.reel-spinner {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* ── Import Page Visual Polish ─────────────────────────────── */
@@ -75,7 +129,7 @@
   position: absolute;
   inset: -160px 0 auto;
   height: 420px;
-  background: radial-gradient(circle at 50% 18%, rgba(108, 142, 247, 0.24), transparent 70%);
+  background: radial-gradient(circle at 50% 18%, rgba(232, 163, 61, 0.16), transparent 70%);
   filter: blur(8px);
   pointer-events: none;
   animation: hero-radial-float 8s ease-in-out infinite;
@@ -86,8 +140,8 @@
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(181, 196, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(181, 196, 255, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(232, 163, 61, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 163, 61, 0.05) 1px, transparent 1px);
   background-size: 28px 28px;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0));
   opacity: 0.55;
@@ -115,26 +169,31 @@
 }
 
 .feature-card-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(108, 142, 247, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(12, 11, 9, 0.45);
+  border-color: #2E2618;
 }
 
 .input-focus-glow:focus {
-  box-shadow: 0 0 0 2px rgba(108, 142, 247, 0.28), 0 0 18px rgba(108, 142, 247, 0.22) !important;
+  box-shadow: 0 0 0 2px rgba(232, 163, 61, 0.35), 0 0 14px rgba(232, 163, 61, 0.18) !important;
 }
 
 .validation-warning {
-  border-left: 2px solid rgba(248, 113, 113, 0.55);
+  border-left: 2px solid rgba(193, 80, 46, 0.55);
   padding-left: 10px;
-  color: rgba(226, 225, 235, 0.86);
+  color: rgba(237, 230, 216, 0.86);
 }
 
 .validation-warning-visible {
-  background: rgba(147, 0, 10, 0.14);
-  border-radius: 8px;
+  background: rgba(58, 23, 16, 0.45);
+  border-radius: 6px;
   padding-top: 8px;
   padding-bottom: 8px;
   padding-right: 10px;
+}
+
+.panel-edge {
+  box-shadow: inset 0 1px 0 rgba(237, 230, 216, 0.04);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -159,21 +218,22 @@
 @keyframes progress-live-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(108, 142, 247, 0), 0 0 18px rgba(108, 142, 247, 0.12);
+    box-shadow: inset 0 1px 0 rgba(237, 230, 216, 0.04), 0 0 14px rgba(232, 163, 61, 0.08);
   }
   50% {
-    box-shadow: 0 0 0 rgba(108, 142, 247, 0), 0 0 26px rgba(108, 142, 247, 0.28);
+    box-shadow: inset 0 1px 0 rgba(237, 230, 216, 0.04), 0 0 22px rgba(232, 163, 61, 0.2);
   }
 }
 
 .jobs-stat-card {
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  box-shadow: inset 0 1px 0 rgba(237, 230, 216, 0.04);
 }
 
 .jobs-stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 22px rgba(108, 142, 247, 0.15);
-  border-color: rgba(108, 142, 247, 0.45);
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(237, 230, 216, 0.04), 0 8px 18px rgba(12, 11, 9, 0.4);
+  border-color: #2E2618;
 }
 
 .job-row-lift {
@@ -182,22 +242,22 @@
 
 .job-row-lift:hover {
   transform: translateY(-1px);
-  box-shadow: inset 0 0 0 1px rgba(108, 142, 247, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(232, 163, 61, 0.18);
 }
 
 .jobs-empty-state {
-  background-image: radial-gradient(circle at 50% 0%, rgba(108, 142, 247, 0.08), transparent 70%);
+  background-image: radial-gradient(circle at 50% 0%, rgba(232, 163, 61, 0.06), transparent 70%);
 }
 
 .timeline-step {
-  border: 1px solid #444653;
-  border-radius: 12px;
+  border: 1px solid #2E2618;
+  border-radius: 6px;
   padding: 10px 12px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #c4c6d5;
-  background: rgba(26, 27, 34, 0.6);
+  color: #9C9284;
+  background: #221C14;
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
   letter-spacing: 0.03em;
@@ -205,22 +265,22 @@
 }
 
 .timeline-step-completed {
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #d9e2ff;
-  background: rgba(60, 70, 97, 0.45);
+  border-color: rgba(111, 162, 94, 0.45);
+  color: #A8D89A;
+  background: rgba(30, 51, 24, 0.55);
 }
 
 .timeline-step-active {
-  border-color: rgba(108, 142, 247, 0.6);
-  color: #dbe1ff;
-  background: rgba(108, 142, 247, 0.18);
-  box-shadow: 0 0 18px rgba(108, 142, 247, 0.2);
+  border-color: rgba(232, 163, 61, 0.65);
+  color: #F2C878;
+  background: rgba(58, 44, 16, 0.55);
+  box-shadow: 0 0 14px rgba(232, 163, 61, 0.15);
 }
 
 .timeline-step-failed {
-  border-color: rgba(248, 113, 113, 0.45);
-  color: #ffdad6;
-  background: rgba(147, 0, 10, 0.22);
+  border-color: rgba(193, 80, 46, 0.5);
+  color: #F0A386;
+  background: rgba(58, 23, 16, 0.45);
 }
 
 .progress-card.progress-live {
@@ -248,14 +308,18 @@
 
 /* ── Progress Glow Effects ──────────────────────────────────── */
 .progress-glow {
-  box-shadow: 0 0 12px rgba(181, 196, 255, 0.4);
+  box-shadow: 0 0 12px rgba(232, 163, 61, 0.35);
+}
+
+.progress-card {
+  box-shadow: inset 0 1px 0 rgba(237, 230, 216, 0.04);
 }
 
 /* ── Custom Focus Rings ─────────────────────────────────────── */
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #6c8ef7 !important;
-  box-shadow: 0 0 0 2px rgba(108, 142, 247, 0.2) !important;
+  border-color: #E8A33D !important;
+  box-shadow: 0 0 0 2px rgba(232, 163, 61, 0.22) !important;
 }
 
 /* Custom Checkbox */
@@ -263,22 +327,22 @@ input:focus, select:focus, textarea:focus {
   appearance: none;
   width: 1.25rem;
   height: 1.25rem;
-  border: 1px solid #2e3452;
+  border: 1px solid #2E2618;
   border-radius: 0.25rem;
-  background-color: #1a1b22;
+  background-color: #221C14;
   cursor: pointer;
   position: relative;
   vertical-align: middle;
 }
 .custom-checkbox:checked {
-  background-color: #6c8ef7;
-  border-color: #6c8ef7;
+  background-color: #E8A33D;
+  border-color: #E8A33D;
 }
 .custom-checkbox:checked::after {
   content: '\e5ca'; /* Material Symbol check icon */
   font-family: 'Material Symbols Outlined';
   position: absolute;
-  color: #0d0f14;
+  color: #0C0B09;
   font-size: 16px;
   font-weight: bold;
   top: 50%;
