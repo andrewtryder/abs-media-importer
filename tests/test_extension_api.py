@@ -109,15 +109,17 @@ def mocked_queue(monkeypatch):
         yield m
 
 
-def _seed_imported_video(video_id: str) -> None:
-    """Insert an imported video row directly into the sqlite test database."""
+def _db_path() -> Path:
     db_url = os.environ["DATABASE_URL"]
     prefix = "sqlite+aiosqlite:///"
     if not db_url.startswith(prefix):
         raise AssertionError(f"Unexpected DATABASE_URL in test: {db_url}")
-    db_path = Path(db_url.removeprefix(prefix))
+    return Path(db_url.removeprefix(prefix))
 
-    with sqlite3.connect(db_path) as conn:
+
+def _seed_imported_video(video_id: str) -> None:
+    """Insert an imported video row directly into the sqlite test database."""
+    with sqlite3.connect(_db_path()) as conn:
         conn.execute(
             """
             INSERT OR REPLACE INTO imported_videos (video_id, job_id, source_url, source_title)
@@ -126,6 +128,18 @@ def _seed_imported_video(video_id: str) -> None:
             (video_id, "existing-job", "https://www.youtube.com/watch?v=test123", "Old Title"),
         )
         conn.commit()
+
+
+def _mark_job_succeeded(job_id: str) -> None:
+    """Mark a job terminal so the WebSocket handler exits without polling."""
+    from app.db import get_sync_session_factory
+    from app.models import Job, JobStatus
+
+    with get_sync_session_factory()() as session:
+        job = session.get(Job, job_id)
+        assert job is not None
+        job.status = JobStatus.succeeded
+        session.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -437,6 +451,9 @@ def test_extension_websocket_accepts_query_token(
     )
     assert queue_response.status_code == 201
     job_id = queue_response.json()["job_id"]
+    # End the poll loop immediately so TestClient teardown cannot hang on a
+    # non-terminal job (the handler only exits on terminal status or cancel).
+    _mark_job_succeeded(job_id)
 
     with extension_enabled_client.websocket_connect(
         f"/api/ws/jobs/{job_id}?token=test-token-12345"
@@ -444,6 +461,7 @@ def test_extension_websocket_accepts_query_token(
         payload = websocket.receive_json()
         assert payload["type"] == "job_update"
         assert payload["job"]["id"] == job_id
+        assert payload["job"]["status"] == "succeeded"
 
 
 def test_extension_websocket_rejects_wrong_query_token(

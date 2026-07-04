@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import suppress
 
 from fastapi import APIRouter, HTTPException, WebSocket
 from fastapi.websockets import WebSocketDisconnect
@@ -18,6 +19,8 @@ from app.services.jobs import get_job
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/ws", tags=["websocket"])
+
+_POLL_INTERVAL_SECONDS = 5.0
 
 
 async def _websocket_endpoint(
@@ -81,14 +84,19 @@ async def _websocket_endpoint(
                 await websocket.send_json({"type": "job_update", "job": current_data})
                 break
 
-            await asyncio.sleep(5)
+            # Sleep is interruptible by task cancellation when the TestClient
+            # portal tears down. Avoid websocket.receive() here: Starlette's
+            # TestClient has a race between disconnect enqueue and receive wait
+            # that can hang CI indefinitely.
+            await asyncio.sleep(_POLL_INTERVAL_SECONDS)
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected for job %s", job_id)
     except Exception:
         logger.exception("Unexpected WebSocket error for job %s", job_id)
     finally:
-        await websocket.close(code=1000)
+        with suppress(Exception):
+            await websocket.close(code=1000)
 
 
 @router.websocket("/jobs/{job_id}")
