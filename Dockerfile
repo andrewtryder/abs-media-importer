@@ -46,8 +46,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Copy application code
 COPY app/ app/
 COPY worker/ worker/
-COPY alembic.ini .
-COPY alembic/ alembic/
 COPY pyproject.toml .
 
 # Register package metadata so importlib.metadata.version() works at runtime

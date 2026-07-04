@@ -52,12 +52,10 @@ def test_download_command_contains_no_playlist():
     assert "--no-playlist" in cmd
 
 
-def test_no_playlist_remains_when_allow_playlists_enabled():
-    """ALLOW_PLAYLISTS gates URL acceptance only; yt-dlp still uses --no-playlist.
+def test_single_video_commands_keep_no_playlist_flag():
+    """Single-video preview/download always pass --no-playlist.
 
-    Batch playlist/channel imports are not yet supported, so both the preview
-    and download commands must always suppress playlist expansion even when the
-    corresponding "allow URL" toggles are on.
+    Playlist/channel batch imports use a separate flat-playlist command path.
     """
     svc = make_svc(ALLOW_PLAYLISTS="true", ALLOW_CHANNELS="true")
     preview_cmd = svc.build_preview_command("https://youtu.be/abc123")
@@ -70,8 +68,8 @@ def test_no_playlist_remains_when_allow_playlists_enabled():
     assert "--no-playlist" in download_cmd
 
 
-def test_allow_playlist_channel_settings_labels_reflect_url_only_behavior():
-    """Registry labels/help text must not imply full playlist/channel batch import."""
+def test_allow_playlist_channel_settings_describe_batch_import():
+    """Registry help text describes selection-based batch import."""
     from app.settings_registry import SETTINGS_BY_KEY
 
     playlists = SETTINGS_BY_KEY["allow_playlists"]
@@ -80,8 +78,8 @@ def test_allow_playlist_channel_settings_labels_reflect_url_only_behavior():
     assert playlists.label == "Allow Playlist URLs"
     assert channels.label == "Allow Channel URLs"
     for spec in (playlists, channels):
-        assert "not yet supported" in spec.help_text
-        assert "full" in spec.help_text.lower()
+        assert "not yet supported" not in spec.help_text
+        assert "batch" in spec.help_text.lower()
 
 
 def test_download_command_audio_format():

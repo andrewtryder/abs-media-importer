@@ -111,32 +111,12 @@ Pre-commit hooks use the same Ruff version from `uv.lock` via `uv run --frozen`.
 
 ---
 
-## 6. Database migrations
+## 6. Database schema
 
-Schema changes are managed with [Alembic](https://alembic.sqlalchemy.org/). Migrations run automatically when the FastAPI app starts (`init_db()` in the application lifespan).
+Schema is derived from SQLAlchemy models in `app/models.py`. On startup, `init_db()` creates any missing tables and adds any missing columns. There is no separate migration tool.
 
-### Applying migrations manually
-
-```bash
-export DATABASE_URL=sqlite+aiosqlite:///./app.db
-uv run alembic upgrade head
-```
-
-### Creating a new migration
-
-After editing models in `app/models.py`:
-
-```bash
-export DATABASE_URL=sqlite+aiosqlite:///./app.db
-uv run alembic revision --autogenerate -m "describe your change"
-```
-
-Review the generated file under `alembic/versions/` before committing. Autogenerate can miss SQLite-specific nuances, so always inspect the diff.
-
-### Existing databases
-
-SQLite files created before Alembic was introduced are bootstrapped automatically on first startup: legacy column additions are applied, then the database is stamped at the current head revision.
+After changing models, restart the app. Existing rows are preserved; new columns are added with safe defaults when needed. Columns removed from models are left in place (SQLite does not drop them automatically).
 
 ### Worker-only startup
 
-The RQ worker does not run migrations. In Docker Compose the `app` service starts first and shares the same `./data` volume. For worker-only local setups, run the app once or execute `uv run alembic upgrade head` before starting the worker.
+The RQ worker does not initialize the schema. In Docker Compose the `app` service starts first and shares the same `./data` volume. For worker-only local setups, start the app once before the worker.

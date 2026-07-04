@@ -8,6 +8,9 @@ from app.models import Job
 
 
 def job_dict(job: Job) -> dict[str, Any]:
+    batch_title = None
+    if job.batch is not None:
+        batch_title = job.batch.title
     return {
         "id": job.id,
         "url": job.url,
@@ -34,6 +37,8 @@ def job_dict(job: Job) -> dict[str, Any]:
         "channel": job.channel,
         "channel_id": job.channel_id,
         "thumbnail_url": job.thumbnail_url,
+        "batch_id": job.batch_id,
+        "batch_title": batch_title,
         "rq_job_id": job.rq_job_id,
         "log_file_path": job.log_file_path,
         "created_at": job.created_at.isoformat() if job.created_at else None,

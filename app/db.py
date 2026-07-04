@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+import sys
 from collections.abc import AsyncGenerator
-from pathlib import Path
 
-from alembic import command
-from alembic.config import Config
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, inspect, text
 from sqlalchemy import create_engine as _sync_create_engine
-from sqlalchemy import inspect, text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -17,8 +16,12 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.sql.schema import Column
 
 from app.config import get_settings
+from app.models import Base
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Async engine (FastAPI app)
@@ -54,61 +57,81 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-def _alembic_config() -> Config:
-    """Return Alembic config pointing at the project alembic.ini."""
-    project_root = Path(__file__).resolve().parent.parent
-    return Config(str(project_root / "alembic.ini"))
+def _default_sql_for_column(column: Column[object]) -> str:
+    """Return a SQLite DEFAULT clause for additive columns on existing tables."""
+    default = column.default
+    if default is not None and getattr(default, "is_scalar", False):
+        value = getattr(default, "arg", None)
+        if isinstance(value, bool):
+            return f" DEFAULT {int(value)}"
+        if isinstance(value, int | float):
+            return f" DEFAULT {value}"
+        if isinstance(value, str):
+            escaped = value.replace("'", "''")
+            return f" DEFAULT '{escaped}'"
+
+    if column.nullable:
+        return ""
+
+    # NOT NULL columns need a default when added to a table that already has rows.
+    if isinstance(column.type, Boolean):
+        return " DEFAULT 0"
+    if isinstance(column.type, Integer):
+        return " DEFAULT 0"
+    if isinstance(column.type, DateTime):
+        return " DEFAULT CURRENT_TIMESTAMP"
+    if isinstance(column.type, String | Text):
+        return " DEFAULT ''"
+    return ""
 
 
-def _run_legacy_migrations(connection: Connection) -> None:
-    """Apply pre-Alembic column additions for very old databases."""
-    cursor = connection.execute(text("PRAGMA table_info(jobs)"))
-    cols = [row[1] for row in cursor.fetchall()]
+def _add_missing_columns(connection: Connection) -> None:
+    """Add model columns that are missing from existing tables.
 
-    new_cols = [
-        ("progress", "INTEGER"),
-        ("progress_percent", "FLOAT"),
-        ("progress_eta", "VARCHAR(32)"),
-        ("progress_speed", "VARCHAR(32)"),
-        ("progress_label", "VARCHAR(64)"),
-        ("output_file_size", "INTEGER"),
-    ]
-
-    for col_name, col_type in new_cols:
-        if col_name not in cols:
-            connection.execute(text(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}"))
-    if "allow_reimport" not in cols:
-        connection.execute(text("ALTER TABLE jobs ADD COLUMN allow_reimport BOOLEAN DEFAULT 0"))
-
-    cursor_attempts = connection.execute(text("PRAGMA table_info(job_attempts)"))
-    attempts_cols = [row[1] for row in cursor_attempts.fetchall()]
-
-    if "artifact_metadata" not in attempts_cols:
-        connection.execute(text("ALTER TABLE job_attempts ADD COLUMN artifact_metadata TEXT"))
-
-
-def _run_migrations(connection: Connection, cfg: Config) -> None:
-    """Run Alembic migrations, bootstrapping legacy databases when needed."""
+    ``create_all`` only creates missing tables; it does not alter existing ones.
+    """
     inspector = inspect(connection)
-    has_alembic_version = inspector.has_table("alembic_version")
-    has_jobs = inspector.has_table("jobs")
+    dialect = connection.dialect
+    for table in Base.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        existing = {col["name"] for col in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in existing:
+                continue
+            type_sql = column.type.compile(dialect=dialect)
+            default_sql = _default_sql_for_column(column)
+            connection.execute(
+                text(f"ALTER TABLE {table.name} ADD COLUMN {column.name} {type_sql}{default_sql}")
+            )
+            logger.info("Added column %s.%s", table.name, column.name)
 
-    if has_jobs and not has_alembic_version:
-        _run_legacy_migrations(connection)
-        command.stamp(cfg, "head")
-        return
 
-    cfg.attributes["connection"] = connection
-    command.upgrade(cfg, "head")
+def _drop_alembic_version(connection: Connection) -> None:
+    """Remove leftover Alembic bookkeeping from older installs."""
+    inspector = inspect(connection)
+    if inspector.has_table("alembic_version"):
+        connection.execute(text("DROP TABLE alembic_version"))
+        logger.info("Dropped obsolete alembic_version table")
+
+
+def _init_schema(connection: Connection) -> None:
+    """Create missing tables and columns from SQLAlchemy models."""
+    Base.metadata.create_all(bind=connection)
+    _add_missing_columns(connection)
+    _drop_alembic_version(connection)
 
 
 async def init_db() -> None:
-    """Apply Alembic migrations on startup."""
+    """Create or update the database schema from models."""
     engine = get_async_engine()
-    cfg = _alembic_config()
-
-    async with engine.begin() as conn:
-        await conn.run_sync(_run_migrations, cfg)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(_init_schema)
+    except Exception as exc:
+        print(f"Database schema init failed: {exc}", file=sys.stderr, flush=True)
+        logger.exception("Database schema init failed")
+        raise
 
 
 # ---------------------------------------------------------------------------

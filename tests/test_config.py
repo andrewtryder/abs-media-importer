@@ -13,11 +13,16 @@ from pydantic import ValidationError
 def test_defaults(monkeypatch: pytest.MonkeyPatch):
     """Default settings are set correctly."""
     monkeypatch.setenv("APP_SECRET_KEY", "test")
+    monkeypatch.delenv("ALLOW_PLAYLISTS", raising=False)
+    monkeypatch.delenv("ALLOW_CHANNELS", raising=False)
+    monkeypatch.delenv("MAX_PLAYLIST_ENTRIES", raising=False)
+    monkeypatch.delenv("DRY_RUN", raising=False)
     s = Settings()
     assert s.app_host == "0.0.0.0"
     assert s.app_port == 8080
     assert s.allow_playlists is False
     assert s.allow_channels is False
+    assert s.max_playlist_entries == 100
     assert s.dry_run is False
     assert s.retry_max == 3
     assert s.ytdlp_audio_format == "m4a"

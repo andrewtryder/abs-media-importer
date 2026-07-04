@@ -58,6 +58,111 @@ class VideoMetadata:
 
 
 @dataclass
+class PlaylistEntry:
+    """One video entry from a flat-playlist enumeration."""
+
+    id: str
+    title: str
+    url: str
+    duration: int | None = None
+    uploader: str | None = None
+    uploader_id: str | None = None
+    channel: str | None = None
+    channel_id: str | None = None
+    thumbnail: str | None = None
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> PlaylistEntry | None:
+        video_id = (data.get("id") or "").strip()
+        if not video_id:
+            return None
+        url = (data.get("url") or data.get("webpage_url") or "").strip()
+        if not url:
+            url = f"https://www.youtube.com/watch?v={video_id}"
+        elif not url.startswith("http"):
+            # Flat playlist entries sometimes return only the video id as url.
+            url = f"https://www.youtube.com/watch?v={video_id}"
+        duration = data.get("duration")
+        if duration is not None:
+            try:
+                duration = int(duration)
+            except (TypeError, ValueError):
+                duration = None
+        thumbnail = data.get("thumbnail")
+        if not thumbnail:
+            thumbnails = data.get("thumbnails") or []
+            if thumbnails and isinstance(thumbnails[-1], dict):
+                thumbnail = thumbnails[-1].get("url")
+        return cls(
+            id=video_id,
+            title=(data.get("title") or video_id).strip() or video_id,
+            url=url,
+            duration=duration,
+            uploader=data.get("uploader"),
+            uploader_id=data.get("uploader_id"),
+            channel=data.get("channel"),
+            channel_id=data.get("channel_id"),
+            thumbnail=thumbnail,
+        )
+
+
+@dataclass
+class PlaylistMetadata:
+    """Flat-playlist / channel listing returned by yt-dlp."""
+
+    id: str
+    title: str
+    source_type: str  # "playlist" | "channel"
+    webpage_url: str = ""
+    uploader: str | None = None
+    uploader_id: str | None = None
+    channel: str | None = None
+    channel_id: str | None = None
+    thumbnail: str | None = None
+    entries: list[PlaylistEntry] = field(default_factory=list)
+    truncated: bool = False
+
+    @property
+    def entry_count(self) -> int:
+        return len(self.entries)
+
+    @classmethod
+    def from_json(
+        cls,
+        data: dict[str, Any],
+        *,
+        source_type: str,
+        limit: int,
+    ) -> PlaylistMetadata:
+        raw_entries = data.get("entries") or []
+        truncated = len(raw_entries) > limit
+        entries: list[PlaylistEntry] = []
+        for item in raw_entries[:limit]:
+            if not isinstance(item, dict):
+                continue
+            entry = PlaylistEntry.from_json(item)
+            if entry is not None:
+                entries.append(entry)
+        thumbnails = data.get("thumbnails") or []
+        thumbnail = data.get("thumbnail")
+        if not thumbnail and thumbnails and isinstance(thumbnails[-1], dict):
+            thumbnail = thumbnails[-1].get("url")
+        return cls(
+            id=data.get("id") or "",
+            title=data.get("title") or data.get("channel") or "Untitled",
+            source_type=source_type,
+            webpage_url=data.get("webpage_url") or data.get("original_url") or "",
+            uploader=data.get("uploader"),
+            uploader_id=data.get("uploader_id"),
+            channel=data.get("channel"),
+            channel_id=data.get("channel_id"),
+            thumbnail=thumbnail,
+            entries=entries,
+            truncated=truncated,
+        )
+
+
+@dataclass
 class UrlValidationResult:
     valid: bool
     error: str | None = None
@@ -103,13 +208,13 @@ class YtDlpService:
             return UrlValidationResult(False, f"Domain '{host}' is not in the allowlist")
 
         # Detect playlist / channel patterns
-        if not self.settings.allow_playlists and _is_playlist_url(url):
+        if not self.settings.allow_playlists and is_playlist_url(url):
             return UrlValidationResult(
                 False,
                 "Playlist URLs are not allowed (ALLOW_PLAYLISTS=false). Paste a single video URL.",
             )
 
-        if not self.settings.allow_channels and _is_channel_url(url):
+        if not self.settings.allow_channels and is_channel_url(url):
             return UrlValidationResult(
                 False,
                 "Channel URLs are not allowed (ALLOW_CHANNELS=false). Paste a single video URL.",
@@ -152,6 +257,61 @@ class YtDlpService:
             raise ValueError(f"yt-dlp returned invalid JSON: {exc}") from exc
 
         return VideoMetadata.from_json(data)
+
+    # ── Playlist / channel enumeration ────────────────────────────────────────
+
+    def build_flat_playlist_command(self, url: str, limit: int) -> list[str]:
+        """Return the argument list for a capped flat-playlist listing.
+
+        Fetches ``limit + 1`` entries so callers can detect truncation without
+        paging the entire playlist or channel.
+        """
+        playlist_end = max(limit, 0) + 1
+        return [
+            self.settings.ytdlp_bin,
+            "--skip-download",
+            "--flat-playlist",
+            "--dump-single-json",
+            "--playlist-end",
+            str(playlist_end),
+            "--",
+            url,
+        ]
+
+    def run_playlist_preview(self, url: str, limit: int) -> PlaylistMetadata:
+        """
+        Enumerate videos in a playlist or channel URL (flat, metadata only).
+
+        Raises subprocess.CalledProcessError on failure.
+        Raises ValueError if JSON cannot be parsed or no entries are found.
+        """
+        if limit <= 0:
+            raise ValueError("Playlist entry limit must be greater than zero")
+
+        source_type = "channel" if is_channel_url(url) else "playlist"
+        cmd = self.build_flat_playlist_command(url, limit)
+        logger.debug("Playlist preview command: %s", cmd)
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"yt-dlp returned invalid JSON: {exc}") from exc
+
+        if not isinstance(data, dict):
+            raise ValueError("yt-dlp returned unexpected playlist payload")
+
+        meta = PlaylistMetadata.from_json(data, source_type=source_type, limit=limit)
+        if not meta.entries:
+            raise ValueError("No videos found in playlist or channel")
+        if not meta.webpage_url:
+            meta.webpage_url = url
+        return meta
 
     # ── Download ──────────────────────────────────────────────────────────────
 
@@ -271,11 +431,11 @@ _CHANNEL_PATTERNS = [
 ]
 
 
-def _is_playlist_url(url: str) -> bool:
+def is_playlist_url(url: str) -> bool:
     return any(p.search(url) for p in _PLAYLIST_PATTERNS)
 
 
-def _is_channel_url(url: str) -> bool:
+def is_channel_url(url: str) -> bool:
     return any(p.search(url) for p in _CHANNEL_PATTERNS)
 
 

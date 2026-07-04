@@ -33,7 +33,13 @@ def settings_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("DRY_RUN", raising=False)
     monkeypatch.delenv("ALLOW_PLAYLISTS", raising=False)
     monkeypatch.delenv("ALLOW_CHANNELS", raising=False)
+    monkeypatch.delenv("MAX_PLAYLIST_ENTRIES", raising=False)
     monkeypatch.delenv("ABS_SCAN_AFTER_SUCCESS", raising=False)
+    monkeypatch.delenv("YTDLP_EXTRA_ARGS", raising=False)
+    monkeypatch.delenv("FFMPEG_EXTRA_ARGS", raising=False)
+    monkeypatch.delenv("COLLISION_MODE", raising=False)
+    monkeypatch.delenv("FILENAME_TEMPLATE", raising=False)
+    monkeypatch.delenv("OUTPUT_EXTENSION", raising=False)
     monkeypatch.setattr(config_module, "_get_default_data_dir", lambda: data_dir)
     monkeypatch.setattr(config_module, "_parse_dotenv_keys", lambda: set())
     _reset_runtime_state()
@@ -106,6 +112,7 @@ def test_post_settings_valid(settings_env: Path, tmp_path: Path):
             "job_timeout_seconds": "7200",
             "retry_max": "2",
             "retry_interval_seconds": "30,120",
+            "max_playlist_entries": "50",
             "output_extension": "m4b",
             "filename_template": "{title}.m4b",
             "folder_name_field": "uploader_id",
@@ -126,6 +133,7 @@ def test_post_settings_valid(settings_env: Path, tmp_path: Path):
     assert settings.dry_run is True
     assert settings.collision_mode == "skip"
     assert settings.retry_max == 2
+    assert settings.max_playlist_entries == 50
 
 
 def test_post_settings_relative(settings_env: Path):
@@ -138,6 +146,7 @@ def test_post_settings_relative(settings_env: Path):
             "job_timeout_seconds": "10800",
             "retry_max": "3",
             "retry_interval_seconds": "60,300,900",
+            "max_playlist_entries": "100",
             "output_extension": "m4b",
             "filename_template": "{title}.m4b",
             "folder_name_field": "uploader_id",
@@ -161,6 +170,7 @@ def test_post_settings_non_writable(settings_env: Path):
             "job_timeout_seconds": "10800",
             "retry_max": "3",
             "retry_interval_seconds": "60,300,900",
+            "max_playlist_entries": "100",
             "output_extension": "m4b",
             "filename_template": "{title}.m4b",
             "folder_name_field": "uploader_id",
@@ -193,6 +203,7 @@ def test_extra_args_reject_shell_injection(settings_env: Path):
             "job_timeout_seconds": "10800",
             "retry_max": "3",
             "retry_interval_seconds": "60,300,900",
+            "max_playlist_entries": "100",
             "output_extension": "m4b",
             "filename_template": "{title}.m4b",
             "folder_name_field": "uploader_id",
