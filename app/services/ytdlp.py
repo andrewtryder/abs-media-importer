@@ -224,15 +224,34 @@ class YtDlpService:
 
     # ── Preview ───────────────────────────────────────────────────────────────
 
+    def _sanitize_command_url(self, url: str) -> str:
+        """Validate and normalize a user-provided URL before command execution."""
+        safe_url = (url or "").strip()
+        if not safe_url:
+            raise ValueError("URL is required")
+        if any(ch in safe_url for ch in ("\n", "\r", "\x00")):
+            raise ValueError("URL contains invalid control characters")
+
+        parsed = urlparse(safe_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("Only absolute http(s) URLs are allowed")
+
+        validation = self.validate_url(safe_url)
+        if not validation.valid:
+            raise ValueError(validation.error or "Invalid URL")
+
+        return safe_url
+
     def build_preview_command(self, url: str) -> list[str]:
         """Return the argument list for a metadata-only fetch."""
+        safe_url = self._sanitize_command_url(url)
         return [
             self.settings.ytdlp_bin,
             "--skip-download",
             "--dump-json",
             "--no-playlist",
             "--",
-            url,
+            safe_url,
         ]
 
     def run_preview(self, url: str) -> VideoMetadata:
@@ -266,6 +285,7 @@ class YtDlpService:
         Fetches ``limit + 1`` entries so callers can detect truncation without
         paging the entire playlist or channel.
         """
+        safe_url = self._sanitize_command_url(url)
         playlist_end = max(limit, 0) + 1
         return [
             self.settings.ytdlp_bin,
@@ -275,7 +295,7 @@ class YtDlpService:
             "--playlist-end",
             str(playlist_end),
             "--",
-            url,
+            safe_url,
         ]
 
     def run_playlist_preview(self, url: str, limit: int) -> PlaylistMetadata:
