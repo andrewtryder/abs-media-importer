@@ -64,7 +64,7 @@ def test_parse_absolute_file_path_rejects_relative_and_traversal(tmp_path: Path)
 
 def test_check_readable_file_warns_when_missing(tmp_path: Path):
     missing = tmp_path / "missing-cookies.txt"
-    error, warning = check_readable_file(missing)
+    error, warning = check_readable_file(missing.resolve())
     assert error is None
     assert warning is not None
     assert "does not exist" in warning
@@ -73,6 +73,6 @@ def test_check_readable_file_warns_when_missing(tmp_path: Path):
 def test_check_readable_file_passes_for_readable_file(tmp_path: Path):
     cookies = tmp_path / "cookies.txt"
     cookies.write_text("# Netscape HTTP Cookie File\n")
-    error, warning = check_readable_file(cookies)
+    error, warning = check_readable_file(cookies.resolve())
     assert error is None
     assert warning is None
