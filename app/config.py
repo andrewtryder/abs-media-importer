@@ -82,6 +82,7 @@ def _load_yaml() -> dict[str, Any]:
             "LOUDNESS_NORMALIZE": dl.get("loudness_normalize", None),
             "LOUDNESS_TARGET_LUFS": dl.get("loudness_target_lufs", None),
             "LOUDNESS_AUDIO_BITRATE": dl.get("loudness_audio_bitrate", None),
+            "SPONSORBLOCK_REMOVE": dl.get("sponsorblock_remove", None),
         }
     )
 
@@ -214,6 +215,7 @@ class Settings(BaseSettings):
     loudness_normalize: bool = Field(False, alias="LOUDNESS_NORMALIZE")
     loudness_target_lufs: str = Field("-16", alias="LOUDNESS_TARGET_LUFS")
     loudness_audio_bitrate: str = Field("192k", alias="LOUDNESS_AUDIO_BITRATE")
+    sponsorblock_remove: bool = Field(False, alias="SPONSORBLOCK_REMOVE")
 
     allowed_domains: Any = Field(
         default_factory=lambda: list(ALLOWED_DOMAINS_DEFAULT),

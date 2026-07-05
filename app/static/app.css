@@ -350,6 +350,18 @@ input:focus, select:focus, textarea:focus {
   transform: translate(-50%, -50%);
 }
 
+/* Import options: collapsible Advanced Controls */
+.advanced-controls {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+}
+.advanced-controls.open {
+  max-height: 3000px;
+  opacity: 1;
+}
+
 /* ── Mobile Responsive Improvements ────────────────────────────────── */
 
 @media (max-width: 640px) {

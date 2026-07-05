@@ -387,6 +387,7 @@ class YtDlpService:
         force_archive_bypass: bool = False,
         audio_format: str | None = None,
         audio_quality: str | None = None,
+        sponsorblock_remove: bool | None = None,
         cookies_file: Path | None = None,
         extra_args: list[str] | None = None,
     ) -> list[str]:
@@ -407,6 +408,9 @@ class YtDlpService:
         s = self.settings
         resolved_format = audio_format or s.ytdlp_audio_format
         resolved_quality = audio_quality if audio_quality is not None else s.ytdlp_audio_quality
+        resolved_sponsorblock = (
+            sponsorblock_remove if sponsorblock_remove is not None else s.sponsorblock_remove
+        )
         resolved_cookies = cookies_file if cookies_file is not None else s.cookies_file
         resolved_extra = extra_args if extra_args is not None else list(s.ytdlp_extra_args)
         cmd: list[str] = [
@@ -430,6 +434,9 @@ class YtDlpService:
 
         if embed_chapters:
             cmd.append("--embed-chapters")
+
+        if resolved_sponsorblock:
+            cmd += ["--sponsorblock-remove", "sponsor"]
 
         archive = s.archive_file
         if use_archive and not force_archive_bypass and archive:

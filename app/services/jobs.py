@@ -55,6 +55,7 @@ class JobSubmitParams:
     embed_chapters: bool = True
     trigger_abs_scan: bool = False
     allow_reimport: bool = False
+    sponsorblock_remove: bool | None = None
     validate_url: bool = True
     batch_id: str | None = None
     collision_mode: str | None = None
@@ -84,6 +85,7 @@ class BatchJobSubmitParams:
     embed_chapters: bool = True
     trigger_abs_scan: bool = False
     allow_reimport: bool = False
+    sponsorblock_remove: bool | None = None
     collision_mode: str | None = None
     audio_format: str | None = None
     audio_quality: str | None = None
@@ -211,6 +213,7 @@ async def submit_job(
         embed_chapters=params.embed_chapters,
         trigger_abs_scan=params.trigger_abs_scan,
         allow_reimport=params.allow_reimport,
+        sponsorblock_remove=params.sponsorblock_remove,
         batch_id=_or_none(params.batch_id),
         collision_mode=params.collision_mode,
         audio_format=params.audio_format,
@@ -292,6 +295,7 @@ async def submit_batch(
                 embed_chapters=params.embed_chapters,
                 trigger_abs_scan=params.trigger_abs_scan,
                 allow_reimport=params.allow_reimport,
+                sponsorblock_remove=params.sponsorblock_remove,
                 batch_id=batch.id,
                 collision_mode=params.collision_mode,
                 audio_format=params.audio_format,
@@ -355,6 +359,7 @@ async def create_job(
     embed_chapters: bool = True,
     trigger_abs_scan: bool = False,
     allow_reimport: bool = False,
+    sponsorblock_remove: bool | None = None,
     batch_id: str | None = None,
     collision_mode: str | None = None,
     audio_format: str | None = None,
@@ -399,6 +404,7 @@ async def create_job(
         embed_chapters=embed_chapters,
         trigger_abs_scan=trigger_abs_scan,
         allow_reimport=allow_reimport,
+        sponsorblock_remove=sponsorblock_remove,
         batch_id=batch_id,
         collision_mode=collision_mode or settings.collision_mode,
         audio_format=audio_format,

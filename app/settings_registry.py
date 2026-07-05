@@ -218,6 +218,15 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         help_text="AAC bitrate used when loudness normalization re-encodes audio.",
         validate=validate_audio_bitrate,
     ),
+    SettingSpec(
+        key="sponsorblock_remove",
+        env_alias="SPONSORBLOCK_REMOVE",
+        label="Skip Sponsor Segments (SponsorBlock)",
+        group="download",
+        type=SettingType.BOOL,
+        default="false",
+        help_text=("Remove sponsor segments from downloads using yt-dlp SponsorBlock integration."),
+    ),
     # ── Naming ───────────────────────────────────────────────────────────────
     SettingSpec(
         key="filename_template",
