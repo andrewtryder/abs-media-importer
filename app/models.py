@@ -161,6 +161,7 @@ class Job(Base):
     embed_chapters: Mapped[bool] = mapped_column(Boolean, default=True)
     trigger_abs_scan: Mapped[bool] = mapped_column(Boolean, default=False)
     allow_reimport: Mapped[bool] = mapped_column(Boolean, default=False)
+    sponsorblock_remove: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(

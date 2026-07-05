@@ -80,169 +80,210 @@
 {%- endif -%}
 {%- endmacro %}
 
-{% macro advanced_options_button(id_prefix) -%}
-<button
-  type="button"
-  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-colors"
-  data-advanced-open="{{ id_prefix }}-advanced-dialog"
->
-  <span class="material-symbols-outlined text-[16px]">tune</span>
-  Advanced Options
-</button>
-{%- endmacro %}
-
-{% macro advanced_import_dialog(settings, id_prefix='import') -%}
+{% macro import_options_panel(settings, id_prefix='import') -%}
 {%- set input_class = 'w-full bg-panel-raised border border-panel-line rounded-lg px-4 py-2.5 font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow' -%}
 {%- set label_class = 'font-label-md text-label-md text-paper-muted uppercase tracking-wider' -%}
+{%- set pill_btn = 'px-4 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-all cursor-pointer' -%}
 {%- set ytdlp_extra_placeholder = settings.ytdlp_extra_args | join(' ') if settings.ytdlp_extra_args is iterable and settings.ytdlp_extra_args is not string else (settings.ytdlp_extra_args or '') -%}
 {%- set ffmpeg_extra_placeholder = settings.ffmpeg_extra_args | join(' ') if settings.ffmpeg_extra_args is iterable and settings.ffmpeg_extra_args is not string else (settings.ffmpeg_extra_args or '') -%}
-<dialog
-  id="{{ id_prefix }}-advanced-dialog"
-  class="advanced-import-dialog bg-panel border border-panel-line rounded-xl p-stack-md panel-edge text-paper backdrop:bg-ink/70 max-w-lg w-[calc(100%-2rem)] open:fixed open:inset-0 open:z-50 open:m-auto open:max-h-[90vh] open:overflow-y-auto"
->
-  <div class="flex items-start justify-between gap-3 mb-stack-md">
-    <div>
-      <h3 class="font-headline-sm text-headline-sm text-paper uppercase tracking-wide">Advanced Options</h3>
-      <p class="font-body-md text-body-md text-paper-muted mt-1">Leave fields blank to use global Settings defaults.</p>
-    </div>
-    <button type="button" class="p-1 rounded-lg text-paper-muted hover:bg-panel-raised transition-colors" data-advanced-close aria-label="Close">
-      <span class="material-symbols-outlined text-[20px]">close</span>
+<div class="space-y-4" data-options-panel>
+  <div class="flex flex-wrap gap-2" role="group" aria-label="Import options mode">
+    <button
+      type="button"
+      class="{{ pill_btn }} mode-btn-active bg-amber-container/40 text-on-amber-container"
+      data-mode-btn="simple"
+    >
+      Simple
+    </button>
+    <button
+      type="button"
+      class="{{ pill_btn }}"
+      data-mode-btn="advanced"
+    >
+      Advanced
     </button>
   </div>
 
-  <div class="space-y-4">
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_audio_format" class="{{ label_class }}">Audio Format</label>
-      <select id="{{ id_prefix }}_audio_format" name="audio_format" class="{{ input_class }}">
-        <option value="">— Use global default ({{ settings.ytdlp_audio_format | e }}) —</option>
-        {% for fmt in ['m4a', 'mp3', 'opus', 'wav', 'flac', 'aac', 'vorbis', 'best'] %}
-        <option value="{{ fmt }}">{{ fmt }}</option>
-        {% endfor %}
-      </select>
+  <fieldset class="border border-panel-line/30 rounded-lg p-4 bg-panel-raised/50">
+    <legend class="font-label-md text-label-md text-amber uppercase tracking-wider px-2">Quick Options</legend>
+    <div class="space-y-3 mt-2">
+      <div class="flex items-center gap-3">
+        <input type="checkbox" name="embed_metadata" value="true" checked id="{{ id_prefix }}_embed_metadata" class="custom-checkbox" />
+        <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_embed_metadata">Embed tags &amp; details</label>
+      </div>
+      <div class="flex items-center gap-3">
+        <input type="checkbox" name="embed_thumbnail" value="true" checked id="{{ id_prefix }}_embed_thumbnail" class="custom-checkbox" />
+        <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_embed_thumbnail">Embed cover art / thumbnail</label>
+      </div>
+      <div class="flex items-center gap-3">
+        <input type="checkbox" name="embed_chapters" value="true" checked id="{{ id_prefix }}_embed_chapters" class="custom-checkbox" />
+        <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_embed_chapters">Embed video chapters</label>
+      </div>
+      <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
+        <input type="checkbox" name="sponsorblock_remove" value="true"
+          {% if settings.sponsorblock_remove %}checked{% endif %}
+          id="{{ id_prefix }}_sponsorblock_remove" class="custom-checkbox" />
+        <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_sponsorblock_remove">Skip sponsor segments (SponsorBlock)</label>
+      </div>
+      <div class="flex flex-col gap-2 border-t border-panel-line/30 pt-3 mt-2">
+        <span class="{{ label_class }}">Audio Quality</span>
+        {# Simple presets map to yt-dlp --audio-quality: Standard=128K, High=192K, Best=0 (best available) #}
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Audio quality preset">
+          <button type="button" class="{{ pill_btn }} mode-btn-active bg-amber-container/40 text-on-amber-container" data-quality-preset="128K">Standard</button>
+          <button type="button" class="{{ pill_btn }}" data-quality-preset="192K">High</button>
+          <button type="button" class="{{ pill_btn }}" data-quality-preset="0">Best</button>
+        </div>
+      </div>
+      {% if settings.abs_configured %}
+      <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
+        <input type="checkbox" name="trigger_abs_scan" value="true"
+          {% if settings.abs_scan_after_success %}checked{% endif %}
+          id="{{ id_prefix }}_trigger_abs_scan" class="custom-checkbox" />
+        <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_trigger_abs_scan">Trigger Audiobookshelf library scan after success</label>
+      </div>
+      {% endif %}
+      <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
+        <input type="checkbox" name="allow_reimport" value="true" id="{{ id_prefix }}_allow_reimport" class="custom-checkbox" />
+        <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_allow_reimport">Allow re-import (overwrite duplicate guard)</label>
+      </div>
     </div>
+  </fieldset>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_audio_quality" class="{{ label_class }}">Audio Quality</label>
-      <input
-        id="{{ id_prefix }}_audio_quality"
-        name="audio_quality"
-        type="text"
-        class="{{ input_class }}"
-        placeholder="{{ settings.ytdlp_audio_quality or 'best' | e }}"
-      />
-    </div>
+  <div class="advanced-controls" data-advanced-section aria-hidden="true">
+    <fieldset class="border border-panel-line/30 rounded-lg p-4 bg-panel-raised/50">
+      <legend class="font-label-md text-label-md text-amber uppercase tracking-wider px-2">Advanced Controls</legend>
+      <p class="font-body-md text-body-md text-paper-muted mt-2 mb-4">Leave fields blank to use global Settings defaults.</p>
+      <div class="space-y-4">
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_audio_format" class="{{ label_class }}">Audio Format</label>
+          <select id="{{ id_prefix }}_audio_format" name="audio_format" class="{{ input_class }}">
+            <option value="">— Use global default ({{ settings.ytdlp_audio_format | e }}) —</option>
+            {% for fmt in ['m4a', 'mp3', 'opus', 'wav', 'flac', 'aac', 'vorbis', 'best'] %}
+            <option value="{{ fmt }}">{{ fmt }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_loudness_normalize" class="{{ label_class }}">Loudness Normalization</label>
-      <select id="{{ id_prefix }}_loudness_normalize" name="loudness_normalize" class="{{ input_class }}">
-        <option value="">— Use global default ({{ 'enabled' if settings.loudness_normalize else 'disabled' }}) —</option>
-        <option value="true">Enabled</option>
-        <option value="false">Disabled</option>
-      </select>
-      <p class="font-label-md text-label-md text-paper-muted opacity-75">Re-encodes audio with ffmpeg loudnorm (EBU R128).</p>
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_audio_quality" class="{{ label_class }}">Precise Bitrate</label>
+          <input
+            id="{{ id_prefix }}_audio_quality"
+            name="audio_quality"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            value="128K"
+            data-audio-quality-input
+            placeholder="{{ settings.ytdlp_audio_quality or 'best' | e }}"
+          />
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_loudness_target_lufs" class="{{ label_class }}">Loudness Target (LUFS)</label>
-      <input
-        id="{{ id_prefix }}_loudness_target_lufs"
-        name="loudness_target_lufs"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ settings.loudness_target_lufs | e }}"
-      />
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_loudness_normalize" class="{{ label_class }}">Loudness Normalization</label>
+          <select id="{{ id_prefix }}_loudness_normalize" name="loudness_normalize" class="{{ input_class }}">
+            <option value="">— Use global default ({{ 'enabled' if settings.loudness_normalize else 'disabled' }}) —</option>
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+          </select>
+          <p class="font-label-md text-label-md text-paper-muted opacity-75">Re-encodes audio with ffmpeg loudnorm (EBU R128).</p>
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_loudness_audio_bitrate" class="{{ label_class }}">Loudness Re-encode Bitrate</label>
-      <input
-        id="{{ id_prefix }}_loudness_audio_bitrate"
-        name="loudness_audio_bitrate"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ settings.loudness_audio_bitrate | e }}"
-      />
-      <p class="font-label-md text-label-md text-paper-muted opacity-75">AAC bitrate when normalization is enabled.</p>
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_loudness_target_lufs" class="{{ label_class }}">Loudness Target (LUFS)</label>
+          <input
+            id="{{ id_prefix }}_loudness_target_lufs"
+            name="loudness_target_lufs"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ settings.loudness_target_lufs | e }}"
+          />
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_collision_mode" class="{{ label_class }}">Collision Mode</label>
-      <select id="{{ id_prefix }}_collision_mode" name="collision_mode" class="{{ input_class }}">
-        <option value="">— Use global default ({{ settings.collision_mode | e }}) —</option>
-        {% for choice in COLLISION_CHOICES %}
-        <option value="{{ choice | e }}">{{ choice | e }}</option>
-        {% endfor %}
-      </select>
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_loudness_audio_bitrate" class="{{ label_class }}">Loudness Re-encode Bitrate</label>
+          <input
+            id="{{ id_prefix }}_loudness_audio_bitrate"
+            name="loudness_audio_bitrate"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ settings.loudness_audio_bitrate | e }}"
+          />
+          <p class="font-label-md text-label-md text-paper-muted opacity-75">AAC bitrate when normalization is enabled.</p>
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_output_extension" class="{{ label_class }}">Output Extension</label>
-      <input
-        id="{{ id_prefix }}_output_extension"
-        name="output_extension"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ settings.output_extension | e }}"
-      />
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_collision_mode" class="{{ label_class }}">Collision Mode</label>
+          <select id="{{ id_prefix }}_collision_mode" name="collision_mode" class="{{ input_class }}">
+            <option value="">— Use global default ({{ settings.collision_mode | e }}) —</option>
+            {% for choice in COLLISION_CHOICES %}
+            <option value="{{ choice | e }}">{{ choice | e }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_filename_template" class="{{ label_class }}">Filename Template</label>
-      <input
-        id="{{ id_prefix }}_filename_template"
-        name="filename_template"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ settings.filename_template | e }}"
-      />
-      <p class="font-label-md text-label-md text-paper-muted opacity-75">Placeholders: {title}, {video_id}, {uploader}, {channel}, {upload_date}</p>
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_output_extension" class="{{ label_class }}">Output Extension</label>
+          <input
+            id="{{ id_prefix }}_output_extension"
+            name="output_extension"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ settings.output_extension | e }}"
+          />
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_ytdlp_extra_args" class="{{ label_class }}">yt-dlp Extra Arguments</label>
-      <input
-        id="{{ id_prefix }}_ytdlp_extra_args"
-        name="ytdlp_extra_args"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ ytdlp_extra_placeholder | e }}"
-      />
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_filename_template" class="{{ label_class }}">Filename Template</label>
+          <input
+            id="{{ id_prefix }}_filename_template"
+            name="filename_template"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ settings.filename_template | e }}"
+          />
+          <p class="font-label-md text-label-md text-paper-muted opacity-75">Placeholders: {title}, {video_id}, {uploader}, {channel}, {upload_date}</p>
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_ffmpeg_extra_args" class="{{ label_class }}">ffmpeg Extra Arguments</label>
-      <input
-        id="{{ id_prefix }}_ffmpeg_extra_args"
-        name="ffmpeg_extra_args"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ ffmpeg_extra_placeholder | e }}"
-      />
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_ytdlp_extra_args" class="{{ label_class }}">yt-dlp Extra Arguments</label>
+          <input
+            id="{{ id_prefix }}_ytdlp_extra_args"
+            name="ytdlp_extra_args"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ ytdlp_extra_placeholder | e }}"
+          />
+        </div>
 
-    <div class="flex flex-col gap-2">
-      <label for="{{ id_prefix }}_cookies_file" class="{{ label_class }}">Cookies File Override</label>
-      <input
-        id="{{ id_prefix }}_cookies_file"
-        name="cookies_file"
-        type="text"
-        class="{{ input_class }} font-code text-code"
-        placeholder="{{ settings.cookies_file or '' | e }}"
-      />
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_ffmpeg_extra_args" class="{{ label_class }}">ffmpeg Extra Arguments</label>
+          <input
+            id="{{ id_prefix }}_ffmpeg_extra_args"
+            name="ffmpeg_extra_args"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ ffmpeg_extra_placeholder | e }}"
+          />
+        </div>
 
-    <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3">
-      <input type="checkbox" name="dry_run" value="true" id="{{ id_prefix }}_dry_run" class="custom-checkbox" />
-      <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_dry_run">
-        Dry run for this job only
-      </label>
-    </div>
+        <div class="flex flex-col gap-2">
+          <label for="{{ id_prefix }}_cookies_file" class="{{ label_class }}">Cookies File Override</label>
+          <input
+            id="{{ id_prefix }}_cookies_file"
+            name="cookies_file"
+            type="text"
+            class="{{ input_class }} font-code text-code"
+            placeholder="{{ settings.cookies_file or '' | e }}"
+          />
+        </div>
+
+        <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3">
+          <input type="checkbox" name="dry_run" value="true" id="{{ id_prefix }}_dry_run" class="custom-checkbox" />
+          <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_dry_run">
+            Dry run for this job only
+          </label>
+        </div>
+      </div>
+    </fieldset>
   </div>
-
-  <div class="flex justify-end gap-2 mt-stack-md pt-4 border-t border-panel-line/30">
-    <button type="button" class="px-4 py-2 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-colors" data-advanced-close>
-      Done
-    </button>
-  </div>
-</dialog>
+</div>
 {%- endmacro %}

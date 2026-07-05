@@ -277,6 +277,7 @@ async def page_create_job(
     embed_chapters: bool = Form(True),
     trigger_abs_scan: bool = Form(False),
     allow_reimport: bool = Form(False),
+    sponsorblock_remove: bool = Form(False),
     collision_mode: str = Form(""),
     audio_format: str = Form(""),
     audio_quality: str = Form(""),
@@ -340,6 +341,7 @@ async def page_create_job(
         embed_chapters=embed_chapters,
         trigger_abs_scan=trigger_abs_scan,
         allow_reimport=allow_reimport,
+        sponsorblock_remove=sponsorblock_remove,
         **advanced,  # type: ignore[arg-type]
     )
     try:
@@ -449,6 +451,7 @@ async def page_create_batch(
         embed_chapters=_bool_field("embed_chapters", True),
         trigger_abs_scan=_bool_field("trigger_abs_scan", False),
         allow_reimport=_bool_field("allow_reimport", False),
+        sponsorblock_remove=_bool_field("sponsorblock_remove", False),
         **advanced,  # type: ignore[arg-type]
     )
 

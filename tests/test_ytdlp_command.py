@@ -114,6 +114,50 @@ def test_download_command_embed_flags_off():
     assert "--embed-chapters" not in cmd
 
 
+def test_download_command_sponsorblock_default_disabled():
+    svc = make_svc()
+    cmd = svc.build_download_command(
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
+    )
+    assert "--sponsorblock-remove" not in cmd
+
+
+def test_download_command_sponsorblock_enabled_via_setting():
+    svc = make_svc(SPONSORBLOCK_REMOVE="true")
+    cmd = svc.build_download_command(
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
+    )
+    assert "--sponsorblock-remove" in cmd
+    idx = cmd.index("--sponsorblock-remove")
+    assert cmd[idx + 1] == "sponsor"
+
+
+def test_download_command_sponsorblock_per_job_override():
+    svc = make_svc(SPONSORBLOCK_REMOVE="true")
+    cmd = svc.build_download_command(
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
+        sponsorblock_remove=False,
+    )
+    assert "--sponsorblock-remove" not in cmd
+
+    svc_disabled = make_svc(SPONSORBLOCK_REMOVE="false")
+    cmd_enabled = svc_disabled.build_download_command(
+        "https://youtu.be/abc123",
+        "job-1",
+        "/tmp/out/%(title)s.%(ext)s",
+        sponsorblock_remove=True,
+    )
+    assert "--sponsorblock-remove" in cmd_enabled
+    idx = cmd_enabled.index("--sponsorblock-remove")
+    assert cmd_enabled[idx + 1] == "sponsor"
+
+
 def test_download_command_archive(tmp_path: Path):
     archive = tmp_path / "archive.txt"
     svc = make_svc(ARCHIVE_FILE=str(archive))

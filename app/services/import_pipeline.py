@@ -274,6 +274,7 @@ class ImportPipeline:
                     embed_chapters=job.embed_chapters,
                     audio_format=eff_audio_format,
                     audio_quality=eff_audio_quality,
+                    sponsorblock_remove=job.sponsorblock_remove,
                     cookies_file=eff_cookies,
                     extra_args=eff_ytdlp_extra,
                 )
@@ -369,6 +370,7 @@ class ImportPipeline:
                 force_archive_bypass=bool(job.allow_reimport),
                 audio_format=eff_audio_format,
                 audio_quality=eff_audio_quality,
+                sponsorblock_remove=job.sponsorblock_remove,
                 cookies_file=eff_cookies,
                 extra_args=eff_ytdlp_extra,
             )
