@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import shlex
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -89,6 +90,15 @@ class ImportPipeline:
     _M_COMPLETE = 100.0
 
     _THROTTLE_INTERVAL = 1.0  # seconds between DB writes during streaming phases
+
+    @staticmethod
+    def _split_extra_args(raw: str | None) -> list[str] | None:
+        if raw is None:
+            return None
+        stripped = raw.strip()
+        if not stripped:
+            return []
+        return shlex.split(stripped)
 
     def __init__(self, db: Session, settings: Settings, job_id: str) -> None:
         self.db = db
@@ -208,10 +218,34 @@ class ImportPipeline:
 
             try:
                 output_path = fs.resolve_output_path(
-                    dest_folder, output_title, video_id, job.collision_mode
+                    dest_folder,
+                    output_title,
+                    video_id,
+                    job.collision_mode,
+                    extension=job.output_extension,
+                    filename_template=job.filename_template,
+                    uploader=job.uploader,
+                    channel=job.channel,
+                    upload_date=job.upload_date,
                 )
             except ValueError as exc:
                 raise PipelineFailedError(f"Invalid output path: {exc}") from exc
+
+            eff_dry_run = self.settings.dry_run or job.dry_run
+            eff_ytdlp_extra = self._split_extra_args(job.ytdlp_extra_args)
+            eff_ffmpeg_extra = self._split_extra_args(job.ffmpeg_extra_args)
+            eff_cookies = Path(job.cookies_file) if job.cookies_file else None
+            eff_audio_format = job.audio_format
+            eff_audio_quality = job.audio_quality
+            eff_loudness_normalize = (
+                job.loudness_normalize
+                if job.loudness_normalize is not None
+                else self.settings.loudness_normalize
+            )
+            eff_loudness_target = job.loudness_target_lufs or self.settings.loudness_target_lufs
+            eff_loudness_bitrate = (
+                job.loudness_audio_bitrate or self.settings.loudness_audio_bitrate
+            )
 
             # Stage conversion inside the job work directory so scanners never
             # see partial .m4b files in the Audiobookshelf-facing output root.
@@ -222,12 +256,13 @@ class ImportPipeline:
             log(f"[setup] Staged output path: {staged_path}")
             log(f"[setup] Final temp (commit) sibling: {final_temp_path}")
             log(f"URL: {job.url}")
-            log(f"DRY_RUN: {self.settings.dry_run}")
+            log(f"DRY_RUN: {eff_dry_run}")
+            log(f"LOUDNESS_NORMALIZE: {eff_loudness_normalize}")
 
             self._set_progress(job, percent=2.0, label="Setup complete", eta="", speed="")
 
             # ── DRY RUN Mode ──────────────────────────────────────────────────
-            if self.settings.dry_run:
+            if eff_dry_run:
                 log("--- DRY RUN: building commands only ---")
                 dl_template = ytdlp_svc.get_output_template(self.job_id)
                 dl_cmd = ytdlp_svc.build_download_command(
@@ -237,6 +272,10 @@ class ImportPipeline:
                     embed_metadata=job.embed_metadata,
                     embed_thumbnail=job.embed_thumbnail,
                     embed_chapters=job.embed_chapters,
+                    audio_format=eff_audio_format,
+                    audio_quality=eff_audio_quality,
+                    cookies_file=eff_cookies,
+                    extra_args=eff_ytdlp_extra,
                 )
                 log(f"[download] yt-dlp command: {' '.join(dl_cmd)}")
 
@@ -244,8 +283,22 @@ class ImportPipeline:
                 # In real runs ffmpeg writes to staged_path; commit later moves
                 # that file into output_path. Show both commands here so the
                 # dry-run log reflects the staged-output flow.
-                cmd_p = ffmpeg_svc.build_remux_command(fake_m4a, staged_path)
-                cmd_f = ffmpeg_svc.build_remux_command_fallback(fake_m4a, staged_path)
+                cmd_p = ffmpeg_svc.build_remux_command(
+                    fake_m4a,
+                    staged_path,
+                    extra_args=eff_ffmpeg_extra,
+                    loudness_normalize=eff_loudness_normalize,
+                    loudness_target_lufs=eff_loudness_target,
+                    audio_bitrate=eff_loudness_bitrate,
+                )
+                cmd_f = ffmpeg_svc.build_remux_command_fallback(
+                    fake_m4a,
+                    staged_path,
+                    extra_args=eff_ffmpeg_extra,
+                    loudness_normalize=eff_loudness_normalize,
+                    loudness_target_lufs=eff_loudness_target,
+                    audio_bitrate=eff_loudness_bitrate,
+                )
                 log(f"[convert] ffmpeg primary (staged): {' '.join(cmd_p)}")
                 log(f"[convert] ffmpeg fallback (staged): {' '.join(cmd_f)}")
                 log(f"[commit] Would copy {staged_path} -> {final_temp_path} -> {output_path}")
@@ -314,6 +367,10 @@ class ImportPipeline:
                 embed_thumbnail=job.embed_thumbnail,
                 embed_chapters=job.embed_chapters,
                 force_archive_bypass=bool(job.allow_reimport),
+                audio_format=eff_audio_format,
+                audio_quality=eff_audio_quality,
+                cookies_file=eff_cookies,
+                extra_args=eff_ytdlp_extra,
             )
 
             # Ensure archive parent dir exists
@@ -378,7 +435,7 @@ class ImportPipeline:
             # Wrap in DownloadArtifact
             dl_artifact = DownloadArtifact(
                 path=downloaded_file,
-                format=self.settings.ytdlp_audio_format,
+                format=eff_audio_format or self.settings.ytdlp_audio_format,
                 filesize=downloaded_file.stat().st_size,
                 title=job.source_title,
                 uploader=job.uploader,
@@ -473,6 +530,10 @@ class ImportPipeline:
                 log_fh,
                 check_cancelled=check_cancelled,
                 on_progress=_on_ffmpeg_progress,
+                extra_args=eff_ffmpeg_extra,
+                loudness_normalize=eff_loudness_normalize,
+                loudness_target_lufs=eff_loudness_target,
+                audio_bitrate=eff_loudness_bitrate,
             )
 
             if not remux_result.success:

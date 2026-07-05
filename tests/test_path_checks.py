@@ -6,7 +6,7 @@ import os
 import stat
 from pathlib import Path
 
-from app.path_checks import check_writable_directory
+from app.path_checks import check_readable_file, check_writable_directory, parse_absolute_file_path
 
 
 def test_writable_directory_passes(tmp_path: Path):
@@ -53,3 +53,34 @@ def test_file_path_fails(tmp_path: Path):
     error = check_writable_directory(file_path, create=False)
     assert error is not None
     assert "bind mount is not available yet" in error
+
+
+def test_parse_absolute_file_path_rejects_relative_and_traversal(tmp_path: Path):
+    assert parse_absolute_file_path(str(tmp_path / "cookies.txt")) is not None
+    assert parse_absolute_file_path("relative/cookies.txt") is None
+    assert parse_absolute_file_path(str(tmp_path / ".." / "escape.txt")) is None
+    assert parse_absolute_file_path("cookies.txt\0") is None
+
+
+def test_parse_absolute_file_path_rejects_dotdot_segments(tmp_path: Path):
+    nested = tmp_path / "config" / "cookies.txt"
+    nested.parent.mkdir()
+    assert (
+        parse_absolute_file_path(str(tmp_path / "config" / ".." / "config" / "cookies.txt")) is None
+    )
+
+
+def test_check_readable_file_warns_when_missing(tmp_path: Path):
+    missing = tmp_path / "missing-cookies.txt"
+    error, warning = check_readable_file(missing.resolve())
+    assert error is None
+    assert warning is not None
+    assert "does not exist" in warning
+
+
+def test_check_readable_file_passes_for_readable_file(tmp_path: Path):
+    cookies = tmp_path / "cookies.txt"
+    cookies.write_text("# Netscape HTTP Cookie File\n")
+    error, warning = check_readable_file(cookies.resolve())
+    assert error is None
+    assert warning is None

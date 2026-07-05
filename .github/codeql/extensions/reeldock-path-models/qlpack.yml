@@ -1,0 +1,7 @@
+name: reeldock/path-models
+version: 0.0.1
+library: true
+extensionTargets:
+  codeql/python-all: "*"
+dataExtensions:
+  - path-sanitizers.model.yml

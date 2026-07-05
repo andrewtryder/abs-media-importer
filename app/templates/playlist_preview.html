@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import advanced_import_dialog, advanced_options_button %}
 {% block title %}Preview: {{ meta.title | e }} — reeldock{% endblock %}
 
 {% block content %}
@@ -16,7 +17,7 @@
   </header>
 
   <div class="max-w-5xl mx-auto px-container-padding py-stack-lg">
-    <p class="font-body-md text-body-md text-on-surface-variant mb-stack-lg section-entrance section-entrance-1">
+    <p class="font-body-md text-body-md text-paper-muted mb-stack-lg section-entrance section-entrance-1">
       Select videos to import, then configure shared audiobook options for the batch.
     </p>
 
@@ -39,14 +40,14 @@
       <!-- Left: entry checklist -->
       <div class="md:col-span-7 flex flex-col gap-stack-md">
         <div class="preview-card section-entrance section-entrance-2 bg-panel border border-panel-line rounded-xl p-stack-md panel-edge flex flex-col gap-4">
-          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-outline-variant/30 pb-3">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-panel-line/30 pb-3">
             <div class="min-w-0">
-              <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">
+              <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">
                 {{ meta.source_type | title }}
               </span>
               <h2 class="font-headline-sm text-headline-sm text-paper truncate">{{ meta.title | e }}</h2>
               {% if meta.uploader or meta.channel %}
-              <p class="font-body-md text-body-md text-on-surface-variant mt-1">
+              <p class="font-body-md text-body-md text-paper-muted mt-1">
                 {{ (meta.uploader or meta.channel) | e }}
               </p>
               {% endif %}
@@ -62,20 +63,20 @@
           </div>
 
           <div class="flex justify-between items-center">
-            <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Videos</span>
-            <span id="selection-count" class="font-code text-code text-primary">
+            <span class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Videos</span>
+            <span id="selection-count" class="font-code text-code text-amber">
               {{ meta.entry_count }} / {{ meta.entry_count }} selected
             </span>
           </div>
 
-          <div class="max-h-[28rem] overflow-y-auto custom-scrollbar border border-outline-variant/30 rounded-lg divide-y divide-outline-variant/30">
+          <div class="max-h-[28rem] overflow-y-auto custom-scrollbar border border-panel-line/30 rounded-lg divide-y divide-panel-line/30">
             {% for entry in meta.entries %}
             <label class="flex items-start gap-3 p-3 hover:bg-panel-raised/60 cursor-pointer transition-colors">
               <input
                 type="checkbox"
                 name="selected"
                 value="{{ entry.id | e }}"
-                class="entry-select mt-1 h-4 w-4 accent-primary cursor-pointer"
+                class="entry-select mt-1 h-4 w-4 accent-amber cursor-pointer"
                 checked
               />
               {% if entry.thumbnail %}
@@ -91,10 +92,10 @@
               </div>
               {% endif %}
               <div class="min-w-0 flex-1">
-                <span class="font-body-md text-body-md text-on-surface font-semibold block truncate">
+                <span class="font-body-md text-body-md text-paper font-semibold block truncate">
                   {{ entry.title | e }}
                 </span>
-                <span class="font-code text-code text-on-surface-variant">
+                <span class="font-code text-code text-paper-muted">
                   {{ entry.duration | duration }}
                   {% if entry.uploader %} · {{ entry.uploader | e }}{% endif %}
                 </span>
@@ -116,18 +117,21 @@
       <!-- Right: shared options -->
       <div class="md:col-span-5">
         <div class="preview-card section-entrance section-entrance-3 bg-panel border border-panel-line rounded-xl p-stack-md panel-edge sticky top-4">
-          <h2 class="font-headline-sm text-headline-sm text-paper mb-6 flex items-center gap-2 uppercase tracking-wide">
-            <span class="material-symbols-outlined text-amber">tune</span>
-            Configure Batch
-          </h2>
+          <div class="flex items-center justify-between gap-3 mb-6">
+            <h2 class="font-headline-sm text-headline-sm text-paper flex items-center gap-2 uppercase tracking-wide">
+              <span class="material-symbols-outlined text-amber">tune</span>
+              Configure Batch
+            </h2>
+            {{ advanced_options_button('batch') }}
+          </div>
 
           <div class="space-y-6">
             <div class="flex flex-col gap-2">
-              <label for="destination_folder" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Destination Folder</label>
+              <label for="destination_folder" class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Destination Folder</label>
               <select
                 id="destination_folder"
                 name="destination_folder"
-                class="w-full bg-surface-container-low border border-outline rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none input-focus-glow"
+                class="w-full bg-panel-raised border border-panel-line rounded-lg px-4 py-2.5 font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow"
               >
                 <option value="">— Select folder —</option>
                 {% for folder in folders %}
@@ -138,31 +142,31 @@
                 >{{ folder | e }}</option>
                 {% endfor %}
               </select>
-              <p class="font-label-md text-label-md text-on-surface-variant opacity-70">
+              <p class="font-label-md text-label-md text-paper-muted opacity-70">
                 Applied to every selected video under
-                <code class="font-code text-code text-primary">{{ settings.output_root }}</code>
+                <code class="font-code text-code text-amber">{{ settings.output_root }}</code>
               </p>
             </div>
 
             <div class="flex flex-col gap-2">
-              <label for="new_folder" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+              <label for="new_folder" class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">
                 Or Create New Folder
               </label>
               <div class="relative flex items-center">
-                <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">create_new_folder</span>
+                <span class="material-symbols-outlined absolute left-3 text-paper-muted text-[18px]">create_new_folder</span>
                 <input
                   id="new_folder"
                   name="new_folder"
                   type="text"
-                  class="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline rounded-lg font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none input-focus-glow"
+                  class="w-full pl-10 pr-4 py-2.5 bg-panel-raised border border-panel-line rounded-lg font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow"
                   placeholder="e.g. @mychannelname"
                   value="{{ (meta.uploader_id or meta.channel or '') | e }}"
                 />
               </div>
             </div>
 
-            <fieldset class="border border-outline-variant/30 rounded-lg p-4 bg-surface-container-low/50">
-              <legend class="font-label-md text-label-md text-primary uppercase tracking-wider px-2">Embed Options</legend>
+            <fieldset class="border border-panel-line/30 rounded-lg p-4 bg-panel-raised/50">
+              <legend class="font-label-md text-label-md text-amber uppercase tracking-wider px-2">Embed Options</legend>
               <div class="space-y-3 mt-2">
                 <div class="flex items-center gap-3">
                   <input type="checkbox" name="embed_metadata" value="true" checked id="embed_metadata" class="custom-checkbox" />
@@ -177,23 +181,25 @@
                   <label class="font-body-md text-body-md cursor-pointer select-none" for="embed_chapters">Embed video chapters</label>
                 </div>
                 {% if settings.abs_configured %}
-                <div class="flex items-center gap-3 border-t border-outline-variant/30 pt-3 mt-2">
+                <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
                   <input type="checkbox" name="trigger_abs_scan" value="true"
                     {% if settings.abs_scan_after_success %}checked{% endif %}
                     id="trigger_abs_scan" class="custom-checkbox" />
                   <label class="font-body-md text-body-md cursor-pointer select-none" for="trigger_abs_scan">Trigger Audiobookshelf library scan after success</label>
                 </div>
                 {% endif %}
-                <div class="flex items-center gap-3 border-t border-outline-variant/30 pt-3 mt-2">
+                <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
                   <input type="checkbox" name="allow_reimport" value="true" id="allow_reimport" class="custom-checkbox" />
                   <label class="font-body-md text-body-md cursor-pointer select-none" for="allow_reimport">Allow re-import (overwrite duplicate guard)</label>
                 </div>
               </div>
             </fieldset>
 
+            {{ advanced_import_dialog(settings, 'batch') }}
+
             <p id="batch-form-error" class="hidden text-body-md text-error"></p>
 
-            <button type="submit" class="w-full flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md font-bold uppercase tracking-wide hover:brightness-110 transition-all active:scale-95 cursor-pointer" id="create-batch-btn">
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-8 py-3 bg-amber-container text-on-amber-container rounded-lg font-label-md text-label-md font-bold uppercase tracking-wide hover:brightness-110 transition-all active:scale-95 cursor-pointer" id="create-batch-btn">
               <span class="material-symbols-outlined">playlist_play</span>
               Queue Selected
             </button>
@@ -205,6 +211,23 @@
 </main>
 
 <script>
+  document.querySelectorAll('[data-advanced-open]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const dialog = document.getElementById(btn.getAttribute('data-advanced-open'));
+      if (dialog && typeof dialog.showModal === 'function') {
+        dialog.showModal();
+      }
+    });
+  });
+  document.querySelectorAll('[data-advanced-close]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const dialog = btn.closest('dialog');
+      if (dialog) {
+        dialog.close();
+      }
+    });
+  });
+
   (() => {
     const form = document.getElementById('batch-import-form');
     const checkboxes = Array.from(document.querySelectorAll('.entry-select'));

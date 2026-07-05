@@ -55,10 +55,11 @@ def _seed_job(job_id: str, status: str) -> None:
                 embed_chapters,
                 trigger_abs_scan,
                 allow_reimport,
+                dry_run,
                 status,
                 attempts
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 job_id,
@@ -67,6 +68,7 @@ def _seed_job(job_id: str, status: str) -> None:
                 1,
                 1,
                 1,
+                0,
                 0,
                 0,
                 status,

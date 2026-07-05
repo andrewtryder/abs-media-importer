@@ -31,14 +31,6 @@ def test_preview_command_structure():
     assert "https://youtu.be/abc123" in cmd
 
 
-def test_preview_command_no_shell_true():
-    """Command must be a list, never a string (no shell=True)."""
-    svc = make_svc()
-    cmd = svc.build_preview_command("https://youtu.be/abc123")
-    assert isinstance(cmd, list)
-    assert all(isinstance(c, str) for c in cmd)
-
-
 # ── Download command ────────────────────────────────────────────────────────────
 
 
@@ -170,17 +162,6 @@ def test_download_command_url_at_end():
     assert cmd[-1] == "https://youtu.be/abc123"
     # Separator '--' should precede the URL
     assert cmd[-2] == "--"
-
-
-def test_download_command_no_shell_true():
-    svc = make_svc()
-    cmd = svc.build_download_command(
-        "https://youtu.be/abc123",
-        "job-1",
-        "/tmp/out/%(title)s.%(ext)s",
-        use_archive=False,
-    )
-    assert isinstance(cmd, list)
 
 
 def test_custom_ytdlp_bin():

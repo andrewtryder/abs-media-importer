@@ -43,13 +43,6 @@ def test_primary_command_structure(tmp_path: Path):
     assert str(output_f) == cmd[-1]
 
 
-def test_primary_command_no_shell_true(tmp_path: Path):
-    svc = make_svc()
-    cmd = svc.build_remux_command(tmp_path / "a.m4a", tmp_path / "b.m4b")
-    assert isinstance(cmd, list)
-    assert all(isinstance(c, str) for c in cmd)
-
-
 # ── Fallback command ──────────────────────────────────────────────────────────
 
 
@@ -62,11 +55,6 @@ def test_fallback_command_no_video_map(tmp_path: Path):
     assert "-map_metadata" in cmd
     assert "-map_chapters" in cmd
     assert "ipod" in cmd
-
-
-def test_fallback_command_no_shell_true(tmp_path: Path):
-    cmd = make_svc().build_remux_command_fallback(tmp_path / "a.m4a", tmp_path / "b.m4b")
-    assert isinstance(cmd, list)
 
 
 # ── Extra args ────────────────────────────────────────────────────────────────
@@ -347,3 +335,40 @@ def test_progress_command_insertion_order(tmp_path: Path):
     prog_idx = cmd.index("-progress")
     input_idx = cmd.index("-i")
     assert prog_idx < input_idx
+
+
+def test_primary_command_uses_copy_when_loudness_disabled(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command(tmp_path / "a.m4a", tmp_path / "b.m4b")
+    assert "-c" in cmd and "copy" in cmd
+    assert "loudnorm" not in " ".join(cmd)
+
+
+def test_primary_command_applies_loudnorm_when_enabled(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command(
+        tmp_path / "a.m4a",
+        tmp_path / "b.m4b",
+        loudness_normalize=True,
+        loudness_target_lufs="-18",
+        audio_bitrate="160k",
+    )
+    joined = " ".join(cmd)
+    assert "loudnorm=I=-18:TP=-1.5:LRA=11" in joined
+    assert "-c:a" in cmd and "aac" in cmd
+    assert "-b:a" in cmd and "160k" in cmd
+    assert "-c:v" in cmd and "copy" in cmd
+    assert "-c copy" not in " ".join(cmd)
+
+
+def test_fallback_command_applies_loudnorm_without_video_copy(tmp_path: Path):
+    svc = make_svc()
+    cmd = svc.build_remux_command_fallback(
+        tmp_path / "a.m4a",
+        tmp_path / "b.m4b",
+        loudness_normalize=True,
+    )
+    joined = " ".join(cmd)
+    assert "loudnorm" in joined
+    assert "-c:v" not in cmd
+    assert "-c:a" in cmd and "aac" in cmd

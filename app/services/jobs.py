@@ -57,6 +57,18 @@ class JobSubmitParams:
     allow_reimport: bool = False
     validate_url: bool = True
     batch_id: str | None = None
+    collision_mode: str | None = None
+    audio_format: str | None = None
+    audio_quality: str | None = None
+    output_extension: str | None = None
+    filename_template: str | None = None
+    ytdlp_extra_args: str | None = None
+    ffmpeg_extra_args: str | None = None
+    cookies_file: str | None = None
+    dry_run: bool = False
+    loudness_normalize: bool | None = None
+    loudness_target_lufs: str | None = None
+    loudness_audio_bitrate: str | None = None
 
 
 @dataclass
@@ -72,6 +84,18 @@ class BatchJobSubmitParams:
     embed_chapters: bool = True
     trigger_abs_scan: bool = False
     allow_reimport: bool = False
+    collision_mode: str | None = None
+    audio_format: str | None = None
+    audio_quality: str | None = None
+    output_extension: str | None = None
+    filename_template: str | None = None
+    ytdlp_extra_args: str | None = None
+    ffmpeg_extra_args: str | None = None
+    cookies_file: str | None = None
+    dry_run: bool = False
+    loudness_normalize: bool | None = None
+    loudness_target_lufs: str | None = None
+    loudness_audio_bitrate: str | None = None
 
 
 @dataclass
@@ -188,6 +212,18 @@ async def submit_job(
         trigger_abs_scan=params.trigger_abs_scan,
         allow_reimport=params.allow_reimport,
         batch_id=_or_none(params.batch_id),
+        collision_mode=params.collision_mode,
+        audio_format=params.audio_format,
+        audio_quality=params.audio_quality,
+        output_extension=params.output_extension,
+        filename_template=params.filename_template,
+        ytdlp_extra_args=params.ytdlp_extra_args,
+        ffmpeg_extra_args=params.ffmpeg_extra_args,
+        cookies_file=params.cookies_file,
+        dry_run=params.dry_run,
+        loudness_normalize=params.loudness_normalize,
+        loudness_target_lufs=params.loudness_target_lufs,
+        loudness_audio_bitrate=params.loudness_audio_bitrate,
     )
 
     rq_id = enqueue_job_task(job.id)
@@ -257,6 +293,18 @@ async def submit_batch(
                 trigger_abs_scan=params.trigger_abs_scan,
                 allow_reimport=params.allow_reimport,
                 batch_id=batch.id,
+                collision_mode=params.collision_mode,
+                audio_format=params.audio_format,
+                audio_quality=params.audio_quality,
+                output_extension=params.output_extension,
+                filename_template=params.filename_template,
+                ytdlp_extra_args=params.ytdlp_extra_args,
+                ffmpeg_extra_args=params.ffmpeg_extra_args,
+                cookies_file=params.cookies_file,
+                dry_run=params.dry_run,
+                loudness_normalize=params.loudness_normalize,
+                loudness_target_lufs=params.loudness_target_lufs,
+                loudness_audio_bitrate=params.loudness_audio_bitrate,
             )
         except DuplicateVideoError:
             result.skipped_duplicate += 1
@@ -308,6 +356,18 @@ async def create_job(
     trigger_abs_scan: bool = False,
     allow_reimport: bool = False,
     batch_id: str | None = None,
+    collision_mode: str | None = None,
+    audio_format: str | None = None,
+    audio_quality: str | None = None,
+    output_extension: str | None = None,
+    filename_template: str | None = None,
+    ytdlp_extra_args: str | None = None,
+    ffmpeg_extra_args: str | None = None,
+    cookies_file: str | None = None,
+    dry_run: bool = False,
+    loudness_normalize: bool | None = None,
+    loudness_target_lufs: str | None = None,
+    loudness_audio_bitrate: str | None = None,
 ) -> Job:
     """Persist a new Job record and return it."""
     normalized_video_id = (video_id or "").strip() or None
@@ -340,7 +400,18 @@ async def create_job(
         trigger_abs_scan=trigger_abs_scan,
         allow_reimport=allow_reimport,
         batch_id=batch_id,
-        collision_mode=settings.collision_mode,
+        collision_mode=collision_mode or settings.collision_mode,
+        audio_format=audio_format,
+        audio_quality=audio_quality,
+        output_extension=output_extension,
+        filename_template=filename_template,
+        ytdlp_extra_args=ytdlp_extra_args,
+        ffmpeg_extra_args=ffmpeg_extra_args,
+        cookies_file=cookies_file,
+        dry_run=dry_run,
+        loudness_normalize=loudness_normalize,
+        loudness_target_lufs=loudness_target_lufs,
+        loudness_audio_bitrate=loudness_audio_bitrate,
         status=JobStatus.queued,
         attempts=0,
         created_at=_utcnow(),

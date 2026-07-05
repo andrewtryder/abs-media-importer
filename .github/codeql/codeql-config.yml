@@ -1,0 +1,7 @@
+# CodeQL configuration for ReelDock.
+#
+# Optional cookies paths are validated in app.path_checks.parse_absolute_file_path
+# (absolute path, no traversal, normpath + anchor prefix) before filesystem probes.
+# The barrierModel extension tells CodeQL that return values are safe for path ops.
+
+name: "reeldock-codeql-config"

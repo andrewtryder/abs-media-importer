@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import badge, vu_meter %}
+{% from "_macros.html" import badge, vu_meter, job_status_indicator %}
 {% block title %}Jobs — reeldock{% endblock %}
 
 {% block content %}
@@ -94,7 +94,7 @@
           Delete selected
           <span id="bulk-delete-count" class="font-code text-code">(0)</span>
         </button>
-        <a href="/" class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-headline-sm text-body-md flex items-center gap-2 hover:brightness-110 transition-all">
+        <a href="/" class="bg-amber-container text-on-amber-container px-4 py-2 rounded-lg font-headline-sm text-body-md flex items-center gap-2 hover:brightness-110 transition-all">
           <span class="material-symbols-outlined text-[16px]">add</span>
           New Import
         </a>
@@ -103,31 +103,31 @@
 
     <!-- Table Card -->
     {% if not items %}
-    <div class="jobs-empty-state section-entrance section-entrance-3 bg-surface-container border border-outline rounded-xl p-12 text-center flex flex-col items-center gap-4">
-      <span class="material-symbols-outlined text-[48px] text-primary/80 opacity-90">hourglass_empty</span>
-      <h3 class="font-headline-sm text-headline-sm text-on-surface">No import jobs found</h3>
-      <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">You haven't queued any audiobooks yet. Paste a YouTube URL on the import tab to get started.</p>
-      <a href="/" class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg font-headline-sm text-body-md hover:brightness-110 transition-all">Import a Video</a>
+    <div class="jobs-empty-state section-entrance section-entrance-3 bg-panel border border-panel-line rounded-xl p-12 text-center flex flex-col items-center gap-4">
+      <span class="material-symbols-outlined text-[48px] text-amber/80 opacity-90">hourglass_empty</span>
+      <h3 class="font-headline-sm text-headline-sm text-paper">No import jobs found</h3>
+      <p class="font-body-md text-body-md text-paper-muted max-w-sm">You haven't queued any audiobooks yet. Paste a YouTube URL on the import tab to get started.</p>
+      <a href="/" class="bg-amber-container text-on-amber-container px-6 py-2.5 rounded-lg font-headline-sm text-body-md hover:brightness-110 transition-all">Import a Video</a>
     </div>
     {% else %}
-    <div class="section-entrance section-entrance-3 bg-surface-container border border-outline rounded-xl overflow-hidden shadow-xl">
+    <div class="section-entrance section-entrance-3 bg-panel border border-panel-line rounded-xl overflow-hidden shadow-xl">
       <div class="overflow-x-auto custom-scrollbar jobs-table-scroll">
         <table class="jobs-table-responsive w-full text-left border-collapse" id="jobs-table">
           <thead>
-            <tr class="bg-surface-container-high/50 border-b border-outline-variant">
+            <tr class="bg-panel-raised/50 border-b border-panel-line">
               <th class="px-4 py-4 w-12">
                 <input
                   id="jobs-select-all"
                   type="checkbox"
-                  class="h-4 w-4 accent-primary cursor-pointer"
+                  class="h-4 w-4 accent-amber cursor-pointer"
                   title="Select all visible jobs"
                 />
               </th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Video Title</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Destination</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Status</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Created</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-paper-muted uppercase tracking-wider">Video Title</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-paper-muted uppercase tracking-wider">Destination</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-paper-muted uppercase tracking-wider">Status</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-paper-muted uppercase tracking-wider">Created</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-paper-muted uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant">
@@ -136,7 +136,7 @@
               {% set batch = item.batch %}
               {% set batch_open = highlight_batch == batch.id %}
               <tr
-                class="batch-header-row job-row-lift hover:bg-surface-container-high/40 transition-colors cursor-pointer {% if batch_open %}bg-amber-container/10{% endif %}"
+                class="batch-header-row job-row-lift hover:bg-panel-raised/40 transition-colors cursor-pointer {% if batch_open %}bg-amber-container/10{% endif %}"
                 data-batch-id="{{ batch.id }}"
                 data-kind="batch"
                 data-status="{% if item.active_count %}running{% elif item.queued_count %}queued{% else %}completed{% endif %}"
@@ -151,17 +151,17 @@
                       {% if batch.source_type == 'channel' %}podcasts{% else %}playlist_play{% endif %}
                     </span>
                     <div class="min-w-0">
-                      <span class="font-body-md text-on-surface font-semibold block truncate">
+                      <span class="font-body-md text-paper font-semibold block truncate">
                         {{ (batch.title or batch.source_type | title) | e }}
                       </span>
-                      <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">
+                      <span class="font-label-md text-label-md text-paper-muted opacity-75 block mt-0.5 truncate">
                         {{ batch.source_type | title }} · {{ item.succeeded_count }}/{{ item.total_count }} succeeded
                         {% if item.failed_count %} · {{ item.failed_count }} failed{% endif %}
                       </span>
                     </div>
                   </div>
                 </td>
-                <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
+                <td data-label="Destination" class="px-6 py-4 font-code text-code text-paper-muted truncate max-w-[150px]">
                   {% if item.jobs and item.jobs[0].destination_folder %}
                     {{ item.jobs[0].destination_folder | e }}
                   {% else %}
@@ -182,16 +182,16 @@
                     {{ vu_meter(percent=item.progress_percent, segments=10, compact=true) }}
                   </div>
                 </td>
-                <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
+                <td data-label="Created" class="px-6 py-4 font-code text-code text-paper-muted">
                   {{ batch.created_at.strftime('%m-%d %H:%M') if batch.created_at else '—' }}
                 </td>
                 <td data-label="Actions" class="px-6 py-4 text-right">
-                  <span class="font-label-md text-label-md text-on-surface-variant uppercase">{{ item.total_count }} jobs</span>
+                  <span class="font-label-md text-label-md text-paper-muted uppercase">{{ item.total_count }} jobs</span>
                 </td>
               </tr>
               {% for job in item.jobs %}
               <tr
-                class="job-row batch-child-row job-row-lift hover:bg-surface-container-high/40 transition-colors {% if not batch_open %}hidden{% endif %}"
+                class="job-row batch-child-row job-row-lift hover:bg-panel-raised/40 transition-colors {% if not batch_open %}hidden{% endif %}"
                 data-status="{{ job.status.value }}"
                 data-job-id="{{ job.id }}"
                 data-batch-id="{{ batch.id }}"
@@ -200,43 +200,33 @@
                 <td class="px-4 py-4 pl-8">
                   <input
                     type="checkbox"
-                    class="job-select h-4 w-4 accent-primary cursor-pointer"
+                    class="job-select h-4 w-4 accent-amber cursor-pointer"
                     value="{{ job.id }}"
                     aria-label="Select job {{ job.id }}"
                   />
                 </td>
                 <td data-label="Video Title" class="px-6 py-4 max-w-xs sm:max-w-sm truncate pl-8">
-                  <a href="/jobs/{{ job.id }}" class="font-body-md text-on-surface font-semibold hover:text-primary transition-colors block truncate">
+                  <a href="/jobs/{{ job.id }}" class="font-body-md text-paper font-semibold hover:text-amber transition-colors block truncate">
                     {{ (job.output_title or job.source_title or job.url) | e }}
                   </a>
                   {% if job.uploader %}
-                  <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
+                  <span class="font-label-md text-label-md text-paper-muted opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
                   {% endif %}
                 </td>
-                <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
+                <td data-label="Destination" class="px-6 py-4 font-code text-code text-paper-muted truncate max-w-[150px]">
                   {{ job.destination_folder | default('—') | e }}
                 </td>
                 <td data-label="Status" class="px-6 py-4">
                   <div class="flex flex-col gap-1.5">
-                    {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-                    {{ badge(job.status.value, variant='info', reel=true) }}
-                    {% set row_pct = job.progress_percent or job.progress or 0 %}
-                    {{ vu_meter(percent=row_pct, segments=10, compact=true) }}
-                    {% elif job.status.value == 'succeeded' %}
-                    {{ badge('completed', variant='success', icon='check_circle') }}
-                    {% elif job.status.value in ['failed', 'cancelled'] %}
-                    {{ badge(job.status.value, variant='error', icon='error') }}
-                    {% else %}
-                    {{ badge(job.status.value, variant='neutral', icon='schedule') }}
-                    {% endif %}
+                    {{ job_status_indicator(job) }}
                   </div>
                 </td>
-                <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
+                <td data-label="Created" class="px-6 py-4 font-code text-code text-paper-muted">
                   {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
                 </td>
                 <td data-label="Actions" class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-2">
-                    <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-all hover:text-on-surface flex items-center justify-center" title="View details">
+                    <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-panel-raised text-paper-muted transition-all hover:text-paper flex items-center justify-center" title="View details">
                       <span class="material-symbols-outlined text-[18px]">description</span>
                     </a>
                   </div>
@@ -245,47 +235,37 @@
               {% endfor %}
               {% elif item.job %}
               {% set job = item.job %}
-              <tr class="job-row job-row-lift hover:bg-surface-container-high/40 transition-colors" data-status="{{ job.status.value }}" data-job-id="{{ job.id }}" data-kind="job">
+              <tr class="job-row job-row-lift hover:bg-panel-raised/40 transition-colors" data-status="{{ job.status.value }}" data-job-id="{{ job.id }}" data-kind="job">
                 <td class="px-4 py-4">
                   <input
                     type="checkbox"
-                    class="job-select h-4 w-4 accent-primary cursor-pointer"
+                    class="job-select h-4 w-4 accent-amber cursor-pointer"
                     value="{{ job.id }}"
                     aria-label="Select job {{ job.id }}"
                   />
                 </td>
                 <td data-label="Video Title" class="px-6 py-4 max-w-xs sm:max-w-sm truncate">
-                  <a href="/jobs/{{ job.id }}" class="font-body-md text-on-surface font-semibold hover:text-primary transition-colors block truncate">
+                  <a href="/jobs/{{ job.id }}" class="font-body-md text-paper font-semibold hover:text-amber transition-colors block truncate">
                     {{ (job.output_title or job.source_title or job.url) | e }}
                   </a>
                   {% if job.uploader %}
-                  <span class="font-label-md text-label-md text-on-surface-variant opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
+                  <span class="font-label-md text-label-md text-paper-muted opacity-75 block mt-0.5 truncate">{{ job.uploader | e }}</span>
                   {% endif %}
                 </td>
-                <td data-label="Destination" class="px-6 py-4 font-code text-code text-on-surface-variant truncate max-w-[150px]">
+                <td data-label="Destination" class="px-6 py-4 font-code text-code text-paper-muted truncate max-w-[150px]">
                   {{ job.destination_folder | default('—') | e }}
                 </td>
                 <td data-label="Status" class="px-6 py-4">
                   <div class="flex flex-col gap-1.5">
-                    {% if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] %}
-                    {{ badge(job.status.value, variant='info', reel=true) }}
-                    {% set row_pct = job.progress_percent or job.progress or 0 %}
-                    {{ vu_meter(percent=row_pct, segments=10, compact=true) }}
-                    {% elif job.status.value == 'succeeded' %}
-                    {{ badge('completed', variant='success', icon='check_circle') }}
-                    {% elif job.status.value in ['failed', 'cancelled'] %}
-                    {{ badge(job.status.value, variant='error', icon='error') }}
-                    {% else %}
-                    {{ badge(job.status.value, variant='neutral', icon='schedule') }}
-                    {% endif %}
+                    {{ job_status_indicator(job) }}
                   </div>
                 </td>
-                <td data-label="Created" class="px-6 py-4 font-code text-code text-on-surface-variant">
+                <td data-label="Created" class="px-6 py-4 font-code text-code text-paper-muted">
                   {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
                 </td>
                 <td data-label="Actions" class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-2">
-                    <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant transition-all hover:text-on-surface flex items-center justify-center" title="View details">
+                    <a href="/jobs/{{ job.id }}" class="p-2 rounded-lg hover:bg-panel-raised text-paper-muted transition-all hover:text-paper flex items-center justify-center" title="View details">
                       <span class="material-symbols-outlined text-[18px]">description</span>
                     </a>
                   </div>

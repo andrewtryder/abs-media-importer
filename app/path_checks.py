@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import errno
+import os
 from pathlib import Path
+
+ValidationResult = tuple[str | None, str | None]
 
 
 def _format_os_error(path: Path, exc: OSError, *, create: bool) -> str:
@@ -35,3 +38,28 @@ def check_writable_directory(path: Path, *, create: bool = True) -> str | None:
         return _format_os_error(path, exc, create=create)
 
     return None
+
+
+def parse_absolute_file_path(value: str) -> Path | None:
+    """Parse *value* as an absolute path without touching the filesystem."""
+    stripped = value.strip()
+    if not stripped or "\0" in stripped:
+        return None
+    path = Path(stripped)
+    if not path.is_absolute() or ".." in path.parts:
+        return None
+    normalized = os.path.normpath(str(path))
+    if not normalized.startswith(path.anchor):
+        return None
+    return Path(normalized)
+
+
+def check_readable_file(path: Path) -> ValidationResult:
+    """Return (error, warning) for a structurally validated absolute file path."""
+    if not path.exists():
+        return None, "File does not exist yet; yt-dlp will fail until it is created."
+    if not path.is_file():
+        return "Path must point to a file.", None
+    if not os.access(path, os.R_OK):
+        return "File is not readable.", None
+    return None, None

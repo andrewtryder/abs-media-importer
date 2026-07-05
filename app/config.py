@@ -79,6 +79,9 @@ def _load_yaml() -> dict[str, Any]:
             "COLLISION_MODE": dl.get("collision_mode", None),
             "COOKIES_FILE": dl.get("cookies_file", None),
             "ALLOWED_DOMAINS": dl.get("allowed_domains", None),
+            "LOUDNESS_NORMALIZE": dl.get("loudness_normalize", None),
+            "LOUDNESS_TARGET_LUFS": dl.get("loudness_target_lufs", None),
+            "LOUDNESS_AUDIO_BITRATE": dl.get("loudness_audio_bitrate", None),
         }
     )
 
@@ -208,6 +211,10 @@ class Settings(BaseSettings):
     )
     collision_mode: str = Field("append_id", alias="COLLISION_MODE")
 
+    loudness_normalize: bool = Field(False, alias="LOUDNESS_NORMALIZE")
+    loudness_target_lufs: str = Field("-16", alias="LOUDNESS_TARGET_LUFS")
+    loudness_audio_bitrate: str = Field("192k", alias="LOUDNESS_AUDIO_BITRATE")
+
     allowed_domains: Any = Field(
         default_factory=lambda: list(ALLOWED_DOMAINS_DEFAULT),
         alias="ALLOWED_DOMAINS",
@@ -266,9 +273,10 @@ class Settings(BaseSettings):
     @field_validator("collision_mode")
     @classmethod
     def validate_collision_mode(cls, v: str) -> str:
-        valid = {"skip", "overwrite", "append_id", "append_counter"}
-        if v not in valid:
-            raise ValueError(f"collision_mode must be one of {valid}")
+        from app.settings_registry import COLLISION_CHOICES
+
+        if v not in COLLISION_CHOICES:
+            raise ValueError(f"collision_mode must be one of {COLLISION_CHOICES}")
         return v
 
     @field_validator("extension_api_token", mode="before")

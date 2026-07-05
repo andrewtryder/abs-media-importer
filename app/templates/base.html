@@ -150,7 +150,7 @@
     }
   </script>
 </head>
-<body class="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container flex min-h-screen overflow-x-hidden">
+<body class="bg-background text-on-background font-body-md selection:bg-amber-container selection:text-on-amber-container flex min-h-screen overflow-x-hidden">
   <header class="md:hidden fixed inset-x-0 top-0 h-14 z-40 bg-panel/95 backdrop-blur border-b border-panel-line">
     <div class="h-full px-container-padding flex items-center justify-between">
       <a class="flex items-center gap-3 min-w-0" href="/">
@@ -231,18 +231,18 @@
     {% block content %}{% endblock %}
 
     <!-- Footer Implementation -->
-    <footer class="relative bg-surface-dim dark:bg-surface-dim w-full py-stack-md">
-      <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-outline-variant/80 to-transparent"></div>
+    <footer class="relative bg-ink w-full py-stack-md">
+      <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-panel-line/80 to-transparent"></div>
       <div class="px-container-padding">
         <div class="mx-auto w-full max-w-5xl">
           <div class="flex flex-col gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-4">
-            <div class="inline-flex items-center gap-2 font-label-md text-label-md font-semibold text-on-surface">
+            <div class="inline-flex items-center gap-2 font-label-md text-label-md font-semibold text-paper">
               <img src="/static/favicon.svg" alt="reeldock" class="h-4 w-4 rounded-[4px] shrink-0" />
               <span>reeldock {{ app_ui_version }}</span>
             </div>
             <div class="flex flex-wrap items-center gap-5 md:justify-center">
               <a
-                class="inline-flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant hover:text-secondary-fixed dark:hover:text-secondary-fixed transition-colors duration-200"
+                class="inline-flex items-center gap-1.5 font-label-md text-label-md text-paper-muted hover:text-paper transition-colors duration-200"
                 href="https://github.com/andrewtryder/reeldock/tree/main/docs"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -251,7 +251,7 @@
                 <span>Documentation</span>
               </a>
               <a
-                class="inline-flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant hover:text-secondary-fixed dark:hover:text-secondary-fixed transition-colors duration-200"
+                class="inline-flex items-center gap-1.5 font-label-md text-label-md text-paper-muted hover:text-paper transition-colors duration-200"
                 href="https://github.com/andrewtryder/reeldock"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -262,7 +262,7 @@
                 <span>GitHub</span>
               </a>
             </div>
-            <div class="font-label-md text-label-md text-on-surface-variant opacity-60 md:text-right">
+            <div class="font-label-md text-label-md text-paper-muted opacity-60 md:text-right">
               © 2026 reeldock project
             </div>
           </div>

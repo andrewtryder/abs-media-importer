@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import spec_tag %}
+{% from "_macros.html" import spec_tag, badge, job_status_indicator %}
 {% block title %}Import — reeldock{% endblock %}
 
 {% block content %}
@@ -53,7 +53,9 @@
                   </button>
                 </div>
               </div>
-              <p id="url-warning" class="hidden validation-warning text-body-md text-paper-muted"></p>
+              <div id="url-warning" class="hidden">
+                {% call badge(variant='warning', icon='warning') %}<span id="url-warning-text"></span>{% endcall %}
+              </div>
             </div>
             <p class="text-paper-muted font-body-md text-body-md">
               Paste a single video URL, or a playlist/channel URL when enabled.
@@ -67,6 +69,46 @@
       </div>
     </section>
 
+    {% if recent_jobs %}
+    <section class="w-full section-entrance section-entrance-3">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <h2 class="font-headline-sm text-headline-sm text-paper uppercase tracking-wide">Recent Imports</h2>
+        <a href="/jobs" class="font-label-md text-label-md text-amber hover:underline uppercase">View all</a>
+      </div>
+      <div class="bg-panel border border-panel-line rounded-xl overflow-hidden panel-edge divide-y divide-panel-line">
+        {% for job in recent_jobs %}
+        <a href="/jobs/{{ job.id }}" class="flex items-center gap-4 p-4 hover:bg-panel-raised/60 transition-colors group">
+          {% if job.thumbnail_url %}
+          <img
+            src="{{ job.thumbnail_url | e }}"
+            alt=""
+            class="w-16 h-10 object-cover rounded border border-panel-line shrink-0 bg-panel-raised"
+            loading="lazy"
+          />
+          {% else %}
+          <div class="w-16 h-10 rounded border border-panel-line shrink-0 bg-panel-raised flex items-center justify-center">
+            <span class="material-symbols-outlined text-paper-muted text-[18px]">movie</span>
+          </div>
+          {% endif %}
+          <div class="min-w-0 flex-1">
+            <span class="font-body-md text-body-md text-paper font-semibold block truncate group-hover:text-amber transition-colors">
+              {{ (job.output_title or job.source_title or job.url) | e }}
+            </span>
+            {% if job.destination_folder %}
+            <span class="font-label-md text-label-md text-paper-muted block truncate mt-0.5">{{ job.destination_folder | e }}</span>
+            {% endif %}
+          </div>
+          <div class="hidden sm:flex flex-col items-end gap-1.5 shrink-0 min-w-[120px]">
+            {{ job_status_indicator(job) }}
+          </div>
+          <span class="font-code text-code text-paper-muted shrink-0 hidden md:block">
+            {{ job.created_at.strftime('%m-%d %H:%M') if job.created_at else '—' }}
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
     <!-- Info Grid (spec-plate cards) -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-gutter w-full section-entrance section-entrance-3">
       <div class="bg-panel border border-panel-line rounded-xl p-stack-md hover:border-amber/40 transition-colors group cursor-default feature-card-lift panel-edge">
@@ -106,6 +148,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
   </div>
 </main>
 
@@ -114,6 +157,7 @@
     const urlForm = document.querySelector(".url-form");
     const urlInput = document.getElementById("url");
     const warning = document.getElementById("url-warning");
+    const warningText = document.getElementById("url-warning-text");
     const pasteBtn = document.getElementById("paste-btn");
     const previewBtn = document.getElementById("preview-btn");
     const allowPlaylists = {{ 'true' if settings.allow_playlists else 'false' }};
@@ -121,20 +165,18 @@
 
     const REEL_SVG = `<svg class="reel-spinner inline-block shrink-0 animate-spin-slow" width="16" height="11" viewBox="0 0 36 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="12" r="6"/><circle cx="28" cy="12" r="6"/><line x1="14" y1="12" x2="22" y2="12"/><line x1="8" y1="7" x2="8" y2="10"/><line x1="8" y1="14" x2="8" y2="17"/><line x1="4" y1="12" x2="7" y2="12"/><line x1="9" y1="12" x2="12" y2="12"/><line x1="28" y1="7" x2="28" y2="10"/><line x1="28" y1="14" x2="28" y2="17"/><line x1="24" y1="12" x2="27" y2="12"/><line x1="29" y1="12" x2="32" y2="12"/></svg>`;
 
-    if (!urlForm || !urlInput || !warning || !previewBtn) {
+    if (!urlForm || !urlInput || !warning || !warningText || !previewBtn) {
       return;
     }
 
     const showWarning = (message) => {
-      warning.textContent = message;
+      warningText.textContent = message;
       warning.classList.remove("hidden");
-      warning.classList.add("validation-warning-visible");
     };
 
     const clearWarning = () => {
-      warning.textContent = "";
+      warningText.textContent = "";
       warning.classList.add("hidden");
-      warning.classList.remove("validation-warning-visible");
     };
 
     const getUrlWarning = (value) => {

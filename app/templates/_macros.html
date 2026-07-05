@@ -1,6 +1,6 @@
 {% macro badge(text='', variant='neutral', icon=None, icon_class='', reel=false) -%}
 {%- set variants = {
-  'neutral': 'bg-surface-container-highest text-on-surface-variant border-outline-variant',
+  'neutral': 'bg-panel-raised text-paper-muted border-panel-line',
   'info': 'bg-amber-container/50 text-on-amber-container border-amber/30',
   'success': 'bg-success-container/40 text-on-success-container border-success/30',
   'warning': 'bg-warning-container/40 text-on-warning-container border-warning/30',
@@ -65,4 +65,184 @@
 
 {% macro spec_tag(text) -%}
 <span class="inline-flex items-center px-2 py-0.5 font-code text-code text-paper-muted border border-panel-line rounded tracking-wider uppercase">{{ text }}</span>
+{%- endmacro %}
+
+{% macro job_status_indicator(job, segments=10) -%}
+{%- if job.status.value in ['running', 'downloading', 'postprocessing', 'converting', 'verifying', 'scanning'] -%}
+{{ badge(job.status.value, variant='info', reel=true) }}
+{{ vu_meter(percent=(job.progress_percent or job.progress or 0), segments=segments, compact=true) }}
+{%- elif job.status.value == 'succeeded' -%}
+{{ badge('completed', variant='success', icon='check_circle') }}
+{%- elif job.status.value in ['failed', 'cancelled'] -%}
+{{ badge(job.status.value, variant='error', icon='error') }}
+{%- else -%}
+{{ badge(job.status.value, variant='neutral', icon='schedule') }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro advanced_options_button(id_prefix) -%}
+<button
+  type="button"
+  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-colors"
+  data-advanced-open="{{ id_prefix }}-advanced-dialog"
+>
+  <span class="material-symbols-outlined text-[16px]">tune</span>
+  Advanced Options
+</button>
+{%- endmacro %}
+
+{% macro advanced_import_dialog(settings, id_prefix='import') -%}
+{%- set input_class = 'w-full bg-panel-raised border border-panel-line rounded-lg px-4 py-2.5 font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow' -%}
+{%- set label_class = 'font-label-md text-label-md text-paper-muted uppercase tracking-wider' -%}
+{%- set ytdlp_extra_placeholder = settings.ytdlp_extra_args | join(' ') if settings.ytdlp_extra_args is iterable and settings.ytdlp_extra_args is not string else (settings.ytdlp_extra_args or '') -%}
+{%- set ffmpeg_extra_placeholder = settings.ffmpeg_extra_args | join(' ') if settings.ffmpeg_extra_args is iterable and settings.ffmpeg_extra_args is not string else (settings.ffmpeg_extra_args or '') -%}
+<dialog
+  id="{{ id_prefix }}-advanced-dialog"
+  class="advanced-import-dialog bg-panel border border-panel-line rounded-xl p-stack-md panel-edge text-paper backdrop:bg-ink/70 max-w-lg w-[calc(100%-2rem)] open:fixed open:inset-0 open:z-50 open:m-auto open:max-h-[90vh] open:overflow-y-auto"
+>
+  <div class="flex items-start justify-between gap-3 mb-stack-md">
+    <div>
+      <h3 class="font-headline-sm text-headline-sm text-paper uppercase tracking-wide">Advanced Options</h3>
+      <p class="font-body-md text-body-md text-paper-muted mt-1">Leave fields blank to use global Settings defaults.</p>
+    </div>
+    <button type="button" class="p-1 rounded-lg text-paper-muted hover:bg-panel-raised transition-colors" data-advanced-close aria-label="Close">
+      <span class="material-symbols-outlined text-[20px]">close</span>
+    </button>
+  </div>
+
+  <div class="space-y-4">
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_audio_format" class="{{ label_class }}">Audio Format</label>
+      <select id="{{ id_prefix }}_audio_format" name="audio_format" class="{{ input_class }}">
+        <option value="">— Use global default ({{ settings.ytdlp_audio_format | e }}) —</option>
+        {% for fmt in ['m4a', 'mp3', 'opus', 'wav', 'flac', 'aac', 'vorbis', 'best'] %}
+        <option value="{{ fmt }}">{{ fmt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_audio_quality" class="{{ label_class }}">Audio Quality</label>
+      <input
+        id="{{ id_prefix }}_audio_quality"
+        name="audio_quality"
+        type="text"
+        class="{{ input_class }}"
+        placeholder="{{ settings.ytdlp_audio_quality or 'best' | e }}"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_loudness_normalize" class="{{ label_class }}">Loudness Normalization</label>
+      <select id="{{ id_prefix }}_loudness_normalize" name="loudness_normalize" class="{{ input_class }}">
+        <option value="">— Use global default ({{ 'enabled' if settings.loudness_normalize else 'disabled' }}) —</option>
+        <option value="true">Enabled</option>
+        <option value="false">Disabled</option>
+      </select>
+      <p class="font-label-md text-label-md text-paper-muted opacity-75">Re-encodes audio with ffmpeg loudnorm (EBU R128).</p>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_loudness_target_lufs" class="{{ label_class }}">Loudness Target (LUFS)</label>
+      <input
+        id="{{ id_prefix }}_loudness_target_lufs"
+        name="loudness_target_lufs"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.loudness_target_lufs | e }}"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_loudness_audio_bitrate" class="{{ label_class }}">Loudness Re-encode Bitrate</label>
+      <input
+        id="{{ id_prefix }}_loudness_audio_bitrate"
+        name="loudness_audio_bitrate"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.loudness_audio_bitrate | e }}"
+      />
+      <p class="font-label-md text-label-md text-paper-muted opacity-75">AAC bitrate when normalization is enabled.</p>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_collision_mode" class="{{ label_class }}">Collision Mode</label>
+      <select id="{{ id_prefix }}_collision_mode" name="collision_mode" class="{{ input_class }}">
+        <option value="">— Use global default ({{ settings.collision_mode | e }}) —</option>
+        {% for choice in COLLISION_CHOICES %}
+        <option value="{{ choice | e }}">{{ choice | e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_output_extension" class="{{ label_class }}">Output Extension</label>
+      <input
+        id="{{ id_prefix }}_output_extension"
+        name="output_extension"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.output_extension | e }}"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_filename_template" class="{{ label_class }}">Filename Template</label>
+      <input
+        id="{{ id_prefix }}_filename_template"
+        name="filename_template"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.filename_template | e }}"
+      />
+      <p class="font-label-md text-label-md text-paper-muted opacity-75">Placeholders: {title}, {video_id}, {uploader}, {channel}, {upload_date}</p>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_ytdlp_extra_args" class="{{ label_class }}">yt-dlp Extra Arguments</label>
+      <input
+        id="{{ id_prefix }}_ytdlp_extra_args"
+        name="ytdlp_extra_args"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ ytdlp_extra_placeholder | e }}"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_ffmpeg_extra_args" class="{{ label_class }}">ffmpeg Extra Arguments</label>
+      <input
+        id="{{ id_prefix }}_ffmpeg_extra_args"
+        name="ffmpeg_extra_args"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ ffmpeg_extra_placeholder | e }}"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="{{ id_prefix }}_cookies_file" class="{{ label_class }}">Cookies File Override</label>
+      <input
+        id="{{ id_prefix }}_cookies_file"
+        name="cookies_file"
+        type="text"
+        class="{{ input_class }} font-code text-code"
+        placeholder="{{ settings.cookies_file or '' | e }}"
+      />
+    </div>
+
+    <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3">
+      <input type="checkbox" name="dry_run" value="true" id="{{ id_prefix }}_dry_run" class="custom-checkbox" />
+      <label class="font-body-md text-body-md cursor-pointer select-none" for="{{ id_prefix }}_dry_run">
+        Dry run for this job only
+      </label>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2 mt-stack-md pt-4 border-t border-panel-line/30">
+    <button type="button" class="px-4 py-2 rounded-lg border border-panel-line font-label-md text-label-md uppercase text-paper-muted hover:bg-panel-raised transition-colors" data-advanced-close>
+      Done
+    </button>
+  </div>
+</dialog>
 {%- endmacro %}

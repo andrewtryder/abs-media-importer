@@ -54,6 +54,37 @@ def safe_folder_name(name: str) -> str:
     return safe_filename(name, max_length=100)
 
 
+def render_filename_template(
+    template: str,
+    *,
+    title: str,
+    video_id: str,
+    uploader: str | None = None,
+    channel: str | None = None,
+    upload_date: str | None = None,
+) -> str:
+    """Render a filename template with supported placeholders."""
+    fields = {
+        "title": title,
+        "video_id": video_id,
+        "uploader": uploader or "",
+        "channel": channel or "",
+        "upload_date": upload_date or "",
+    }
+    rendered = template
+    for key, value in fields.items():
+        rendered = rendered.replace(f"{{{key}}}", value)
+    return safe_filename(rendered)
+
+
+def _strip_extension_suffix(stem: str, ext: str) -> str:
+    """Remove a trailing .ext from *stem* when the template already included it."""
+    suffix = f".{ext.lstrip('.')}"
+    if stem.lower().endswith(suffix.lower()):
+        return stem[: -len(suffix)]
+    return stem
+
+
 # ---------------------------------------------------------------------------
 # Path safety
 # ---------------------------------------------------------------------------
@@ -170,6 +201,10 @@ def resolve_output_path(
     video_id: str,
     collision_mode: str = "append_id",
     extension: str = "m4b",
+    filename_template: str = "{title}.m4b",
+    uploader: str | None = None,
+    channel: str | None = None,
+    upload_date: str | None = None,
 ) -> Path:
     """
     Determine the final output .m4b path, applying collision handling.
@@ -184,7 +219,15 @@ def resolve_output_path(
     Raises ValueError on path traversal.
     """
     ext = extension.lstrip(".")
-    safe_name = safe_filename(title)
+    rendered = render_filename_template(
+        filename_template,
+        title=title,
+        video_id=video_id,
+        uploader=uploader,
+        channel=channel,
+        upload_date=upload_date,
+    )
+    safe_name = _strip_extension_suffix(rendered, ext)
     folder_path = resolve_safe_path(output_root, destination_folder)
     assert_within_root(output_root, folder_path)
 
@@ -298,6 +341,11 @@ class FilesystemService:
         title: str,
         video_id: str,
         collision_mode: str | None = None,
+        extension: str | None = None,
+        filename_template: str | None = None,
+        uploader: str | None = None,
+        channel: str | None = None,
+        upload_date: str | None = None,
     ) -> Path:
         mode = collision_mode or self.settings.collision_mode
         return resolve_output_path(
@@ -306,7 +354,11 @@ class FilesystemService:
             title,
             video_id,
             mode,
-            self.settings.output_extension,
+            extension or self.settings.output_extension,
+            filename_template or self.settings.filename_template,
+            uploader=uploader,
+            channel=channel,
+            upload_date=upload_date,
         )
 
     def ensure_work_dir(self, job_id: str) -> Path:

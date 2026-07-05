@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import advanced_import_dialog, advanced_options_button %}
 {% block title %}Preview: {{ meta.title | e }} — reeldock{% endblock %}
 
 {% block content %}
@@ -14,7 +15,7 @@
   </header>
 
   <div class="max-w-5xl mx-auto px-container-padding py-stack-lg">
-    <p class="font-body-md text-body-md text-on-surface-variant mb-stack-lg section-entrance section-entrance-1">Review fetched metadata and customize audiobook options.</p>
+    <p class="font-body-md text-body-md text-paper-muted mb-stack-lg section-entrance section-entrance-1">Review fetched metadata and customize audiobook options.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
       <!-- Left Column: Video Metadata Card -->
@@ -27,56 +28,56 @@
           {% endif %}
 
           <div class="flex flex-col gap-3">
-            <div class="flex flex-col gap-0.5 border-b border-outline-variant/30 pb-2">
-              <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Title</span>
-              <span class="font-body-md text-body-md text-on-surface font-semibold leading-snug">{{ meta.title | e }}</span>
+            <div class="flex flex-col gap-0.5 border-b border-panel-line/30 pb-2">
+              <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Title</span>
+              <span class="font-body-md text-body-md text-paper font-semibold leading-snug">{{ meta.title | e }}</span>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div class="flex flex-col gap-0.5">
-                <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Channel</span>
-                <span class="font-body-md text-on-surface">{{ meta.uploader | default('—') | e }}</span>
+                <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Channel</span>
+                <span class="font-body-md text-paper">{{ meta.uploader | default('—') | e }}</span>
               </div>
               <div class="flex flex-col gap-0.5">
-                <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Duration</span>
-                <span class="font-body-md text-on-surface font-code">{{ meta.duration | duration }}</span>
+                <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Duration</span>
+                <span class="font-body-md text-paper font-code">{{ meta.duration | duration }}</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 border-t border-outline-variant/30 pt-2">
+            <div class="grid grid-cols-2 gap-3 border-t border-panel-line/30 pt-2">
               {% if meta.uploader_id %}
               <div class="flex flex-col gap-0.5">
-                <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Handle</span>
-                <span class="font-code text-code text-on-surface truncate">{{ meta.uploader_id | e }}</span>
+                <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Handle</span>
+                <span class="font-code text-code text-paper truncate">{{ meta.uploader_id | e }}</span>
               </div>
               {% endif %}
               {% if meta.upload_date %}
               <div class="flex flex-col gap-0.5">
-                <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Upload Date</span>
-                <span class="font-body-md text-on-surface">{{ meta.upload_date | format_date }}</span>
+                <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Upload Date</span>
+                <span class="font-body-md text-paper">{{ meta.upload_date | format_date }}</span>
               </div>
               {% endif %}
             </div>
 
-            <div class="flex justify-between items-center border-t border-outline-variant/30 pt-3">
-              <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Chapters</span>
+            <div class="flex justify-between items-center border-t border-panel-line/30 pt-3">
+              <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Chapters</span>
               <span>
                 {% if meta.chapter_count > 0 %}
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-container/20 border border-primary/30 text-primary font-label-md text-label-md">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-container/20 border border-amber/30 text-amber font-label-md text-label-md">
                   <span class="material-symbols-outlined text-[12px]">format_list_bulleted</span>
                   {{ meta.chapter_count }} chapters
                 </span>
                 {% else %}
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-md text-label-md">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-panel-raised text-paper-muted font-label-md text-label-md">
                   None detected
                 </span>
                 {% endif %}
               </span>
             </div>
 
-            <div class="flex justify-between items-center border-t border-outline-variant/30 pt-3">
-              <span class="uppercase font-label-md text-label-md text-on-surface-variant tracking-wider">Video ID</span>
-              <span class="font-code text-code text-primary">{{ meta.id | e }}</span>
+            <div class="flex justify-between items-center border-t border-panel-line/30 pt-3">
+              <span class="uppercase font-label-md text-label-md text-paper-muted tracking-wider">Video ID</span>
+              <span class="font-code text-code text-amber">{{ meta.id | e }}</span>
             </div>
           </div>
         </div>
@@ -85,10 +86,13 @@
       <!-- Right Column: Configure Form Card -->
       <div class="md:col-span-7">
         <div class="preview-card section-entrance section-entrance-3 bg-panel border border-panel-line rounded-xl p-stack-md panel-edge">
-          <h2 class="font-headline-sm text-headline-sm text-paper mb-6 flex items-center gap-2 uppercase tracking-wide">
-            <span class="material-symbols-outlined text-amber">tune</span>
-            Configure Import
-          </h2>
+          <div class="flex items-center justify-between gap-3 mb-6">
+            <h2 class="font-headline-sm text-headline-sm text-paper flex items-center gap-2 uppercase tracking-wide">
+              <span class="material-symbols-outlined text-amber">tune</span>
+              Configure Import
+            </h2>
+            {{ advanced_options_button('import') }}
+          </div>
 
           <form method="POST" action="/jobs/create" id="import-form" class="space-y-6">
             <!-- Hidden metadata fields -->
@@ -106,25 +110,25 @@
 
             <!-- Output title -->
             <div class="flex flex-col gap-2">
-              <label for="output_title" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Output Title</label>
+              <label for="output_title" class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Output Title</label>
               <input
                 id="output_title"
                 name="output_title"
                 type="text"
-                class="w-full bg-surface-container-low border border-outline rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none input-focus-glow"
+                class="w-full bg-panel-raised border border-panel-line rounded-lg px-4 py-2.5 font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow"
                 value="{{ meta.title | e }}"
                 required
               />
-              <p class="font-label-md text-label-md text-on-surface-variant opacity-70">This becomes the audiobook file name. Edit to customize.</p>
+              <p class="font-label-md text-label-md text-paper-muted opacity-70">This becomes the audiobook file name. Edit to customize.</p>
             </div>
 
             <!-- Destination folder -->
             <div class="flex flex-col gap-2">
-              <label for="destination_folder" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Destination Folder</label>
+              <label for="destination_folder" class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">Destination Folder</label>
               <select
                 id="destination_folder"
                 name="destination_folder"
-                class="w-full bg-surface-container-low border border-outline rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none input-focus-glow"
+                class="w-full bg-panel-raised border border-panel-line rounded-lg px-4 py-2.5 font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow"
               >
                 <option value="">— Select folder —</option>
                 {% for folder in folders %}
@@ -135,30 +139,30 @@
                 >{{ folder | e }}</option>
                 {% endfor %}
               </select>
-              <p class="font-label-md text-label-md text-on-surface-variant opacity-70">Folder under media root: <code class="font-code text-code text-primary">{{ settings.output_root }}</code></p>
+              <p class="font-label-md text-label-md text-paper-muted opacity-70">Folder under media root: <code class="font-code text-code text-amber">{{ settings.output_root }}</code></p>
             </div>
 
             <!-- New folder creation -->
             <div class="flex flex-col gap-2">
-              <label for="new_folder" class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+              <label for="new_folder" class="font-label-md text-label-md text-paper-muted uppercase tracking-wider">
                 Or Create New Folder
-                <span class="font-label-md text-label-md text-on-surface-variant lowercase normal-case">(leave empty to use selection above)</span>
+                <span class="font-label-md text-label-md text-paper-muted lowercase normal-case">(leave empty to use selection above)</span>
               </label>
               <div class="relative flex items-center">
-                <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">create_new_folder</span>
+                <span class="material-symbols-outlined absolute left-3 text-paper-muted text-[18px]">create_new_folder</span>
                 <input
                   id="new_folder"
                   name="new_folder"
                   type="text"
-                  class="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline rounded-lg font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none input-focus-glow"
+                  class="w-full pl-10 pr-4 py-2.5 bg-panel-raised border border-panel-line rounded-lg font-body-md text-paper focus:ring-2 focus:ring-amber focus:border-amber transition-all outline-none input-focus-glow"
                   placeholder="e.g. @mychannelname"
                 />
               </div>
             </div>
 
             <!-- Embed options -->
-            <fieldset class="border border-outline-variant/30 rounded-lg p-4 bg-surface-container-low/50">
-              <legend class="font-label-md text-label-md text-primary uppercase tracking-wider px-2">Embed Options</legend>
+            <fieldset class="border border-panel-line/30 rounded-lg p-4 bg-panel-raised/50">
+              <legend class="font-label-md text-label-md text-amber uppercase tracking-wider px-2">Embed Options</legend>
               <div class="space-y-3 mt-2">
                 <div class="flex items-center gap-3">
                   <input type="checkbox" name="embed_metadata" value="true" checked id="embed_metadata" class="custom-checkbox" />
@@ -173,21 +177,23 @@
                   <label class="font-body-md text-body-md cursor-pointer select-none" for="embed_chapters">Embed video chapters</label>
                 </div>
                 {% if settings.abs_configured %}
-                <div class="flex items-center gap-3 border-t border-outline-variant/30 pt-3 mt-2">
+                <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
                   <input type="checkbox" name="trigger_abs_scan" value="true"
                     {% if settings.abs_scan_after_success %}checked{% endif %}
                     id="trigger_abs_scan" class="custom-checkbox" />
                   <label class="font-body-md text-body-md cursor-pointer select-none" for="trigger_abs_scan">Trigger Audiobookshelf library scan after success</label>
                 </div>
                 {% endif %}
-                <div class="flex items-center gap-3 border-t border-outline-variant/30 pt-3 mt-2">
+                <div class="flex items-center gap-3 border-t border-panel-line/30 pt-3 mt-2">
                   <input type="checkbox" name="allow_reimport" value="true" id="allow_reimport" class="custom-checkbox" />
                   <label class="font-body-md text-body-md cursor-pointer select-none" for="allow_reimport">Allow re-import (overwrite duplicate guard)</label>
                 </div>
               </div>
             </fieldset>
 
-            <button type="submit" class="w-full flex items-center justify-center gap-2 px-8 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md font-bold uppercase tracking-wide hover:brightness-110 transition-all active:scale-95 cursor-pointer" id="create-btn">
+            {{ advanced_import_dialog(settings, 'import') }}
+
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-8 py-3 bg-amber-container text-on-amber-container rounded-lg font-label-md text-label-md font-bold uppercase tracking-wide hover:brightness-110 transition-all active:scale-95 cursor-pointer" id="create-btn">
               <span class="material-symbols-outlined">play_arrow</span>
               Create M4B
             </button>
@@ -199,6 +205,23 @@
 </main>
 
 <script>
+  document.querySelectorAll('[data-advanced-open]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const dialog = document.getElementById(btn.getAttribute('data-advanced-open'));
+      if (dialog && typeof dialog.showModal === 'function') {
+        dialog.showModal();
+      }
+    });
+  });
+  document.querySelectorAll('[data-advanced-close]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const dialog = btn.closest('dialog');
+      if (dialog) {
+        dialog.close();
+      }
+    });
+  });
+
   document.getElementById('import-form').addEventListener('submit', function(e) {
     const btn = document.getElementById('create-btn');
     if (btn) {

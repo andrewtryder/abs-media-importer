@@ -385,6 +385,9 @@ class YtDlpService:
         embed_chapters: bool = True,
         use_archive: bool = True,
         force_archive_bypass: bool = False,
+        audio_format: str | None = None,
+        audio_quality: str | None = None,
+        cookies_file: Path | None = None,
         extra_args: list[str] | None = None,
     ) -> list[str]:
         """
@@ -402,18 +405,22 @@ class YtDlpService:
             extra_args: Additional yt-dlp arguments to append.
         """
         s = self.settings
+        resolved_format = audio_format or s.ytdlp_audio_format
+        resolved_quality = audio_quality if audio_quality is not None else s.ytdlp_audio_quality
+        resolved_cookies = cookies_file if cookies_file is not None else s.cookies_file
+        resolved_extra = extra_args if extra_args is not None else list(s.ytdlp_extra_args)
         cmd: list[str] = [
             s.ytdlp_bin,
             "--no-playlist",
             "-x",
             "--audio-format",
-            s.ytdlp_audio_format,
+            resolved_format,
             "--newline",
             "--progress",
         ]
 
-        if s.ytdlp_audio_quality:
-            cmd += ["--audio-quality", s.ytdlp_audio_quality]
+        if resolved_quality:
+            cmd += ["--audio-quality", resolved_quality]
 
         if embed_metadata:
             cmd.append("--embed-metadata")
@@ -428,14 +435,10 @@ class YtDlpService:
         if use_archive and not force_archive_bypass and archive:
             cmd += ["--download-archive", str(archive)]
 
-        # Extra args from config
-        if s.cookies_file:
-            cmd += ["--cookies", str(s.cookies_file)]
-        cmd.extend(s.ytdlp_extra_args)
-
-        # Extra args from caller
-        if extra_args:
-            cmd.extend(extra_args)
+        # Extra args from config or per-job override
+        if resolved_cookies:
+            cmd += ["--cookies", str(resolved_cookies)]
+        cmd.extend(resolved_extra)
 
         safe_url = self._sanitize_command_url(url)
         cmd += ["-o", output_template, "--", safe_url]

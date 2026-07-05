@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import re
-import shlex
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -12,10 +9,14 @@ from pathlib import Path
 from typing import Any
 
 from app.path_checks import check_writable_directory
-
-ValidationResult = tuple[str | None, str | None]  # (error, warning)
-
-_SHELL_INJECTION_RE = re.compile(r"[;|&`><]|&&|\|\||\$\(")
+from app.validators import (
+    ValidationResult,
+    validate_audio_bitrate,
+    validate_extra_args,
+    validate_filename_template,
+    validate_lufs_target,
+    validate_optional_path,
+)
 
 
 class SettingType(StrEnum):
@@ -55,40 +56,6 @@ def _validate_absolute_writable_path(value: str) -> ValidationResult:
     return None, None
 
 
-def _validate_optional_path(value: str) -> ValidationResult:
-    stripped = value.strip()
-    if not stripped:
-        return None, None
-    p = Path(stripped)
-    if not p.is_absolute():
-        return "Path must be absolute.", None
-    if not p.exists():
-        return None, "File does not exist yet; yt-dlp will fail until it is created."
-    if not p.is_file():
-        return "Path must point to a file.", None
-    if not os.access(p, os.R_OK):
-        return "File is not readable.", None
-    return None, None
-
-
-def _validate_extra_args(value: str) -> ValidationResult:
-    stripped = value.strip()
-    if not stripped:
-        return None, None
-    if _SHELL_INJECTION_RE.search(stripped):
-        return "Arguments must not contain shell metacharacters (; | & ` > < && || $( ).", None
-    warnings: list[str] = []
-    try:
-        tokens = shlex.split(stripped)
-    except ValueError as exc:
-        return f"Could not parse arguments: {exc}", None
-    for token in tokens:
-        if not token.startswith("-"):
-            warnings.append(f'Unusual token "{token}" does not look like a flag.')
-    warning = " ".join(warnings) if warnings else None
-    return None, warning
-
-
 def _validate_positive_int(value: str) -> ValidationResult:
     try:
         parsed = int(value.strip())
@@ -124,15 +91,6 @@ def _validate_int_list(value: str) -> ValidationResult:
     return None, None
 
 
-def _validate_filename_template(value: str) -> ValidationResult:
-    stripped = value.strip()
-    if not stripped:
-        return "Filename template cannot be empty.", None
-    if ".." in stripped or "/" in stripped or "\\" in stripped:
-        return "Template must not contain path separators.", None
-    return None, None
-
-
 COLLISION_CHOICES = ("skip", "overwrite", "append_id", "append_counter")
 
 SETTINGS_REGISTRY: list[SettingSpec] = [
@@ -164,7 +122,7 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         type=SettingType.PATH,
         default="",
         help_text="Absolute path to a Netscape-format cookies file for yt-dlp.",
-        validate=_validate_optional_path,
+        validate=validate_optional_path,
     ),
     # ── Download behavior ────────────────────────────────────────────────────
     SettingSpec(
@@ -216,7 +174,7 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         type=SettingType.SPACE_LIST,
         default="",
         help_text="Space-separated extra arguments passed to yt-dlp.",
-        validate=_validate_extra_args,
+        validate=validate_extra_args,
     ),
     SettingSpec(
         key="ffmpeg_extra_args",
@@ -226,7 +184,39 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         type=SettingType.SPACE_LIST,
         default="",
         help_text="Space-separated extra arguments passed to ffmpeg.",
-        validate=_validate_extra_args,
+        validate=validate_extra_args,
+    ),
+    SettingSpec(
+        key="loudness_normalize",
+        env_alias="LOUDNESS_NORMALIZE",
+        label="Normalize Loudness (EBU R128)",
+        group="download",
+        type=SettingType.BOOL,
+        default="false",
+        help_text=(
+            "Apply ffmpeg loudnorm during conversion. Re-encodes audio (AAC); "
+            "stream copy is not used when enabled."
+        ),
+    ),
+    SettingSpec(
+        key="loudness_target_lufs",
+        env_alias="LOUDNESS_TARGET_LUFS",
+        label="Loudness Target (LUFS)",
+        group="download",
+        type=SettingType.STR,
+        default="-16",
+        help_text="Integrated loudness target for loudnorm (typically -16 for podcasts).",
+        validate=validate_lufs_target,
+    ),
+    SettingSpec(
+        key="loudness_audio_bitrate",
+        env_alias="LOUDNESS_AUDIO_BITRATE",
+        label="Loudness Re-encode Bitrate",
+        group="download",
+        type=SettingType.STR,
+        default="192k",
+        help_text="AAC bitrate used when loudness normalization re-encodes audio.",
+        validate=validate_audio_bitrate,
     ),
     # ── Naming ───────────────────────────────────────────────────────────────
     SettingSpec(
@@ -237,7 +227,7 @@ SETTINGS_REGISTRY: list[SettingSpec] = [
         type=SettingType.STR,
         default="{title}.m4b",
         help_text="Template for the final output filename.",
-        validate=_validate_filename_template,
+        validate=validate_filename_template,
     ),
     SettingSpec(
         key="folder_name_field",

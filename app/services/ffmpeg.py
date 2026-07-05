@@ -139,6 +139,10 @@ class FfmpegService:
         output_path: Path,
         *,
         progress: bool = False,
+        extra_args: list[str] | None = None,
+        loudness_normalize: bool = False,
+        loudness_target_lufs: str = "-16",
+        audio_bitrate: str = "192k",
     ) -> list[str]:
         """
         Primary remux command.
@@ -167,14 +171,23 @@ class FfmpegService:
             "0",
             "-map_chapters",
             "0",
-            "-c",
-            "copy",
+        ]
+        cmd.extend(
+            self._codec_args(
+                include_video=True,
+                loudness_normalize=loudness_normalize,
+                loudness_target_lufs=loudness_target_lufs,
+                audio_bitrate=audio_bitrate,
+            )
+        )
+        cmd += [
             "-disposition:v:0",
             "attached_pic",
             "-f",
             "ipod",
         ]
-        cmd.extend(s.ffmpeg_extra_args)
+        resolved_extra = extra_args if extra_args is not None else list(s.ffmpeg_extra_args)
+        cmd.extend(resolved_extra)
         cmd.append(str(output_path))
         return cmd
 
@@ -184,6 +197,10 @@ class FfmpegService:
         output_path: Path,
         *,
         progress: bool = False,
+        extra_args: list[str] | None = None,
+        loudness_normalize: bool = False,
+        loudness_target_lufs: str = "-16",
+        audio_bitrate: str = "192k",
     ) -> list[str]:
         """
         Fallback remux command: audio-only, no cover art.
@@ -207,12 +224,21 @@ class FfmpegService:
             "0",
             "-map_chapters",
             "0",
-            "-c",
-            "copy",
+        ]
+        cmd.extend(
+            self._codec_args(
+                include_video=False,
+                loudness_normalize=loudness_normalize,
+                loudness_target_lufs=loudness_target_lufs,
+                audio_bitrate=audio_bitrate,
+            )
+        )
+        cmd += [
             "-f",
             "ipod",
         ]
-        cmd.extend(s.ffmpeg_extra_args)
+        resolved_extra = extra_args if extra_args is not None else list(s.ffmpeg_extra_args)
+        cmd.extend(resolved_extra)
         cmd.append(str(output_path))
         return cmd
 
@@ -239,6 +265,10 @@ class FfmpegService:
         log_fh: object | None = None,
         check_cancelled: Callable[[], bool] | None = None,
         on_progress: Callable[[FfmpegProgress], None] | None = None,
+        extra_args: list[str] | None = None,
+        loudness_normalize: bool = False,
+        loudness_target_lufs: str = "-16",
+        audio_bitrate: str = "192k",
     ) -> RemuxResult:
         """
         Attempt primary remux; fall back to audio-only on failure.
@@ -255,8 +285,16 @@ class FfmpegService:
         """
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Primary attempt
-        cmd = self.build_remux_command(input_path, output_path, progress=on_progress is not None)
+        use_progress = on_progress is not None
+        cmd = self.build_remux_command(
+            input_path,
+            output_path,
+            progress=use_progress,
+            extra_args=extra_args,
+            loudness_normalize=loudness_normalize,
+            loudness_target_lufs=loudness_target_lufs,
+            audio_bitrate=audio_bitrate,
+        )
         logger.debug("ffmpeg primary: %s", cmd)
         success, err = self._run_cmd(
             cmd, log_fh, check_cancelled=check_cancelled, on_progress=on_progress
@@ -279,7 +317,13 @@ class FfmpegService:
 
         # Fallback attempt
         cmd_fallback = self.build_remux_command_fallback(
-            input_path, output_path, progress=on_progress is not None
+            input_path,
+            output_path,
+            progress=use_progress,
+            extra_args=extra_args,
+            loudness_normalize=loudness_normalize,
+            loudness_target_lufs=loudness_target_lufs,
+            audio_bitrate=audio_bitrate,
         )
         logger.debug("ffmpeg fallback: %s", cmd_fallback)
         success_fb, err_fb = self._run_cmd(
@@ -335,6 +379,31 @@ class FfmpegService:
         )
 
     # ── Private ───────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _codec_args(
+        *,
+        include_video: bool,
+        loudness_normalize: bool,
+        loudness_target_lufs: str,
+        audio_bitrate: str,
+    ) -> list[str]:
+        if loudness_normalize:
+            args: list[str] = []
+            if include_video:
+                args.extend(["-c:v", "copy"])
+            args.extend(
+                [
+                    "-af",
+                    f"loudnorm=I={loudness_target_lufs}:TP=-1.5:LRA=11",
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    audio_bitrate,
+                ]
+            )
+            return args
+        return ["-c", "copy"]
 
     def _run_cmd(
         self,

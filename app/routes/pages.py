@@ -21,13 +21,22 @@ from app.services.jobs import (
     JobSubmitParams,
     get_job,
     get_jobs_list,
+    get_recent_jobs,
     submit_batch,
     submit_job,
 )
 from app.services.ytdlp import PlaylistEntry, YtDlpService, is_channel_url, is_playlist_url
 from app.settings_registry import (
+    COLLISION_CHOICES,
     parse_form_value,
     registry_groups,
+)
+from app.validators import (
+    validate_audio_bitrate,
+    validate_extra_args,
+    validate_filename_template,
+    validate_lufs_target,
+    validate_optional_path,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,6 +70,7 @@ templates.env.filters["duration"] = _format_duration
 templates.env.filters["format_date"] = _format_date
 templates.env.filters["escape_html"] = _escape_html
 templates.env.globals["format_free_space"] = format_free_space
+templates.env.globals["COLLISION_CHOICES"] = COLLISION_CHOICES
 
 
 def configure_templates(ui_version: str) -> None:
@@ -70,11 +80,98 @@ def configure_templates(ui_version: str) -> None:
 router = APIRouter(tags=["pages"])
 
 
+def _optional_form_str(value: str | None) -> str | None:
+    stripped = (value or "").strip()
+    return stripped or None
+
+
+def _optional_form_bool(value: str | None) -> bool | None:
+    stripped = (value or "").strip().lower()
+    if not stripped:
+        return None
+    if stripped in {"true", "1", "yes", "on"}:
+        return True
+    if stripped in {"false", "0", "no", "off"}:
+        return False
+    return None
+
+
+def _validate_advanced_import_fields(
+    *,
+    collision_mode: str | None,
+    filename_template: str | None,
+    ytdlp_extra_args: str | None,
+    ffmpeg_extra_args: str | None,
+    cookies_file: str | None,
+    loudness_target_lufs: str | None = None,
+    loudness_audio_bitrate: str | None = None,
+) -> str | None:
+    if collision_mode and collision_mode not in COLLISION_CHOICES:
+        return f"Invalid collision mode: {collision_mode}"
+    if filename_template:
+        error, _warning = validate_filename_template(filename_template)
+        if error:
+            return error
+    for label, value in (
+        ("yt-dlp extra arguments", ytdlp_extra_args),
+        ("ffmpeg extra arguments", ffmpeg_extra_args),
+    ):
+        if value:
+            error, _warning = validate_extra_args(value)
+            if error:
+                return f"{label}: {error}"
+    if cookies_file:
+        error, _warning = validate_optional_path(cookies_file)
+        if error:
+            return f"Cookies file: {error}"
+    if loudness_target_lufs:
+        error, _warning = validate_lufs_target(loudness_target_lufs)
+        if error:
+            return f"Loudness target: {error}"
+    if loudness_audio_bitrate:
+        error, _warning = validate_audio_bitrate(loudness_audio_bitrate)
+        if error:
+            return f"Loudness bitrate: {error}"
+    return None
+
+
+def _advanced_fields_from_form(
+    *,
+    collision_mode: str | None = None,
+    audio_format: str | None = None,
+    audio_quality: str | None = None,
+    output_extension: str | None = None,
+    filename_template: str | None = None,
+    ytdlp_extra_args: str | None = None,
+    ffmpeg_extra_args: str | None = None,
+    cookies_file: str | None = None,
+    dry_run: bool = False,
+    loudness_normalize: str | None = None,
+    loudness_target_lufs: str | None = None,
+    loudness_audio_bitrate: str | None = None,
+) -> dict[str, object]:
+    return {
+        "collision_mode": _optional_form_str(collision_mode),
+        "audio_format": _optional_form_str(audio_format),
+        "audio_quality": _optional_form_str(audio_quality),
+        "output_extension": _optional_form_str(output_extension),
+        "filename_template": _optional_form_str(filename_template),
+        "ytdlp_extra_args": _optional_form_str(ytdlp_extra_args),
+        "ffmpeg_extra_args": _optional_form_str(ffmpeg_extra_args),
+        "cookies_file": _optional_form_str(cookies_file),
+        "dry_run": dry_run,
+        "loudness_normalize": _optional_form_bool(loudness_normalize),
+        "loudness_target_lufs": _optional_form_str(loudness_target_lufs),
+        "loudness_audio_bitrate": _optional_form_str(loudness_audio_bitrate),
+    }
+
+
 @router.get("/", response_class=HTMLResponse)
-async def page_home(request: Request, cfg: SettingsDep) -> HTMLResponse:
+async def page_home(request: Request, db: DbDep, cfg: SettingsDep) -> HTMLResponse:
+    recent_jobs = await get_recent_jobs(db, limit=6)
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "settings": cfg},
+        {"request": request, "settings": cfg, "recent_jobs": recent_jobs},
     )
 
 
@@ -180,7 +277,49 @@ async def page_create_job(
     embed_chapters: bool = Form(True),
     trigger_abs_scan: bool = Form(False),
     allow_reimport: bool = Form(False),
+    collision_mode: str = Form(""),
+    audio_format: str = Form(""),
+    audio_quality: str = Form(""),
+    output_extension: str = Form(""),
+    filename_template: str = Form(""),
+    ytdlp_extra_args: str = Form(""),
+    ffmpeg_extra_args: str = Form(""),
+    cookies_file: str = Form(""),
+    dry_run: bool = Form(False),
+    loudness_normalize: str = Form(""),
+    loudness_target_lufs: str = Form(""),
+    loudness_audio_bitrate: str = Form(""),
 ) -> HTMLResponse | RedirectResponse:
+    advanced = _advanced_fields_from_form(
+        collision_mode=collision_mode,
+        audio_format=audio_format,
+        audio_quality=audio_quality,
+        output_extension=output_extension,
+        filename_template=filename_template,
+        ytdlp_extra_args=ytdlp_extra_args,
+        ffmpeg_extra_args=ffmpeg_extra_args,
+        cookies_file=cookies_file,
+        dry_run=dry_run,
+        loudness_normalize=loudness_normalize,
+        loudness_target_lufs=loudness_target_lufs,
+        loudness_audio_bitrate=loudness_audio_bitrate,
+    )
+    validation_error = _validate_advanced_import_fields(
+        collision_mode=advanced["collision_mode"],  # type: ignore[arg-type]
+        filename_template=advanced["filename_template"],  # type: ignore[arg-type]
+        ytdlp_extra_args=advanced["ytdlp_extra_args"],  # type: ignore[arg-type]
+        ffmpeg_extra_args=advanced["ffmpeg_extra_args"],  # type: ignore[arg-type]
+        cookies_file=advanced["cookies_file"],  # type: ignore[arg-type]
+        loudness_target_lufs=advanced["loudness_target_lufs"],  # type: ignore[arg-type]
+        loudness_audio_bitrate=advanced["loudness_audio_bitrate"],  # type: ignore[arg-type]
+    )
+    if validation_error:
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "settings": cfg, "error": validation_error, "url": url},
+            status_code=400,
+        )
+
     params = JobSubmitParams(
         url=url,
         video_id=video_id,
@@ -201,6 +340,7 @@ async def page_create_job(
         embed_chapters=embed_chapters,
         trigger_abs_scan=trigger_abs_scan,
         allow_reimport=allow_reimport,
+        **advanced,  # type: ignore[arg-type]
     )
     try:
         job, _rq_id = await submit_job(db, cfg, params)
@@ -267,6 +407,36 @@ async def page_create_batch(
             )
         )
 
+    advanced = _advanced_fields_from_form(
+        collision_mode=str(form.get("collision_mode") or ""),
+        audio_format=str(form.get("audio_format") or ""),
+        audio_quality=str(form.get("audio_quality") or ""),
+        output_extension=str(form.get("output_extension") or ""),
+        filename_template=str(form.get("filename_template") or ""),
+        ytdlp_extra_args=str(form.get("ytdlp_extra_args") or ""),
+        ffmpeg_extra_args=str(form.get("ffmpeg_extra_args") or ""),
+        cookies_file=str(form.get("cookies_file") or ""),
+        dry_run=_bool_field("dry_run", False),
+        loudness_normalize=str(form.get("loudness_normalize") or ""),
+        loudness_target_lufs=str(form.get("loudness_target_lufs") or ""),
+        loudness_audio_bitrate=str(form.get("loudness_audio_bitrate") or ""),
+    )
+    validation_error = _validate_advanced_import_fields(
+        collision_mode=advanced["collision_mode"],  # type: ignore[arg-type]
+        filename_template=advanced["filename_template"],  # type: ignore[arg-type]
+        ytdlp_extra_args=advanced["ytdlp_extra_args"],  # type: ignore[arg-type]
+        ffmpeg_extra_args=advanced["ffmpeg_extra_args"],  # type: ignore[arg-type]
+        cookies_file=advanced["cookies_file"],  # type: ignore[arg-type]
+        loudness_target_lufs=advanced["loudness_target_lufs"],  # type: ignore[arg-type]
+        loudness_audio_bitrate=advanced["loudness_audio_bitrate"],  # type: ignore[arg-type]
+    )
+    if validation_error:
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "settings": cfg, "error": validation_error, "url": source_url},
+            status_code=400,
+        )
+
     params = BatchJobSubmitParams(
         source_url=source_url,
         source_type=source_type,
@@ -279,6 +449,7 @@ async def page_create_batch(
         embed_chapters=_bool_field("embed_chapters", True),
         trigger_abs_scan=_bool_field("trigger_abs_scan", False),
         allow_reimport=_bool_field("allow_reimport", False),
+        **advanced,  # type: ignore[arg-type]
     )
 
     try:
