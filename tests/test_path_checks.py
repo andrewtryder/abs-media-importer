@@ -62,6 +62,14 @@ def test_parse_absolute_file_path_rejects_relative_and_traversal(tmp_path: Path)
     assert parse_absolute_file_path("cookies.txt\0") is None
 
 
+def test_parse_absolute_file_path_rejects_dotdot_segments(tmp_path: Path):
+    nested = tmp_path / "config" / "cookies.txt"
+    nested.parent.mkdir()
+    assert (
+        parse_absolute_file_path(str(tmp_path / "config" / ".." / "config" / "cookies.txt")) is None
+    )
+
+
 def test_check_readable_file_warns_when_missing(tmp_path: Path):
     missing = tmp_path / "missing-cookies.txt"
     error, warning = check_readable_file(missing.resolve())

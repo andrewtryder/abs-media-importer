@@ -48,21 +48,18 @@ def parse_absolute_file_path(value: str) -> Path | None:
     path = Path(stripped)
     if not path.is_absolute() or ".." in path.parts:
         return None
-    return path
+    normalized = os.path.normpath(str(path))
+    if not normalized.startswith(path.anchor):
+        return None
+    return Path(normalized)
 
 
 def check_readable_file(path: Path) -> ValidationResult:
     """Return (error, warning) for a structurally validated absolute file path."""
-    resolved = path.resolve(strict=False)
-    normalized = os.path.normpath(str(resolved))
-    if not resolved.is_absolute() or not normalized.startswith(path.anchor):
-        return "Path must be absolute.", None
-
-    safe_path = Path(normalized)
-    if not safe_path.exists():
+    if not path.exists():
         return None, "File does not exist yet; yt-dlp will fail until it is created."
-    if not safe_path.is_file():
+    if not path.is_file():
         return "Path must point to a file.", None
-    if not os.access(safe_path, os.R_OK):
+    if not os.access(path, os.R_OK):
         return "File is not readable.", None
     return None, None

@@ -1,0 +1,10 @@
+extensions:
+  - addsTo:
+      pack: codeql/python-all
+      extensible: barrierModel
+    data:
+      - [
+          "app.path_checks",
+          "Member[parse_absolute_file_path].ReturnValue",
+          "path-injection",
+        ]
