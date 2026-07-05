@@ -8,6 +8,13 @@
 * **ui:** add Diagnostics page with health checks for yt-dlp, ffmpeg, ffprobe, Redis, database, paths, disk space, cookies, and ABS API.
 * **ui:** unify page headers, shared badge tokens, success/warning palette, and layout polish across Import, Jobs, Settings, Preview, Job Detail, and Diagnostics.
 
+## [1.9.0](https://github.com/andrewtryder/reeldock/compare/v1.8.0...v1.9.0) (2026-07-05)
+
+
+### Features
+
+* **import:** replace advanced modal with inline options and SponsorBlock ([#81](https://github.com/andrewtryder/reeldock/issues/81)) ([cfe34a0](https://github.com/andrewtryder/reeldock/commit/cfe34a06ba352c35b7c846e5dffbea2e91dff7d1))
+
 ## [1.8.0](https://github.com/andrewtryder/reeldock/compare/v1.7.1...v1.8.0) (2026-07-05)
 
 

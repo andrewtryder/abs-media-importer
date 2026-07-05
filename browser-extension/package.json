@@ -1,6 +1,6 @@
 {
   "name": "reeldock-extension",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Browser extension for queuing YouTube videos into a local reeldock instance.",
   "private": true,
   "type": "module",
