@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # For CI-triggered runs, check out the commit that CI validated.
           # Tag pushes and manual dispatches use the default ref.
